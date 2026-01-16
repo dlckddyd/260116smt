@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, FileText, Image as ImageIcon, ArrowDown, ArrowUp, Upload, Loader2 } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, FileText, Image as ImageIcon, ArrowDown, ArrowUp, Upload, Loader2, Layout } from 'lucide-react';
 import { faqCategories, ContentBlock } from '../data/content';
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -10,11 +10,12 @@ const Admin: React.FC = () => {
     isAdmin, login, logout, 
     inquiries, updateInquiryStatus,
     faqs, addFaq, deleteFaq,
-    reviews, addReview, deleteReview
+    reviews, addReview, deleteReview,
+    serviceImages, updateServiceImage
   } = useData();
 
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState<'inquiries' | 'faq' | 'reviews'>('inquiries');
+  const [activeTab, setActiveTab] = useState<'inquiries' | 'faq' | 'reviews' | 'main'>('inquiries');
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false); // Upload loading state
@@ -27,9 +28,13 @@ const Admin: React.FC = () => {
   // Review Form State
   const [newReview, setNewReview] = useState({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
 
+  // Service Image Management State
+  const [activeServiceIdForUpload, setActiveServiceIdForUpload] = useState<string | null>(null);
+
   // Refs for file inputs
   const faqFileInputRef = useRef<HTMLInputElement>(null);
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
+  const mainImageInputRef = useRef<HTMLInputElement>(null);
   const [activeBlockIdForUpload, setActiveBlockIdForUpload] = useState<string | null>(null);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -175,6 +180,32 @@ const Admin: React.FC = () => {
     setNewReview({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
   };
 
+  // --- Main Image Upload ---
+  const triggerMainImageUpload = (serviceId: string) => {
+    setActiveServiceIdForUpload(serviceId);
+    mainImageInputRef.current?.click();
+  };
+
+  const onMainImageFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && activeServiceIdForUpload) {
+        const url = await handleFileUpload(e.target.files[0]);
+        if (url) {
+            await updateServiceImage(activeServiceIdForUpload, url);
+            alert("이미지가 변경되었습니다.");
+        }
+    }
+    if (mainImageInputRef.current) mainImageInputRef.current.value = '';
+    setActiveServiceIdForUpload(null);
+  };
+
+  const servicesList = [
+      { id: 'place', name: '플레이스 마케팅', defaultImg: "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop" },
+      { id: 'clip', name: '네이버 클립', defaultImg: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop" },
+      { id: 'experience', name: '체험단 마케팅', defaultImg: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=800&auto=format&fit=crop" },
+      { id: 'youtube', name: '유튜브 관리', defaultImg: "https://images.unsplash.com/photo-1626544827763-d516dce335ca?q=80&w=800&auto=format&fit=crop" },
+      { id: 'instagram', name: '인스타그램', defaultImg: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop" },
+  ];
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
@@ -221,24 +252,30 @@ const Admin: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
          {/* Tabs */}
-         <div className="flex gap-4 mb-8 border-b border-gray-200">
+         <div className="flex gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
             <button 
                onClick={() => setActiveTab('inquiries')}
-               className={`pb-4 px-4 font-bold flex items-center gap-2 ${activeTab === 'inquiries' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
+               className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'inquiries' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
             >
-               <MessageSquare className="w-5 h-5" /> 문의 내역 ({inquiries.length})
+               <MessageSquare className="w-5 h-5" /> 문의 내역
+            </button>
+            <button 
+               onClick={() => setActiveTab('main')}
+               className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'main' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+               <Layout className="w-5 h-5" /> 메인 관리
             </button>
             <button 
                onClick={() => setActiveTab('faq')}
-               className={`pb-4 px-4 font-bold flex items-center gap-2 ${activeTab === 'faq' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
+               className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'faq' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
             >
-               <HelpCircle className="w-5 h-5" /> 자주 묻는 질문 ({faqs.length})
+               <HelpCircle className="w-5 h-5" /> 자주 묻는 질문
             </button>
             <button 
                onClick={() => setActiveTab('reviews')}
-               className={`pb-4 px-4 font-bold flex items-center gap-2 ${activeTab === 'reviews' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
+               className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'reviews' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
             >
-               <Star className="w-5 h-5" /> 고객 후기 ({reviews.length})
+               <Star className="w-5 h-5" /> 고객 후기
             </button>
          </div>
 
@@ -276,7 +313,33 @@ const Admin: React.FC = () => {
             </div>
          )}
 
-         {/* 2. FAQ Tab */}
+         {/* 2. Main Management Tab */}
+         {activeTab === 'main' && (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {servicesList.map(service => (
+                     <div key={service.id} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-4">
+                         <h4 className="font-bold text-lg">{service.name}</h4>
+                         <div className="aspect-[4/5] rounded-lg overflow-hidden border border-gray-100 bg-gray-50 relative">
+                             <img 
+                                src={serviceImages[service.id] || service.defaultImg} 
+                                alt={service.name} 
+                                className="w-full h-full object-cover"
+                             />
+                         </div>
+                         <button 
+                            onClick={() => triggerMainImageUpload(service.id)}
+                            className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black font-bold flex items-center justify-center gap-2"
+                            disabled={isUploading}
+                         >
+                            {isUploading && activeServiceIdForUpload === service.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Upload className="w-4 h-4"/>}
+                            이미지 교체
+                         </button>
+                     </div>
+                 ))}
+             </div>
+         )}
+
+         {/* 3. FAQ Tab */}
          {activeTab === 'faq' && (
             <div>
                <div className="flex justify-end mb-6">
@@ -308,7 +371,7 @@ const Admin: React.FC = () => {
             </div>
          )}
 
-         {/* 3. Reviews Tab */}
+         {/* 4. Reviews Tab */}
          {activeTab === 'reviews' && (
             <div>
                <div className="flex justify-end mb-6">
@@ -362,6 +425,13 @@ const Admin: React.FC = () => {
         type="file" 
         ref={reviewFileInputRef} 
         onChange={onReviewFileSelected} 
+        className="hidden" 
+        accept="image/*"
+      />
+      <input 
+        type="file" 
+        ref={mainImageInputRef} 
+        onChange={onMainImageFileSelected} 
         className="hidden" 
         accept="image/*"
       />

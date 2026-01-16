@@ -5,6 +5,7 @@ import RevealOnScroll from '../components/RevealOnScroll';
 import CountUp from '../components/CountUp';
 import ServiceVisual from '../components/ServiceVisual';
 import { partners } from '../data/content';
+import { useData } from '../context/DataContext';
 
 // Wrapper for custom element to avoid TypeScript errors with JSX.IntrinsicElements
 const SplineViewer = React.forwardRef<any, any>((props, ref) => {
@@ -14,6 +15,7 @@ const SplineViewer = React.forwardRef<any, any>((props, ref) => {
 const Home: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const splineRef = useRef<any>(null);
+  const { serviceImages } = useData();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -50,7 +52,7 @@ const Home: React.FC = () => {
       category: "Service 01",
       title: "플레이스 마케팅",
       desc: "매출의 80%는 지역 검색에서 시작됩니다.\n상권 분석 데이터와 최적화 로직으로 당신의 매장을 지역 1위로 만듭니다.",
-      image: "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop", // Phone Map mockup
+      image: serviceImages['place'] || "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop", // Phone Map mockup
       link: "/services/place",
       groups: [
         // Group A
@@ -72,7 +74,7 @@ const Home: React.FC = () => {
       category: "Service 02",
       title: "네이버 클립",
       desc: "지금 가장 뜨거운 트래픽, 숏폼.\n60초 안에 소비자의 마음을 훔치는 고감도 영상을 제작하고 배포합니다.",
-      image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop", // Vertical Video Interface
+      image: serviceImages['clip'] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop", // Vertical Video Interface
       link: "/services/clip",
       groups: [
         [
@@ -91,7 +93,7 @@ const Home: React.FC = () => {
       category: "Service 03",
       title: "체험단 마케팅",
       desc: "광고가 아닌 경험을 팝니다.\n진정성 있는 리뷰 콘텐츠로 잠재 고객의 구매 결정을 확신으로 바꿉니다.",
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=800&auto=format&fit=crop", // Blog typing
+      image: serviceImages['experience'] || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=800&auto=format&fit=crop", // Blog typing
       link: "/services/experience",
       groups: [
         [
@@ -110,7 +112,7 @@ const Home: React.FC = () => {
       category: "Service 04",
       title: "유튜브 관리",
       desc: "브랜드의 팬덤을 구축하는 가장 강력한 무기.\n기획부터 촬영, 편집, 채널 운영까지 전문 PD 그룹이 전담합니다.",
-      image: "https://images.unsplash.com/photo-1626544827763-d516dce335ca?q=80&w=800&auto=format&fit=crop", // Youtube Dashboard
+      image: serviceImages['youtube'] || "https://images.unsplash.com/photo-1626544827763-d516dce335ca?q=80&w=800&auto=format&fit=crop", // Youtube Dashboard
       link: "/services/youtube",
       groups: [
         [
@@ -128,7 +130,7 @@ const Home: React.FC = () => {
       category: "Service 05",
       title: "인스타그램",
       desc: "비주얼 임팩트로 소비 욕구를 자극합니다.\n트렌디한 감각과 정밀한 타겟팅으로 브랜드 인지도를 폭발시킵니다.",
-      image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop", // Instagram UI
+      image: serviceImages['instagram'] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop", // Instagram UI
       link: "/services/instagram",
       groups: [
         [

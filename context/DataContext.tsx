@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { faqData as initialFaqs, reviewsData as initialReviews, FAQItem, ReviewItem } from '../data/content';
 import { db } from '../firebase'; // Import Firebase DB
-import { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, query, orderBy, setDoc } from 'firebase/firestore';
 
 // Inquiry Type Definition
 export interface InquiryItem {
@@ -19,12 +19,14 @@ interface DataContextType {
   faqs: FAQItem[];
   reviews: ReviewItem[];
   inquiries: InquiryItem[];
+  serviceImages: Record<string, string>; // Store dynamic images for services
   addFaq: (faq: Omit<FAQItem, 'id'>) => Promise<void>;
   deleteFaq: (id: string) => Promise<void>;
   addReview: (review: Omit<ReviewItem, 'id' | 'date'>) => Promise<void>;
   deleteReview: (id: string) => Promise<void>;
   addInquiry: (inquiry: Omit<InquiryItem, 'id' | 'date' | 'status'>) => Promise<void>;
   updateInquiryStatus: (id: string, status: InquiryItem['status']) => Promise<void>;
+  updateServiceImage: (id: string, url: string) => Promise<void>; // New function to update service images
   isAdmin: boolean;
   login: (password: string) => boolean;
   logout: () => void;
@@ -36,6 +38,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
+  const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
 
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('growth_lab_is_admin') === 'true';
@@ -97,6 +100,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return () => unsubscribe();
     } catch (e) {
       console.error("Error setting up Inquiries listener:", e);
+    }
+  }, []);
+
+  // 4. Service Images Listener
+  useEffect(() => {
+    try {
+      const q = collection(db, 'service_images');
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const imgs: Record<string, string> = {};
+        snapshot.forEach(doc => {
+           imgs[doc.id] = doc.data().url;
+        });
+        setServiceImages(imgs);
+      }, (error) => {
+         console.warn("Firestore access restricted (Service Images).", error);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.error("Error setting up Service Images listener:", e);
     }
   }, []);
 
@@ -166,6 +188,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateServiceImage = async (id: string, url: string) => {
+    try {
+      // Use setDoc with merge to create or update
+      await setDoc(doc(db, 'service_images', id), { url }, { merge: true });
+    } catch (e) {
+      console.error("Error updating Service Image:", e);
+      alert("이미지 저장에 실패했습니다.");
+    }
+  };
+
   const login = (password: string) => {
     if (password === 'admin1234') {
       setIsAdmin(true);
@@ -180,10 +212,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <DataContext.Provider value={{
-      faqs, reviews, inquiries, 
+      faqs, reviews, inquiries, serviceImages,
       addFaq, deleteFaq, 
       addReview, deleteReview, 
       addInquiry, updateInquiryStatus,
+      updateServiceImage,
       isAdmin, login, logout
     }}>
       {children}

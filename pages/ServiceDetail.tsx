@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { MapPin, Video, MonitorPlay, Instagram, Users, Check, ArrowRight, ThumbsUp, BarChart2, Zap, Search, MousePointer2, Star, TrendingUp, CheckCircle2, Eye, Heart, Share2, Camera, MessageCircle, Youtube, Loader2 } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import ServiceVisual from '../components/ServiceVisual';
+import { useData } from '../context/DataContext';
 
 const serviceData: Record<string, any> = {
   place: {
@@ -147,6 +148,10 @@ const ServiceDetail: React.FC = () => {
   const { type } = useParams<{ type: string }>();
   const data = serviceData[type || 'place'];
   const Icon = data.icon;
+  const { serviceImages } = useData();
+
+  // Use dynamic image if available in context, otherwise fallback to static data
+  const dynamicImage = serviceImages[type || 'place'] || data.image;
 
   return (
     <div className="bg-white">
@@ -221,7 +226,7 @@ const ServiceDetail: React.FC = () => {
             <div className="order-1 lg:order-2">
               <div className="relative hover:-translate-y-2 transition-transform duration-700">
                  {/* Replaced Static Image with Animated ServiceVisual */}
-                 <ServiceVisual image={data.image} groups={data.groups} />
+                 <ServiceVisual image={dynamicImage} groups={data.groups} />
                  
                  <div className="absolute bottom-8 right-8 bg-white/90 backdrop-blur p-6 rounded-2xl shadow-xl max-w-xs border border-white/50 z-30">
                     <div className="flex items-center gap-2 mb-2">
