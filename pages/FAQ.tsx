@@ -1,61 +1,101 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AccordionItem from '../components/Accordion';
 import RevealOnScroll from '../components/RevealOnScroll';
-
-const faqs = [
-  {
-    question: "마케팅 비용은 어떻게 산정되나요?",
-    answer: "업종, 지역, 경쟁 강도, 그리고 목표하시는 키워드에 따라 비용은 상이합니다.\n무조건 비싼 광고보다는 예산 범위 내에서 가장 효율적인 믹스를 제안해드립니다. 자세한 견적은 무료 상담을 통해 받아보실 수 있습니다."
-  },
-  {
-    question: "계약 기간은 최소 얼마인가요?",
-    answer: "마케팅 효과가 가시화되는 데에는 알고리즘 반영 등의 시간이 필요하므로 기본 3개월 계약을 권장드립니다.\n단, 체험단의 경우 1회성 진행도 가능합니다."
-  },
-  {
-    question: "성과 보고는 어떻게 이루어지나요?",
-    answer: "매월 말 상세 리포트를 PDF 형태로 제공해드립니다.\n유입량, 순위 변화, 클릭률 등 주요 지표를 시각화하여 보여드리며, 다음 달 전략 방향성까지 함께 제안드립니다."
-  },
-  {
-    question: "지방에 있는 업체도 가능한가요?",
-    answer: "네, 가능합니다. 서울/경기권은 방문 미팅이 가능하며, 그 외 지역은 화상 회의나 유선을 통해 원활하게 소통하고 있습니다.\n지역에 관계없이 플레이스 상위노출 로직은 동일하게 적용됩니다."
-  },
-  {
-    question: "어떤 업종이 마케팅 효과가 가장 좋은가요?",
-    answer: "요식업, 뷰티/미용, 병의원, 법률/세무 등 지역 기반 서비스업의 효과가 가장 즉각적입니다.\n하지만 쇼핑몰이나 B2B 기업 또한 채널 전략만 다를 뿐 충분한 성과를 낼 수 있습니다."
-  }
-];
+import { faqCategories } from '../data/content';
+import { useData } from '../context/DataContext';
+import { Search } from 'lucide-react';
 
 const FAQ: React.FC = () => {
+  const { faqs } = useData();
+  const [activeCategory, setActiveCategory] = useState("자주 찾는 도움말");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredData = faqs.filter(item => {
+    // Basic Search implementation looking into question and text blocks
+    const categoryMatch = item.category === activeCategory;
+    
+    const textContent = item.blocks
+        .filter(b => b.type === 'text')
+        .map(b => b.content)
+        .join(' ');
+        
+    const searchMatch = item.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        textContent.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return categoryMatch && searchMatch;
+  });
+
   return (
-    <div className="bg-white">
-      {/* Fullscreen Hero */}
-      <section className="relative w-full h-[60vh] md:h-screen flex items-center justify-center overflow-hidden">
-         <img 
-            src="https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?q=80&w=2000&auto=format&fit=crop" 
-            alt="FAQ Hero" 
-            className="absolute inset-0 w-full h-full object-cover"
-         />
-         <div className="absolute inset-0 bg-black/70"></div>
-         <div className="relative z-10 text-center px-6">
-            <RevealOnScroll>
-               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">FAQ</h1>
-               <p className="text-xl text-gray-300">궁금하신 점을 빠르게 확인해보세요.</p>
-            </RevealOnScroll>
+    <div className="bg-white min-h-screen">
+      {/* Hero Section */}
+      <section className="relative w-full h-[40vh] flex flex-col items-center justify-center overflow-hidden bg-brand-black">
+         <div className="absolute inset-0 bg-gradient-to-b from-black/80 to-brand-black z-0"></div>
+         <div className="relative z-10 text-center px-6 max-w-3xl w-full">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-8">무엇을 도와드릴까요?</h1>
+            
+            {/* Search Bar */}
+            <div className="relative w-full">
+               <input 
+                  type="text" 
+                  placeholder="질문 키워드를 검색해보세요 (예: 비용, 예약)"
+                  className="w-full py-4 pl-14 pr-6 rounded-full bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:bg-white focus:text-brand-black focus:placeholder-gray-500 transition-all outline-none text-lg backdrop-blur-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+               />
+               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
+            </div>
          </div>
       </section>
 
-      <div className="py-24 px-6 min-h-screen max-w-3xl mx-auto">
-        <RevealOnScroll className="bg-white border border-gray-100 rounded-3xl p-8 shadow-2xl">
-           {faqs.map((faq, index) => (
-             <AccordionItem key={index} question={faq.question} answer={faq.answer} />
-           ))}
+      {/* Category Navigation - Flex Wrap enabled */}
+      <div className="sticky top-[72px] z-30 bg-white border-b border-gray-100 shadow-sm py-4">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-wrap gap-2 justify-center">
+            {faqCategories.map((category) => (
+              <button
+                key={category}
+                onClick={() => {
+                   setActiveCategory(category);
+                   setSearchQuery(""); // Reset search on category change
+                }}
+                className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 ${
+                  activeCategory === category
+                    ? 'bg-green-600 text-white shadow-md transform scale-105'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="max-w-4xl mx-auto px-6 py-12 min-h-[500px]">
+        <RevealOnScroll>
+           <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden">
+             {filteredData.length > 0 ? (
+               filteredData.map((faq) => (
+                 <AccordionItem 
+                    key={faq.id} 
+                    question={faq.question} 
+                    blocks={faq.blocks}
+                 />
+               ))
+             ) : (
+               <div className="p-12 text-center text-gray-500">
+                  <p className="text-lg">해당 카테고리에 등록된 질문이 없습니다.</p>
+               </div>
+             )}
+           </div>
         </RevealOnScroll>
 
-        <div className="mt-16 text-center">
-          <p className="text-gray-500 mb-6">원하시는 답변을 찾지 못하셨나요?</p>
-          <button className="px-10 py-4 bg-brand-accent text-white font-bold rounded-full hover:bg-blue-600 transition-all shadow-xl hover:-translate-y-1">
-            1:1 문의하기
-          </button>
+        <div className="mt-12 text-center bg-gray-50 rounded-2xl p-8">
+          <p className="text-gray-600 mb-4 font-medium">원하시는 답변을 찾지 못하셨나요?</p>
+          <a href="/contact" className="inline-flex items-center justify-center px-8 py-3 bg-brand-black text-white font-bold rounded-lg hover:bg-gray-800 transition-all">
+            1:1 상담 문의하기
+          </a>
         </div>
       </div>
     </div>

@@ -1,8 +1,21 @@
 import React from 'react';
 import RevealOnScroll from '../components/RevealOnScroll';
-import { Target, Lightbulb, MapPin, Flag } from 'lucide-react';
+import ServiceVisual from '../components/ServiceVisual';
+import { Target, Lightbulb, MapPin, Flag, TrendingUp, Users, Award } from 'lucide-react';
 
 const About: React.FC = () => {
+   
+  const aboutVisualGroups = [
+    [
+      { icon: TrendingUp, title: "성장률", value: "+200%", position: "top-[20%] -right-[5%]", color: "text-green-600", bgColor: "bg-green-100" },
+      { icon: Users, title: "파트너사", value: "1,200+", position: "bottom-[20%] -left-[5%]", color: "text-blue-600", bgColor: "bg-blue-100" }
+    ],
+    [
+      { icon: Award, title: "만족도", value: "98%", position: "top-[30%] -left-[5%]", color: "text-yellow-600", bgColor: "bg-yellow-100" },
+      { icon: Target, title: "목표달성", value: "Success", position: "bottom-[30%] -right-[5%]", color: "text-red-600", bgColor: "bg-red-100" }
+    ]
+  ];
+
   return (
     <div className="bg-white">
       {/* Hero Section - Fullscreen */}
@@ -41,8 +54,13 @@ const About: React.FC = () => {
                   </p>
                </div>
                <div className="w-full md:w-1/2">
-                  {/* Korean/Asian Team Image */}
-                  <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2000&auto=format&fit=crop" className="rounded-3xl shadow-xl w-full h-80 object-cover hover:-translate-y-2 transition-transform duration-500" alt="Mission" />
+                  <div className="relative">
+                      {/* Using ServiceVisual for Popup Animation */}
+                      <ServiceVisual 
+                        image="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop"
+                        groups={aboutVisualGroups}
+                      />
+                  </div>
                </div>
             </div>
          </RevealOnScroll>
@@ -115,7 +133,7 @@ const About: React.FC = () => {
                <div className="space-y-6">
                   <div>
                      <h4 className="text-lg font-bold text-gray-300 mb-2">주소</h4>
-                     <p className="text-lg leading-relaxed">서울시 강서구 양천로 547<br/>마스터밸류</p>
+                     <p className="text-lg leading-relaxed">서울특별시 강서구 양천로 547<br/>마스터밸류 805호</p>
                   </div>
                   <div>
                      <h4 className="text-lg font-bold text-gray-300 mb-2">대중교통</h4>

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import RevealOnScroll from '../components/RevealOnScroll';
-import { Mail, Phone, MapPin, Send, Clock, ArrowRight } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, ArrowRight } from 'lucide-react';
+import { useData } from '../context/DataContext';
 
 const Contact: React.FC = () => {
+  const { addInquiry } = useData();
   const [formState, setFormState] = useState({
     name: '',
     company: '',
@@ -10,10 +12,25 @@ const Contact: React.FC = () => {
     type: '플레이스 마케팅',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('문의가 접수되었습니다. 담당자가 확인 후 빠르게 연락드리겠습니다.');
+    setIsSubmitting(true);
+    
+    // Simulate API delay
+    setTimeout(() => {
+      addInquiry(formState);
+      alert('문의가 성공적으로 접수되었습니다. 관리자 페이지에서 확인하실 수 있습니다.');
+      setFormState({
+        name: '',
+        company: '',
+        phone: '',
+        type: '플레이스 마케팅',
+        message: ''
+      });
+      setIsSubmitting(false);
+    }, 1000);
   };
 
   return (
@@ -169,9 +186,10 @@ const Contact: React.FC = () => {
                         <div className="pt-4">
                            <button 
                               type="submit"
-                              className="w-full py-5 bg-brand-accent text-white font-bold text-lg rounded-xl hover:bg-blue-600 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center gap-2"
+                              disabled={isSubmitting}
+                              className="w-full py-5 bg-brand-accent text-white font-bold text-lg rounded-xl hover:bg-blue-600 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-50"
                            >
-                              무료 진단 신청하기 <ArrowRight className="w-5 h-5" />
+                              {isSubmitting ? '처리중...' : '무료 진단 신청하기'} <ArrowRight className="w-5 h-5" />
                            </button>
                            <p className="text-center text-xs text-gray-400 mt-4">
                               개인정보는 상담 목적으로만 사용되며, 안전하게 보호됩니다.
