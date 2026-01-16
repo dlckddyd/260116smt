@@ -6,18 +6,6 @@ import CountUp from '../components/CountUp';
 import ServiceVisual from '../components/ServiceVisual';
 import { partners } from '../data/content';
 
-// Declare custom element for TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'spline-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        'loading-anim-type'?: string;
-        'url'?: string;
-      };
-    }
-  }
-}
-
 const Home: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const splineRef = useRef<any>(null);
@@ -165,6 +153,7 @@ const Home: React.FC = () => {
          
          {/* Spline Viewer */}
          <div className="absolute inset-0 w-full h-full pointer-events-none">
+            {/* @ts-ignore */}
             <spline-viewer 
               ref={splineRef}
               loading-anim-type="spinner-small-dark"
