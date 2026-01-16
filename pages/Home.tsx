@@ -8,10 +8,7 @@ import CountUp from '../components/CountUp';
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'spline-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        'url'?: string;
-        'loading-anim-type'?: string;
-      };
+      'spline-viewer': any;
     }
   }
 }
@@ -116,7 +113,6 @@ const Home: React.FC = () => {
          
          {/* Spline Viewer Implementation */}
          <div className="absolute inset-0 w-full h-full">
-            {/* @ts-ignore */}
             <spline-viewer 
               ref={splineRef}
               loading-anim-type="spinner-small-dark"
