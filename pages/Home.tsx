@@ -6,6 +6,11 @@ import CountUp from '../components/CountUp';
 import ServiceVisual from '../components/ServiceVisual';
 import { partners } from '../data/content';
 
+// Wrapper for custom element to avoid TypeScript errors with JSX.IntrinsicElements
+const SplineViewer = React.forwardRef<any, any>((props, ref) => {
+  return React.createElement('spline-viewer', { ...props, ref });
+});
+
 const Home: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const splineRef = useRef<any>(null);
@@ -153,13 +158,12 @@ const Home: React.FC = () => {
          
          {/* Spline Viewer */}
          <div className="absolute inset-0 w-full h-full pointer-events-none">
-            {/* @ts-ignore */}
-            <spline-viewer 
+            <SplineViewer 
               ref={splineRef}
               loading-anim-type="spinner-small-dark"
               url="https://prod.spline.design/R8sj9KJPt6z0DcZx/scene.splinecode"
               className={`w-full h-full transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-            ></spline-viewer>
+            />
          </div>
 
          {/* Overlay Gradient */}
@@ -234,7 +238,7 @@ const Home: React.FC = () => {
                             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-3 flex items-center gap-3">
                                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                                   <TrendingUp className="w-5 h-5 text-green-600" />
-                               </div>
+                                </div>
                                <div>
                                   <div className="text-[10px] text-gray-400 font-bold">Growth Rate</div>
                                   <div className="text-sm font-bold">+245%</div>
@@ -373,9 +377,9 @@ const Home: React.FC = () => {
                      </div>
                   </a>
                </div>
-
-               <Link to="/contact" className="inline-flex items-center gap-2 text-base font-bold border-b border-white pb-1 hover:text-gray-300 hover:border-gray-300 transition-all">
-                  1:1 상담 신청서 작성하기 <ArrowRight className="w-4 h-4" />
+               
+               <Link to="/contact" className="inline-block px-10 py-4 bg-brand-accent text-white font-bold rounded-full hover:bg-blue-600 transition-all shadow-lg hover:shadow-blue-500/30 hover:-translate-y-1">
+                  무료 진단 신청하기
                </Link>
             </RevealOnScroll>
          </div>

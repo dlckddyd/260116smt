@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
+import { getStorage } from "firebase/storage";
+// import { getAnalytics, isSupported } from "firebase/analytics"; 
 
 // =================================================================
 // [설정 완료] 제공해주신 파이어베이스 키가 입력되었습니다.
@@ -17,5 +18,21 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app); // Analytics도 초기화
 export const db = getFirestore(app);
+export const storage = getStorage(app); // Export Storage service
+
+// [수정됨] 프리뷰 환경에서의 오류 방지를 위해 Analytics 잠시 비활성화
+// API 키에 도메인 제한이 걸려있을 경우, 로컬/프리뷰에서 Analytics 초기화 시 400 에러가 발생하여 앱이 멈춥니다.
+/*
+isSupported().then((supported) => {
+  if (supported) {
+    try {
+      getAnalytics(app);
+    } catch (e) {
+      console.warn("Analytics initialization failed:", e);
+    }
+  }
+}).catch((error) => {
+  console.warn("Firebase Analytics not supported:", error);
+});
+*/

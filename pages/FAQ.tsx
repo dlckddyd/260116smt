@@ -11,9 +11,7 @@ const FAQ: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredData = faqs.filter(item => {
-    // Basic Search implementation looking into question and text blocks
-    const categoryMatch = item.category === activeCategory;
-    
+    // Search Implementation: If query exists, ignore category and search everything
     const textContent = item.blocks
         .filter(b => b.type === 'text')
         .map(b => b.content)
@@ -22,7 +20,11 @@ const FAQ: React.FC = () => {
     const searchMatch = item.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         textContent.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return categoryMatch && searchMatch;
+    // Logic: If searching, return all matches regardless of category. If not searching, return active category.
+    if (searchQuery.trim().length > 0) {
+        return searchMatch;
+    }
+    return item.category === activeCategory;
   });
 
   return (
@@ -47,32 +49,43 @@ const FAQ: React.FC = () => {
          </div>
       </section>
 
-      {/* Category Navigation - Flex Wrap enabled */}
-      <div className="sticky top-[72px] z-30 bg-white border-b border-gray-100 shadow-sm py-4">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-wrap gap-2 justify-center">
-            {faqCategories.map((category) => (
-              <button
-                key={category}
-                onClick={() => {
-                   setActiveCategory(category);
-                   setSearchQuery(""); // Reset search on category change
-                }}
-                className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 ${
-                  activeCategory === category
-                    ? 'bg-green-600 text-white shadow-md transform scale-105'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+      {/* Category Navigation - Hide when searching */}
+      {searchQuery.trim().length === 0 && (
+          <div className="sticky top-[72px] z-30 bg-white border-b border-gray-100 shadow-sm py-4">
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="flex flex-wrap gap-2 justify-center">
+                {faqCategories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => {
+                       setActiveCategory(category);
+                       setSearchQuery(""); // Reset search on category change
+                    }}
+                    className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 ${
+                      activeCategory === category
+                        ? 'bg-green-600 text-white shadow-md transform scale-105'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+      )}
+      
+      {/* Search Result Indicator */}
+      {searchQuery.trim().length > 0 && (
+          <div className="max-w-4xl mx-auto px-6 pt-12 pb-2">
+              <h2 className="text-xl font-bold text-gray-800">
+                  '<span className="text-brand-accent">{searchQuery}</span>' 검색 결과 ({filteredData.length}건)
+              </h2>
+          </div>
+      )}
 
       {/* Content Area */}
-      <div className="max-w-4xl mx-auto px-6 py-12 min-h-[500px]">
+      <div className="max-w-4xl mx-auto px-6 py-8 min-h-[500px]">
         <RevealOnScroll>
            <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden">
              {filteredData.length > 0 ? (
@@ -85,7 +98,11 @@ const FAQ: React.FC = () => {
                ))
              ) : (
                <div className="p-12 text-center text-gray-500">
-                  <p className="text-lg">해당 카테고리에 등록된 질문이 없습니다.</p>
+                  {searchQuery ? (
+                      <p className="text-lg">검색 결과가 없습니다.</p>
+                  ) : (
+                      <p className="text-lg">해당 카테고리에 등록된 질문이 없습니다.</p>
+                  )}
                </div>
              )}
            </div>

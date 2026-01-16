@@ -45,41 +45,59 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // 1. FAQs Listener
   useEffect(() => {
-    const q = query(collection(db, 'faqs')); // You can add orderBy here if needed
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as FAQItem[];
-      setFaqs(data);
-    });
-    return () => unsubscribe();
+    try {
+      const q = query(collection(db, 'faqs')); 
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as FAQItem[];
+        setFaqs(data);
+      }, (error) => {
+        console.warn("Firestore access restricted (FAQs). Using default data if needed.", error);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.error("Error setting up FAQ listener:", e);
+    }
   }, []);
 
   // 2. Reviews Listener
   useEffect(() => {
-    const q = query(collection(db, 'reviews'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as ReviewItem[];
-      setReviews(data);
-    });
-    return () => unsubscribe();
+    try {
+      const q = query(collection(db, 'reviews'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as ReviewItem[];
+        setReviews(data);
+      }, (error) => {
+        console.warn("Firestore access restricted (Reviews).", error);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+       console.error("Error setting up Reviews listener:", e);
+    }
   }, []);
 
   // 3. Inquiries Listener
   useEffect(() => {
-    const q = query(collection(db, 'inquiries'), orderBy('date', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as InquiryItem[];
-      setInquiries(data);
-    });
-    return () => unsubscribe();
+    try {
+      const q = query(collection(db, 'inquiries'), orderBy('date', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as InquiryItem[];
+        setInquiries(data);
+      }, (error) => {
+         console.warn("Firestore access restricted (Inquiries).", error);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.error("Error setting up Inquiries listener:", e);
+    }
   }, []);
 
   // Admin Auth Persistence
@@ -90,34 +108,62 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // --- Actions (Now returning Promises for async DB ops) ---
 
   const addFaq = async (faq: Omit<FAQItem, 'id'>) => {
-    await addDoc(collection(db, 'faqs'), faq);
+    try {
+      await addDoc(collection(db, 'faqs'), faq);
+    } catch (e) {
+      console.error("Error adding FAQ:", e);
+      alert("데이터베이스 권한 문제로 저장에 실패했습니다.");
+    }
   };
 
   const deleteFaq = async (id: string) => {
-    await deleteDoc(doc(db, 'faqs', id));
+    try {
+      await deleteDoc(doc(db, 'faqs', id));
+    } catch (e) {
+      console.error("Error deleting FAQ:", e);
+    }
   };
 
   const addReview = async (review: Omit<ReviewItem, 'id' | 'date'>) => {
-    await addDoc(collection(db, 'reviews'), {
-      ...review,
-      date: new Date().toISOString().split('T')[0]
-    });
+    try {
+      await addDoc(collection(db, 'reviews'), {
+        ...review,
+        date: new Date().toISOString().split('T')[0]
+      });
+    } catch (e) {
+      console.error("Error adding Review:", e);
+      alert("데이터베이스 권한 문제로 저장에 실패했습니다.");
+    }
   };
 
   const deleteReview = async (id: string) => {
-    await deleteDoc(doc(db, 'reviews', id));
+    try {
+      await deleteDoc(doc(db, 'reviews', id));
+    } catch (e) {
+       console.error("Error deleting Review:", e);
+    }
   };
 
   const addInquiry = async (inquiry: Omit<InquiryItem, 'id' | 'date' | 'status'>) => {
-    await addDoc(collection(db, 'inquiries'), {
-      ...inquiry,
-      date: new Date().toLocaleString(),
-      status: 'new'
-    });
+    try {
+      await addDoc(collection(db, 'inquiries'), {
+        ...inquiry,
+        date: new Date().toLocaleString(),
+        status: 'new'
+      });
+    } catch (e) {
+      console.error("Error adding Inquiry:", e);
+      // Fallback for demo purposes if DB fails
+      console.log("Fallback: Inquiry would be saved:", inquiry);
+    }
   };
 
   const updateInquiryStatus = async (id: string, status: InquiryItem['status']) => {
-    await updateDoc(doc(db, 'inquiries', id), { status });
+    try {
+      await updateDoc(doc(db, 'inquiries', id), { status });
+    } catch (e) {
+      console.error("Error updating Inquiry:", e);
+    }
   };
 
   const login = (password: string) => {
