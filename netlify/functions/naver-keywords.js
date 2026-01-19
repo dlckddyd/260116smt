@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import https from 'https';
 
 // 네이버 광고 API 키 설정
 const CUSTOMER_ID = "4242810";
@@ -27,57 +28,78 @@ export const handler = async (event) => {
       };
     }
 
-    // 네이버 API 필수 헤더 생성 (가이드 준수)
-    // 1. 타임스탬프 (밀리초 단위)
     const timestamp = Date.now().toString();
-    
-    // 2. 서명 생성
-    // 서명 대상 문자열: timestamp + "." + method + "." + uri
     const method = "GET";
     const uri = "/keywordstool";
     const message = `${timestamp}.${method}.${uri}`;
     
-    // 비밀키를 사용하여 HMAC-SHA256 해시 생성 후 Base64 인코딩
     const signature = crypto.createHmac('sha256', SECRET_KEY)
       .update(message)
       .digest('base64');
 
-    console.log(`[API Call] Keyword: ${keyword}, Timestamp: ${timestamp}`);
-
-    // 3. API 요청 (Node.js 18+ 내장 fetch 사용)
-    // 주의: hintKeywords는 반드시 URL 인코딩 되어야 함
-    const apiUrl = `https://api.naver.com${uri}?hintKeywords=${encodeURIComponent(keyword.replace(/\s+/g, ''))}&showDetail=1`;
+    // 공백 제거 (네이버 API 권장사항)
+    const cleanKeyword = keyword.replace(/\s+/g, '');
     
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        "X-Timestamp": timestamp,
-        "X-API-KEY": ACCESS_LICENSE,
-        "X-Customer": CUSTOMER_ID,
-        "X-Signature": signature,
-        "Content-Type": "application/json" // 명시적 헤더 추가
-      }
+    // Node.js native https 모듈 사용 (Header Casing 보존을 위해)
+    const doRequest = () => new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.naver.com',
+        path: `${uri}?hintKeywords=${encodeURIComponent(cleanKeyword)}&showDetail=1`,
+        method: 'GET',
+        headers: {
+          'X-Timestamp': timestamp,
+          'X-API-KEY': ACCESS_LICENSE,
+          'X-Customer': CUSTOMER_ID,
+          'X-Signature': signature,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => resolve({ statusCode: res.statusCode, body: data }));
+      });
+
+      req.on('error', (e) => reject(e));
+      req.end();
     });
 
-    // 응답 상태 확인
-    if (!response.ok) {
-       const errorText = await response.text();
-       console.error(`[Naver API Error] Status: ${response.status}, Body: ${errorText}`);
-       
-       // 네이버 에러 메시지를 그대로 전달
+    const response = await doRequest();
+
+    if (response.statusCode !== 200) {
+       console.error(`Naver API Error: ${response.statusCode} ${response.body}`);
        return {
-         statusCode: response.status,
+         statusCode: response.statusCode,
          headers,
          body: JSON.stringify({ 
            error: 'Naver API Error', 
-           details: errorText,
-           status: response.status
+           details: response.body,
+           status: response.statusCode
          })
        };
     }
 
-    const data = await response.json();
-    console.log(`[API Success] Data received. KeywordList length: ${data.keywordList?.length || 0}`);
+    const data = JSON.parse(response.body);
+    
+    // 데이터 검증 및 기본값 처리
+    if (!data.keywordList || data.keywordList.length === 0) {
+      // 키워드는 유효하지만 데이터가 없는 경우 (검색량이 너무 적거나 신규 키워드)
+       return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+           keywordList: [{
+               relKeyword: cleanKeyword,
+               monthlyPcQc: 0,
+               monthlyMobileQc: 0,
+               monthlyAvePcClkCnt: 0,
+               monthlyAveMobileClkCnt: 0,
+               compIdx: "낮음"
+           }]
+        })
+      };
+    }
 
     return {
       statusCode: 200,
@@ -86,7 +108,7 @@ export const handler = async (event) => {
     };
 
   } catch (error) {
-    console.error("[Server Function Error]", error);
+    console.error("Server Function Error:", error);
     return {
       statusCode: 500,
       headers,
