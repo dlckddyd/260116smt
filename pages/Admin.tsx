@@ -19,6 +19,7 @@ const Admin: React.FC = () => {
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false); // Upload loading state
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // FAQ Form State (New Block System)
   const [newFaqCategory, setNewFaqCategory] = useState(faqCategories[0]);
@@ -37,9 +38,13 @@ const Admin: React.FC = () => {
   const mainImageInputRef = useRef<HTMLInputElement>(null);
   const [activeBlockIdForUpload, setActiveBlockIdForUpload] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!login(password)) {
+    setIsLoggingIn(true);
+    const success = await login(password);
+    setIsLoggingIn(false);
+    
+    if (!success) {
       alert('비밀번호가 틀렸습니다.');
     }
   };
@@ -75,18 +80,36 @@ const Admin: React.FC = () => {
   const handleFileUpload = async (file: File): Promise<string> => {
     try {
       setIsUploading(true);
+      
+      // Resize
       const resizedBlob = await resizeImage(file);
-      const fileName = `uploads/${Date.now()}_${file.name}`;
+      
+      // Sanitize Filename & Path
+      // Replace non-alphanumeric chars with _ to avoid path issues
+      const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+      const fileName = `uploads/${Date.now()}_${safeName}`;
       const storageRef = ref(storage, fileName);
       
-      await uploadBytes(storageRef, resizedBlob);
+      // Add Metadata
+      const metadata = {
+        contentType: 'image/jpeg',
+      };
+      
+      await uploadBytes(storageRef, resizedBlob, metadata);
       const downloadURL = await getDownloadURL(storageRef);
       setIsUploading(false);
       return downloadURL;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload failed", error);
       setIsUploading(false);
-      alert("이미지 업로드에 실패했습니다.");
+      
+      let msg = "이미지 업로드에 실패했습니다.";
+      if (error.code === 'storage/unauthorized') {
+          msg = "업로드 권한이 없습니다. (파이어베이스 규칙 오류)";
+      } else if (error.code === 'storage/canceled') {
+          msg = "업로드가 취소되었습니다.";
+      }
+      alert(msg);
       return "";
     }
   };
@@ -226,8 +249,9 @@ const Admin: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <button className="w-full py-3 bg-brand-accent text-white font-bold rounded-lg hover:bg-blue-600 transition-colors">
-                 로그인
+              <button disabled={isLoggingIn} className="w-full py-3 bg-brand-accent text-white font-bold rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+                 {isLoggingIn && <Loader2 className="w-4 h-4 animate-spin"/>}
+                 {isLoggingIn ? '로그인 중...' : '로그인'}
               </button>
            </form>
            <p className="mt-4 text-center text-xs text-gray-400">초기 비밀번호: admin1234</p>

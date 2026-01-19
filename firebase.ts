@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 
 // =================================================================
 // [설정 완료] 제공해주신 파이어베이스 키가 입력되었습니다.
@@ -19,4 +20,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app); 
-// Cloud Functions (Netlify Functions으로 대체되었으므로 삭제됨)
+export const auth = getAuth(app); // Auth 모듈 추가

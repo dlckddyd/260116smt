@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import https from 'https';
-import crypto from 'crypto'; // 서명 생성을 위해 crypto 모듈 다시 추가
+import crypto from 'crypto';
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -57,26 +57,35 @@ app.get('/api/naver-keywords', async (req, res) => {
   try {
     console.log(`[API Attempt 1] Trying Ad API for: ${cleanKeyword}`);
     
-    // 1차 시도: 검색광고 API (정확한 데이터)
+    // 1차 시도: 검색광고 API
     const adData = await fetchFromAdApi(cleanKeyword);
     console.log('[API Success] Ad API returned data.');
     return res.json(adData);
 
   } catch (adError) {
-    console.error(`[API Fail 1] Ad API failed (${adError.statusCode || 'Unknown'}): ${adError.message}`);
+    console.warn(`[API Fail 1] Ad API failed. Status: ${adError.statusCode}. Message: ${adError.message}`);
+    
+    // 401 Unauthorized 등 실패 시 Fallback 시도
     console.log(`[API Attempt 2] Switching to Open API (Fallback)...`);
 
     try {
-        // 2차 시도: 오픈 API (추정 데이터)
+        // 2차 시도: 오픈 API
         const openData = await fetchFromOpenApi(cleanKeyword);
         console.log('[API Success] Open API returned data.');
-        return res.json(openData);
+        
+        // 프론트엔드에 Fallback 데이터임을 알릴 수 있음 (선택사항)
+        return res.json({ ...openData, _source: 'fallback' });
 
     } catch (openError) {
         console.error(`[API Fail 2] Open API also failed: ${openError.message}`);
+        
+        // 에러 메시지를 구체적으로 반환
+        const adMsg = adError.statusCode === 401 ? 'IP Unauthorized' : adError.message;
+        const openMsg = openError.statusCode === 401 ? 'Invalid Client ID/Secret' : openError.message;
+
         return res.status(500).json({ 
-            error: 'All APIs Failed', 
-            details: '네이버 검색광고 API와 오픈 API 모두 호출에 실패했습니다.' 
+            error: 'API Error', 
+            details: `Ad API(${adMsg}) -> Open API(${openMsg})` 
         });
     }
   }
@@ -114,14 +123,15 @@ function fetchFromAdApi(keyword) {
                 if (res.statusCode === 200) {
                     try {
                         const parsed = JSON.parse(data);
-                        // 검색결과가 없는 경우도 성공으로 처리하되 빈 리스트 반환
                         if (!parsed.keywordList) parsed.keywordList = [];
                         resolve(parsed);
                     } catch (e) {
                         reject({ statusCode: 500, message: 'Invalid JSON from Ad API' });
                     }
                 } else {
-                    reject({ statusCode: res.statusCode, message: `Status ${res.statusCode}` });
+                    // 네이버가 에러 메시지를 보내는지 확인
+                    const msg = data ? data.toString() : `Status ${res.statusCode}`;
+                    reject({ statusCode: res.statusCode, message: msg });
                 }
             });
         });
@@ -154,7 +164,7 @@ function fetchFromOpenApi(keyword) {
                         const parsed = JSON.parse(data);
                         const totalContent = parsed.total || 0;
                         
-                        // Ad API 형식으로 데이터 변환 (추정치 계산)
+                        // 추정치 계산
                         const estimatedSearchVolume = totalContent * 3; 
                         const pcRatio = 0.35;
 
@@ -169,7 +179,6 @@ function fetchFromOpenApi(keyword) {
                             }]
                         };
 
-                        // 연관검색어 시뮬레이션
                         const suffix = [" 추천", " 후기", " 가격", " 예약", " 전문"];
                         for(let i=0; i<5; i++) {
                             const subVol = Math.floor(estimatedSearchVolume * (0.8 - i*0.1));
@@ -185,7 +194,8 @@ function fetchFromOpenApi(keyword) {
                         reject({ statusCode: 500, message: 'Invalid JSON from Open API' });
                     }
                 } else {
-                    reject({ statusCode: res.statusCode, message: `Status ${res.statusCode}` });
+                    const msg = data ? data.toString() : `Status ${res.statusCode}`;
+                    reject({ statusCode: res.statusCode, message: msg });
                 }
             });
         });

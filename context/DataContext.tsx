@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { faqData as initialFaqs, reviewsData as initialReviews, FAQItem, ReviewItem } from '../data/content';
-import { db } from '../firebase'; // Import Firebase DB
+import { db, auth } from '../firebase'; // Import auth
 import { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, query, orderBy, setDoc } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 
 // Inquiry Type Definition
 export interface InquiryItem {
@@ -19,16 +20,16 @@ interface DataContextType {
   faqs: FAQItem[];
   reviews: ReviewItem[];
   inquiries: InquiryItem[];
-  serviceImages: Record<string, string>; // Store dynamic images for services
+  serviceImages: Record<string, string>;
   addFaq: (faq: Omit<FAQItem, 'id'>) => Promise<void>;
   deleteFaq: (id: string) => Promise<void>;
   addReview: (review: Omit<ReviewItem, 'id' | 'date'>) => Promise<void>;
   deleteReview: (id: string) => Promise<void>;
   addInquiry: (inquiry: Omit<InquiryItem, 'id' | 'date' | 'status'>) => Promise<void>;
   updateInquiryStatus: (id: string, status: InquiryItem['status']) => Promise<void>;
-  updateServiceImage: (id: string, url: string) => Promise<void>; // New function to update service images
+  updateServiceImage: (id: string, url: string) => Promise<void>;
   isAdmin: boolean;
-  login: (password: string) => boolean;
+  login: (password: string) => Promise<boolean>; // Changed to Promise
   logout: () => void;
 }
 
@@ -125,9 +126,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Admin Auth Persistence
   useEffect(() => {
     localStorage.setItem('growth_lab_is_admin', String(isAdmin));
+    // If admin matches, try to ensure auth session exists
+    if (isAdmin) {
+      signInAnonymously(auth).catch(e => console.log("Auto-login auth error:", e));
+    }
   }, [isAdmin]);
 
-  // --- Actions (Now returning Promises for async DB ops) ---
+  // --- Actions ---
 
   const addFaq = async (faq: Omit<FAQItem, 'id'>) => {
     try {
@@ -175,7 +180,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
     } catch (e) {
       console.error("Error adding Inquiry:", e);
-      // Fallback for demo purposes if DB fails
       console.log("Fallback: Inquiry would be saved:", inquiry);
     }
   };
@@ -190,7 +194,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateServiceImage = async (id: string, url: string) => {
     try {
-      // Use setDoc with merge to create or update
       await setDoc(doc(db, 'service_images', id), { url }, { merge: true });
     } catch (e) {
       console.error("Error updating Service Image:", e);
@@ -198,8 +201,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const login = (password: string) => {
+  const login = async (password: string) => {
     if (password === 'admin1234') {
+      try {
+        // Sign in anonymously to pass Firebase Storage Rules (request.auth != null)
+        await signInAnonymously(auth);
+      } catch (error) {
+        console.error("Firebase Login Error:", error);
+        // Continue anyway, rules might be public
+      }
       setIsAdmin(true);
       return true;
     }
@@ -208,6 +218,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     setIsAdmin(false);
+    auth.signOut().catch(console.error);
   };
 
   return (
