@@ -40,7 +40,6 @@ const SearchAnalysis: React.FC = () => {
 
   // 안전한 숫자 파싱 함수
   const parseCount = (val: any) => {
-    // console.log('Parsing value:', val, typeof val); // 디버깅용 로그
     if (val === undefined || val === null) return 0;
     
     if (typeof val === 'number') return val;
@@ -48,7 +47,7 @@ const SearchAnalysis: React.FC = () => {
     if (typeof val === 'string') {
         const cleanVal = val.trim();
         if (cleanVal.includes('<')) return 10; // "< 10" 처리
-        // 쉼표 및 숫자 이외의 문자 제거 (단, <는 위에서 처리했으므로 제외)
+        // 쉼표 및 숫자 이외의 문자 제거
         const numStr = cleanVal.replace(/[^0-9]/g, '');
         return Number(numStr) || 0;
     }
@@ -65,25 +64,20 @@ const SearchAnalysis: React.FC = () => {
     setResult(null);
 
     try {
-      // console.log(`Fetching data for: ${keyword}`);
-      const response = await axios.get(`/.netlify/functions/naver-keywords?keyword=${encodeURIComponent(keyword)}`);
+      // Netlify Function 경로 대신 일반 API 경로 사용
+      const response = await axios.get(`/api/naver-keywords?keyword=${encodeURIComponent(keyword)}`);
       const data = response.data;
-
-      // console.log('API Response Data:', data); // 전체 데이터 구조 확인
 
       if (!data || !data.keywordList || data.keywordList.length === 0) {
         throw new Error('검색 결과가 없습니다. 키워드를 확인해주세요.');
       }
 
       const mainItem = data.keywordList[0];
-      // console.log('Main Item:', mainItem);
 
       // 데이터 파싱
       const pcQc = parseCount(mainItem.monthlyPcQc);
       const mobileQc = parseCount(mainItem.monthlyMobileQc);
       const totalQc = pcQc + mobileQc;
-
-      // console.log(`Parsed Counts - PC: ${pcQc}, Mobile: ${mobileQc}, Total: ${totalQc}`);
 
       const getCompIdx = (cnt: number) => cnt > 10000 ? '높음' : cnt > 3000 ? '중간' : '낮음';
 
@@ -117,7 +111,6 @@ const SearchAnalysis: React.FC = () => {
       else if (saturationRatio < 1.5) { status = '경쟁심화'; desc = "콘텐츠가 다소 많습니다. 전략이 필요합니다."; }
       else { status = '레드오션'; desc = "이미 콘텐츠가 포화 상태입니다."; }
 
-      // 트렌드 데이터가 없으므로 랜덤 생성 유지
       const monthlyTrend = Array.from({length: 12}, () => Math.floor(totalQc * (0.8 + Math.random() * 0.4)));
 
       setResult({
