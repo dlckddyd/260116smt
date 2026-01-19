@@ -38,8 +38,17 @@ const SearchAnalysis: React.FC = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState('');
 
-  const parseCount = (val: string | number) => {
-    if (typeof val === 'string' && val.includes('<')) return 10;
+  // 쉼표가 있는 문자열이나 < 10 같은 특수 케이스를 안전하게 숫자로 변환
+  const parseCount = (val: string | number | undefined) => {
+    if (val === undefined || val === null) return 0;
+    
+    if (typeof val === 'string') {
+        // "< 10" 같은 경우 10으로 처리
+        if (val.includes('<')) return 10;
+        // "1,000" 처럼 쉼표가 있는 경우 제거 후 변환
+        return Number(val.replace(/,/g, '')) || 0;
+    }
+    
     return Number(val) || 0;
   };
 
@@ -52,16 +61,17 @@ const SearchAnalysis: React.FC = () => {
     setResult(null);
 
     try {
-      // Netlify Function 호출
-      // 로컬 테스트 시에는 작동하지 않을 수 있습니다 (Netlify Dev 필요). 배포 후 확인해주세요.
       const response = await axios.get(`/.netlify/functions/naver-keywords?keyword=${encodeURIComponent(keyword)}`);
       const data = response.data;
 
+      // 데이터 구조 확인을 위한 안전장치
       if (!data || !data.keywordList || data.keywordList.length === 0) {
         throw new Error('검색 결과가 없습니다. 키워드를 확인해주세요.');
       }
 
       const mainItem = data.keywordList[0];
+      
+      // 데이터 파싱 (안전하게 변환)
       const pcQc = parseCount(mainItem.monthlyPcQc);
       const mobileQc = parseCount(mainItem.monthlyMobileQc);
       const totalQc = pcQc + mobileQc;

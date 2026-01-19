@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto';
+import crypto from 'crypto';
 
 // 네이버 광고 API 키 설정
 const CUSTOMER_ID = "4242810";
@@ -6,14 +6,13 @@ const ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db
 const SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 
 export const handler = async (event) => {
-  // CORS 헤더 설정
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Content-Type': 'application/json; charset=utf-8'
   };
 
-  // Preflight 요청 처리
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
@@ -28,18 +27,26 @@ export const handler = async (event) => {
       };
     }
 
+    // 네이버 API 필수 헤더 생성 (가이드 준수)
+    // 1. 타임스탬프 (밀리초 단위)
     const timestamp = Date.now().toString();
+    
+    // 2. 서명 생성
+    // 서명 대상 문자열: timestamp + "." + method + "." + uri
     const method = "GET";
     const uri = "/keywordstool";
-    
-    // 1. 네이버 API 서명 생성 (Node.js 내장 crypto 사용 - 라이브러리 의존성 제거)
     const message = `${timestamp}.${method}.${uri}`;
-    const signature = createHmac('sha256', SECRET_KEY)
+    
+    // 비밀키를 사용하여 HMAC-SHA256 해시 생성 후 Base64 인코딩
+    const signature = crypto.createHmac('sha256', SECRET_KEY)
       .update(message)
       .digest('base64');
 
-    // 2. API 요청 (Node.js 내장 fetch 사용)
-    const apiUrl = `https://api.naver.com${uri}?hintKeywords=${encodeURIComponent(keyword)}&showDetail=1`;
+    console.log(`[API Call] Keyword: ${keyword}, Timestamp: ${timestamp}`);
+
+    // 3. API 요청 (Node.js 18+ 내장 fetch 사용)
+    // 주의: hintKeywords는 반드시 URL 인코딩 되어야 함
+    const apiUrl = `https://api.naver.com${uri}?hintKeywords=${encodeURIComponent(keyword.replace(/\s+/g, ''))}&showDetail=1`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -47,17 +54,30 @@ export const handler = async (event) => {
         "X-Timestamp": timestamp,
         "X-API-KEY": ACCESS_LICENSE,
         "X-Customer": CUSTOMER_ID,
-        "X-Signature": signature
+        "X-Signature": signature,
+        "Content-Type": "application/json" // 명시적 헤더 추가
       }
     });
 
+    // 응답 상태 확인
     if (!response.ok) {
        const errorText = await response.text();
-       console.error(`Naver API Error: ${response.status} ${errorText}`);
-       throw new Error(`Naver API responded with status ${response.status}`);
+       console.error(`[Naver API Error] Status: ${response.status}, Body: ${errorText}`);
+       
+       // 네이버 에러 메시지를 그대로 전달
+       return {
+         statusCode: response.status,
+         headers,
+         body: JSON.stringify({ 
+           error: 'Naver API Error', 
+           details: errorText,
+           status: response.status
+         })
+       };
     }
 
     const data = await response.json();
+    console.log(`[API Success] Data received. KeywordList length: ${data.keywordList?.length || 0}`);
 
     return {
       statusCode: 200,
@@ -66,12 +86,12 @@ export const handler = async (event) => {
     };
 
   } catch (error) {
-    console.error("Server Function Error:", error);
+    console.error("[Server Function Error]", error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
-        error: '데이터를 가져오는 중 서버 오류가 발생했습니다.', 
+        error: 'Internal Server Error', 
         details: error.message 
       })
     };
