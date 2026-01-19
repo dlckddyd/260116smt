@@ -10,6 +10,7 @@ const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
 const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
 const Reviews = lazy(() => import('./pages/Reviews'));
+const SearchAnalysis = lazy(() => import('./pages/SearchAnalysis')); // New Page
 const FAQ = lazy(() => import('./pages/FAQ'));
 const Reward = lazy(() => import('./pages/Reward'));
 const Contact = lazy(() => import('./pages/Contact'));
@@ -45,6 +46,7 @@ const App: React.FC = () => {
                 <Route path="/services/:type" element={<ServiceDetail />} />
                 <Route path="/reward" element={<Reward />} />
                 <Route path="/reviews" element={<Reviews />} />
+                <Route path="/search-analysis" element={<SearchAnalysis />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/admin" element={<Admin />} />

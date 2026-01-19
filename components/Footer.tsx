@@ -54,6 +54,7 @@ const Footer: React.FC = () => {
             <div>
                <h4 className="font-bold text-lg mb-4 text-gray-900">고객지원</h4>
                <ul className="space-y-2 text-sm text-gray-600">
+                  <li><Link to="/search-analysis" className="hover:text-brand-accent transition-colors">검색량 조회</Link></li>
                   <li><Link to="/faq" className="hover:text-brand-accent transition-colors">자주묻는질문</Link></li>
                   <li><Link to="/contact" className="hover:text-brand-accent transition-colors">문의하기</Link></li>
                </ul>
