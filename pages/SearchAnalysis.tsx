@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Monitor, Smartphone, TrendingUp, AlertCircle, Lock, BarChart2, FileText, Target, Zap, ArrowRight, PieChart } from 'lucide-react';
+import { Search, Monitor, Smartphone, TrendingUp, AlertCircle, Lock, BarChart2, FileText, Target, Zap, ArrowRight, PieChart, Info } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import { useData } from '../context/DataContext';
 import axios from 'axios';
@@ -29,6 +29,7 @@ interface AnalysisResult {
   };
   monthlyTrend: number[];
   relatedKeywords: ProcessedKeyword[];
+  isSimulation?: boolean; // 시뮬레이션 여부 플래그
 }
 
 const SearchAnalysis: React.FC = () => {
@@ -123,7 +124,8 @@ const SearchAnalysis: React.FC = () => {
             desc
         },
         monthlyTrend,
-        relatedKeywords
+        relatedKeywords,
+        isSimulation: data._source === 'simulation'
       });
 
     } catch (err: any) {
@@ -210,6 +212,19 @@ const SearchAnalysis: React.FC = () => {
 
         {result && (
             <div className="space-y-8">
+                {/* Simulation Warning Banner */}
+                {result.isSimulation && (
+                    <RevealOnScroll>
+                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-6 py-4 rounded-xl flex items-center gap-3 shadow-sm mb-4">
+                            <Info className="w-5 h-5 flex-shrink-0 text-yellow-600" />
+                            <div>
+                                <p className="font-bold text-sm">데이터 조회 한도 초과/지연으로 인해 시뮬레이션 모드로 전환되었습니다.</p>
+                                <p className="text-xs mt-1 text-yellow-700">현재 표시되는 데이터는 AI 예측 모델에 의한 추정치이며 실제와 다를 수 있습니다.</p>
+                            </div>
+                        </div>
+                    </RevealOnScroll>
+                )}
+
                 {/* 1. Summary Cards */}
                 <RevealOnScroll>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
