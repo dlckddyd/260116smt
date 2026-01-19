@@ -52,12 +52,13 @@ const SearchAnalysis: React.FC = () => {
     setResult(null);
 
     try {
-      // Netlify Function 호출 (상대 경로 사용)
+      // Netlify Function 호출
+      // 로컬 테스트 시에는 작동하지 않을 수 있습니다 (Netlify Dev 필요). 배포 후 확인해주세요.
       const response = await axios.get(`/.netlify/functions/naver-keywords?keyword=${encodeURIComponent(keyword)}`);
       const data = response.data;
 
       if (!data || !data.keywordList || data.keywordList.length === 0) {
-        throw new Error('검색 결과가 없습니다.');
+        throw new Error('검색 결과가 없습니다. 키워드를 확인해주세요.');
       }
 
       const mainItem = data.keywordList[0];
@@ -113,8 +114,12 @@ const SearchAnalysis: React.FC = () => {
       });
 
     } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.error || err.message || '데이터 분석 중 오류가 발생했습니다.');
+      console.error("Analysis Error:", err);
+      const errorMessage = err.response?.data?.error 
+        ? `${err.response.data.error} (${err.response.data.details || ''})`
+        : err.message || '분석 중 알 수 없는 오류가 발생했습니다.';
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,12 +1,12 @@
-const axios = require("axios");
-const CryptoJS = require("crypto-js");
+import axios from "axios";
+import CryptoJS from "crypto-js";
 
-// 네이버 광고 API 키 설정 (보안상 환경변수로 빼는 것이 좋으나, 편의를 위해 여기에 작성)
+// 네이버 광고 API 키 설정
 const CUSTOMER_ID = "4242810";
 const ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
 const SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 
-exports.handler = async function(event, context) {
+export const handler = async function(event, context) {
   // CORS 헤더 설정 (모든 도메인 허용)
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -24,7 +24,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const keyword = event.queryStringParameters.keyword;
+    const keyword = event.queryStringParameters?.keyword;
 
     if (!keyword) {
       return {
@@ -63,13 +63,14 @@ exports.handler = async function(event, context) {
     };
 
   } catch (error) {
-    console.error("Naver API Error", error);
+    console.error("Naver API Error Details:", error.response?.data || error.message);
+    
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
-        error: '네이버 API 호출 실패', 
-        details: error.message 
+        error: '데이터를 가져오는데 실패했습니다.', 
+        details: error.response?.data || error.message 
       })
     };
   }
