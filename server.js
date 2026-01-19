@@ -3,42 +3,46 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import https from 'https';
 import crypto from 'crypto';
-import fs from 'fs'; // 파일 시스템 모듈 추가
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// Cloudtype 등의 배포 환경에서는 process.env.PORT가 자동으로 주입됩니다.
 const PORT = process.env.PORT || 3000;
 
-// 디버깅을 위한 로그 출력
-console.log('Starting server...');
-console.log('Current directory:', __dirname);
+console.log('-----------------------------------');
+console.log(`Starting Node.js Server...`);
+console.log(`Environment PORT: ${process.env.PORT}`);
+console.log(`Resolved PORT: ${PORT}`);
+console.log(`Current Directory: ${__dirname}`);
+console.log('-----------------------------------');
+
 const distPath = path.join(__dirname, 'dist');
-console.log('Dist directory path:', distPath);
-console.log('Dist directory exists:', fs.existsSync(distPath));
 
 // 미들웨어 설정
 app.use(express.json());
 
-// 정적 파일 제공 (dist 폴더가 있을 때만)
+// 정적 파일 제공 (빌드된 리액트 파일)
 if (fs.existsSync(distPath)) {
+  console.log(`Serving static files from: ${distPath}`);
   app.use(express.static(distPath));
 } else {
-  console.error('CRITICAL ERROR: "dist" folder not found. Build might have failed.');
+  console.error('CRITICAL WARNING: "dist" folder not found. Make sure "npm run build" was executed.');
 }
 
-// Health Check (클라우드타입 등 배포 환경용)
+// Health Check (클라우드타입 Health Check용)
 app.get('/healthz', (req, res) => {
   res.status(200).send('OK');
 });
 
-// 네이버 광고 API 키 설정
+// 네이버 광고 API 설정
 const CUSTOMER_ID = "4242810";
 const ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
 const SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 
-// API 라우트: 네이버 키워드 검색
+// API: 네이버 키워드 검색
 app.get('/api/naver-keywords', async (req, res) => {
   const keyword = req.query.keyword;
 
@@ -58,7 +62,6 @@ app.get('/api/naver-keywords', async (req, res) => {
 
     const cleanKeyword = keyword.replace(/\s+/g, '');
     
-    // Node.js native https 모듈 사용 (Header 대소문자 유지)
     const options = {
       hostname: 'api.naver.com',
       path: `${uri}?hintKeywords=${encodeURIComponent(cleanKeyword)}&showDetail=1`,
@@ -83,17 +86,16 @@ app.get('/api/naver-keywords', async (req, res) => {
     });
 
     const response = await doRequest();
-
+    
+    // 네이버 API 응답 처리
     if (response.statusCode !== 200) {
-       console.error(`Naver API Error: ${response.statusCode} ${response.body}`);
-       return res.status(response.statusCode).json({ 
-           error: 'Naver API Error', 
-           details: response.body 
-       });
+       console.error(`Naver API Error: ${response.statusCode}`);
+       return res.status(response.statusCode).json({ error: 'API Error', details: response.body });
     }
 
     const data = JSON.parse(response.body);
     
+    // 검색 결과가 없거나 적을 경우 기본값 반환
     if (!data.keywordList || data.keywordList.length === 0) {
        return res.json({
            keywordList: [{
@@ -115,23 +117,17 @@ app.get('/api/naver-keywords', async (req, res) => {
   }
 });
 
-// 모든 기타 요청 처리
+// SPA 라우팅 처리 (모든 요청을 index.html로)
 app.get('*', (req, res) => {
   const indexPath = path.join(distPath, 'index.html');
-  
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    // 빌드 실패 시 보여줄 에러 페이지
-    res.status(500).send(`
-      <h1>Server Error: Build Artifacts Missing</h1>
-      <p>The 'dist/index.html' file was not found.</p>
-      <p>This usually means 'npm run build' failed or didn't run.</p>
-      <p>Current directory: ${__dirname}</p>
-    `);
+    res.status(500).send('Server Error: index.html not found. Build failed?');
   }
 });
 
+// 서버 시작 (0.0.0.0 바인딩 중요)
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
