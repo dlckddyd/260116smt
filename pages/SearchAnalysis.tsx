@@ -1,29 +1,30 @@
 import React, { useState } from 'react';
-import { Search, Monitor, Smartphone, TrendingUp, AlertCircle, Lock, BarChart2, FileText, Target, Zap, ArrowRight, PieChart, Info } from 'lucide-react';
+import { Search, Monitor, Smartphone, TrendingUp, AlertCircle, Lock, BarChart2, FileText, Target, Zap, ArrowRight, PieChart, Users, Calendar } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import { useData } from '../context/DataContext';
 import axios from 'axios';
 
 interface ProcessedKeyword {
   keyword: string;
-  monthlyPcQc: number;
-  monthlyMobileQc: number;
-  monthlyTotalQc: number;
-  compIdx: '높음' | '중간' | '낮음' | '분석필요';
+  total: number;
+  pc: number;
+  mo: number;
+  compIdx: string;
 }
 
 interface AnalysisResult {
   keyword: string;
-  adsData: ProcessedKeyword; 
-  blogTotalCount: number;
-  saturation: {
-    status: '블루오션' | '적정' | '경쟁심화' | '레드오션';
-    score: number;
-    desc: string;
+  monthlyTotalQc: number;
+  monthlyPcQc: number;
+  monthlyMobileQc: number;
+  relKeywords: ProcessedKeyword[];
+  trend: number[];
+  demographics: {
+    male: number;
+    female: number;
+    ages: number[];
   };
-  monthlyTrend: number[];
-  relatedKeywords: ProcessedKeyword[];
-  source: 'ad_api' | 'open_api';
+  source: string;
 }
 
 const SearchAnalysis: React.FC = () => {
@@ -32,19 +33,6 @@ const SearchAnalysis: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState('');
-
-  // 안전한 숫자 파싱 함수
-  const parseCount = (val: any) => {
-    if (val === undefined || val === null) return 0;
-    if (typeof val === 'number') return val;
-    if (typeof val === 'string') {
-        const cleanVal = val.trim();
-        if (cleanVal.includes('<')) return 10;
-        const numStr = cleanVal.replace(/[^0-9]/g, '');
-        return Number(numStr) || 0;
-    }
-    return 0;
-  };
 
   const fetchIntegratedData = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,107 +46,19 @@ const SearchAnalysis: React.FC = () => {
       const response = await axios.get(`/api/naver-keywords?keyword=${encodeURIComponent(keyword)}`);
       const data = response.data;
 
-      if (!data || !data.keywordList || data.keywordList.length === 0) {
-        throw new Error('검색 결과가 없습니다. 키워드를 확인해주세요.');
-      }
-
-      const mainItem = data.keywordList[0];
-      const source = data._source || 'ad_api';
-
-      // 1. 검색량 데이터 파싱
-      const pcQc = parseCount(mainItem.monthlyPcQc);
-      const mobileQc = parseCount(mainItem.monthlyMobileQc);
-      const totalQc = pcQc + mobileQc;
-
-      const getCompIdx = (cnt: number) => cnt > 10000 ? '높음' : cnt > 3000 ? '중간' : '낮음';
-
-      const mainAdsData: ProcessedKeyword = {
-        keyword: mainItem.relKeyword,
-        monthlyPcQc: pcQc,
-        monthlyMobileQc: mobileQc,
-        monthlyTotalQc: totalQc,
-        compIdx: getCompIdx(totalQc)
-      };
-
-      // 2. 연관 키워드
-      const relatedKeywords: ProcessedKeyword[] = data.keywordList.slice(1, 6).map((item: any) => {
-        const p = parseCount(item.monthlyPcQc);
-        const m = parseCount(item.monthlyMobileQc);
-        return {
-          keyword: item.relKeyword,
-          monthlyPcQc: p,
-          monthlyMobileQc: m,
-          monthlyTotalQc: p + m,
-          compIdx: item.compIdx === '분석필요' ? '분석필요' : getCompIdx(p + m)
-        };
-      });
-
-      // 3. 블로그 발행량 & 포화도
-      let blogTotalCount = 0;
-      if (source === 'open_api' && data.meta?.blogTotal) {
-          blogTotalCount = data.meta.blogTotal;
-      } else {
-          blogTotalCount = Math.floor(totalQc * 0.8); 
-      }
-
-      const saturationRatio = totalQc > 0 ? blogTotalCount / totalQc : 0;
-      let status: AnalysisResult['saturation']['status'] = '적정';
-      let desc = "";
-
-      if (totalQc < 100 && blogTotalCount > 1000) {
-           status = '레드오션'; desc = "검색량은 적은데 발행량이 너무 많습니다.";
-      } else if (saturationRatio < 0.3) { 
-           status = '블루오션'; desc = "공급 대비 검색량이 월등히 많습니다. 기회입니다!"; 
-      } else if (saturationRatio < 0.8) { 
-           status = '적정'; desc = "검색량과 발행량이 균형을 이루고 있습니다."; 
-      } else if (saturationRatio < 1.5) { 
-           status = '경쟁심화'; desc = "콘텐츠가 다소 많습니다. 차별화 전략이 필요합니다."; 
-      } else { 
-           status = '레드오션'; desc = "이미 콘텐츠가 포화 상태입니다."; 
-      }
-
-      // 4. 트렌드 그래프
-      let monthlyTrend: number[] = [];
-      if (source === 'open_api' && data.meta?.trendData) {
-          monthlyTrend = data.meta.trendData.slice(-12).map((d: any) => d.ratio);
-          while(monthlyTrend.length < 12) monthlyTrend.unshift(0);
-      } else {
-          monthlyTrend = Array(12).fill(Math.round(totalQc / 12));
-      }
-
-      setResult({
-        keyword: mainItem.relKeyword,
-        adsData: mainAdsData,
-        blogTotalCount,
-        saturation: {
-            status,
-            score: Math.min(Math.floor(saturationRatio * 50), 100),
-            desc
-        },
-        monthlyTrend,
-        relatedKeywords,
-        source
-      });
+      setResult(data);
 
     } catch (err: any) {
       console.error("Analysis Error:", err);
       let displayMsg = '분석 중 오류가 발생했습니다.';
       
-      // Axios Error Handling
-      if (err.response) {
-          if (err.response.data && err.response.data.details) {
-              displayMsg = err.response.data.details;
-          } else if (err.response.data && err.response.data.error) {
-              displayMsg = err.response.data.error;
-          } else {
-              displayMsg = `서버 오류 (${err.response.status}): ${err.message}`;
-          }
-      } else if (err.request) {
-          displayMsg = '서버로부터 응답이 없습니다. 잠시 후 다시 시도해주세요.';
+      if (err.response?.data?.details) {
+          displayMsg = err.response.data.details;
+      } else if (err.response?.data?.error) {
+          displayMsg = err.response.data.error;
       } else {
-          displayMsg = err.message || '알 수 없는 오류가 발생했습니다.';
+          displayMsg = err.message || "서버 응답 없음";
       }
-      
       setError(displayMsg);
     } finally {
       setLoading(false);
@@ -167,13 +67,60 @@ const SearchAnalysis: React.FC = () => {
 
   const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(num);
 
+  // 차트 렌더링 헬퍼
+  const TrendChart = ({ data }: { data: number[] }) => {
+     const max = Math.max(...data, 100);
+     const points = data.map((val, i) => {
+         const x = (i / (data.length - 1)) * 100;
+         const y = 100 - (val / max) * 100;
+         return `${x},${y}`;
+     }).join(' ');
+
+     return (
+         <div className="relative w-full h-48 mt-4">
+             <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                 {/* Grid Lines */}
+                 <line x1="0" y1="25" x2="100" y2="25" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="2" />
+                 <line x1="0" y1="50" x2="100" y2="50" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="2" />
+                 <line x1="0" y1="75" x2="100" y2="75" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="2" />
+                 
+                 {/* Line */}
+                 <polyline 
+                    fill="none" 
+                    stroke="#2563eb" 
+                    strokeWidth="2" 
+                    points={points} 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="drop-shadow-lg"
+                 />
+                 
+                 {/* Dots */}
+                 {data.map((val, i) => {
+                     const x = (i / (data.length - 1)) * 100;
+                     const y = 100 - (val / max) * 100;
+                     return (
+                         <circle key={i} cx={x} cy={y} r="1.5" className="fill-white stroke-blue-600 stroke-[0.5] hover:r-2 transition-all" />
+                     );
+                 })}
+             </svg>
+             
+             {/* X-Axis Labels */}
+             <div className="flex justify-between mt-2 text-[10px] text-gray-400">
+                 {Array.from({length: 12}).map((_, i) => (
+                     <span key={i}>M-{12-i}</span>
+                 ))}
+             </div>
+         </div>
+     );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <section className="bg-brand-black pt-32 pb-20 px-6 text-center relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600 rounded-full blur-[100px]"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600 rounded-full blur-[100px]"></div>
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto">
@@ -185,8 +132,7 @@ const SearchAnalysis: React.FC = () => {
                     통합 키워드 <span className="text-brand-accent">데이터 분석</span>
                 </h1>
                 <p className="text-gray-400 mb-10 text-lg max-w-2xl mx-auto">
-                    검색량(수요)과 발행량(공급)을 한번에 비교하여<br/>
-                    최적의 마케팅 키워드를 발굴하세요.
+                    검색량(수요)과 트렌드를 한번에 확인하세요.
                 </p>
 
                 <form onSubmit={fetchIntegratedData} className="relative max-w-2xl mx-auto">
@@ -215,251 +161,134 @@ const SearchAnalysis: React.FC = () => {
       {/* Results Dashboard */}
       <div className="max-w-7xl mx-auto px-6 py-12 -mt-10 relative z-20">
         {error && (
-            <div className="bg-red-50 text-red-600 p-6 rounded-xl text-center border border-red-100 flex flex-col items-center justify-center gap-2 shadow-lg">
-                <div className="flex items-center gap-2 font-bold text-lg mb-2">
+            <div className="bg-red-50 text-red-600 p-6 rounded-xl text-center border border-red-100 mb-8">
+                <div className="flex items-center justify-center gap-2 font-bold text-lg mb-2">
                     <AlertCircle className="w-6 h-6" /> 분석 실패
                 </div>
-                <div className="text-sm font-medium whitespace-pre-wrap leading-relaxed max-w-3xl overflow-x-auto">
-                    {error}
-                </div>
-                <div className="mt-4 text-xs text-red-400 bg-white/50 px-4 py-2 rounded-lg">
-                   오류가 지속되면 관리자에게 문의해주세요.
-                </div>
+                <p className="text-sm">{error}</p>
             </div>
         )}
 
         {!result && !loading && !error && (
             <div className="bg-white rounded-3xl p-12 text-center shadow-xl border border-gray-100 min-h-[400px] flex flex-col items-center justify-center text-gray-400">
-                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                    <BarChart2 className="w-10 h-10 text-gray-300" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-700 mb-2">키워드 분석 대기중</h3>
-                <p className="text-gray-500">원하는 키워드를 입력하여 네이버 실데이터를 확인하세요.</p>
-                {!isAdmin && (
-                    <div className="mt-6 flex items-center justify-center gap-2 text-sm bg-blue-50 text-blue-700 px-4 py-2 rounded-full font-medium">
-                        <Lock className="w-4 h-4" /> 로그인 시 더 상세한 리포트가 제공됩니다.
-                    </div>
-                )}
+                <BarChart2 className="w-16 h-16 text-gray-200 mb-4" />
+                <h3 className="text-xl font-bold text-gray-700">키워드를 입력해주세요</h3>
+                <p className="text-gray-500 mt-2">네이버 검색광고 및 데이터랩 기반의 분석 데이터를 제공합니다.</p>
             </div>
         )}
 
         {result && (
-            <div className="space-y-8">
-                {/* Source Indicator */}
-                <div className="flex justify-end">
+            <div className="space-y-6">
+                <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <h2 className="text-xl font-bold text-gray-900">
+                        '<span className="text-brand-accent">{result.keyword}</span>' 분석 결과
+                    </h2>
                     <span className={`text-xs font-bold px-3 py-1 rounded-full border ${result.source === 'ad_api' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-                        데이터 출처: {result.source === 'ad_api' ? '네이버 검색광고 API (정확)' : '네이버 오픈 API (블로그+데이터랩)'}
+                        {result.source === 'ad_api' ? '정확도: 높음 (Ad API)' : '정확도: 보통 (Open API)'}
                     </span>
                 </div>
 
-                {/* 1. Summary Cards */}
-                <RevealOnScroll>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        
-                        {/* Card 1: Search Volume (Demand) */}
-                        <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden group hover:-translate-y-1 transition-transform">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-blue-100"></div>
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Search className="w-5 h-5"/></div>
-                                    <span className="text-gray-500 font-bold text-sm">월간 검색수 (수요)</span>
-                                </div>
-                                <h2 className="text-4xl font-extrabold text-gray-900 mb-2">{formatNumber(result.adsData.monthlyTotalQc)}</h2>
-                                <div className="flex items-center gap-4 mt-6 text-sm">
-                                    <div className="flex items-center gap-1.5">
-                                        <Monitor className="w-4 h-4 text-gray-400" />
-                                        <span className="font-medium text-gray-600">{formatNumber(result.adsData.monthlyPcQc)}</span>
-                                        <span className="text-xs text-gray-400">PC</span>
-                                    </div>
-                                    <div className="w-px h-4 bg-gray-200"></div>
-                                    <div className="flex items-center gap-1.5">
-                                        <Smartphone className="w-4 h-4 text-gray-400" />
-                                        <span className="font-medium text-blue-600">{formatNumber(result.adsData.monthlyMobileQc)}</span>
-                                        <span className="text-xs text-blue-400 font-bold">Mobile</span>
-                                    </div>
-                                </div>
+                {/* 1. Key Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8"></div>
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-4 text-gray-500 font-bold text-sm">
+                                <Search className="w-4 h-4"/> 월간 검색수
                             </div>
-                        </div>
-
-                        {/* Card 2: Blog Count (Supply) */}
-                        <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden group hover:-translate-y-1 transition-transform">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-green-100"></div>
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="p-2 bg-green-100 rounded-lg text-green-600"><FileText className="w-5 h-5"/></div>
-                                    <span className="text-gray-500 font-bold text-sm">블로그 발행수 (공급)</span>
-                                </div>
-                                <h2 className="text-4xl font-extrabold text-gray-900 mb-2">{formatNumber(result.blogTotalCount)}</h2>
-                                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                                    {result.source === 'ad_api' 
-                                        ? '검색량 대비 추정된 블로그 발행량입니다.' 
-                                        : '네이버 블로그 검색 API 기준 총 문서 수입니다.'}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Card 3: Saturation Analysis */}
-                        <div className={`p-8 rounded-3xl shadow-lg border relative overflow-hidden text-white flex flex-col justify-between
-                            ${result.saturation.status === '블루오션' ? 'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400' : 
-                              result.saturation.status === '적정' ? 'bg-gradient-to-br from-green-500 to-emerald-700 border-green-400' :
-                              result.saturation.status === '경쟁심화' ? 'bg-gradient-to-br from-orange-400 to-red-500 border-orange-400' :
-                              'bg-gradient-to-br from-red-600 to-rose-800 border-red-500'
-                            }`}>
-                            <div>
-                                <div className="flex items-center gap-2 mb-4 opacity-90">
-                                    <Target className="w-5 h-5"/>
-                                    <span className="font-bold text-sm">경쟁 강도 분석</span>
-                                </div>
-                                <h2 className="text-3xl font-extrabold mb-1">{result.saturation.status}</h2>
-                                <div className="text-sm opacity-80 font-medium mb-6">포화도 지수: {result.saturation.score}/100</div>
-                            </div>
-                            
-                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 text-sm leading-relaxed border border-white/10">
-                                {result.saturation.desc}
+                            <h2 className="text-4xl font-extrabold text-gray-900">{formatNumber(result.monthlyTotalQc)}</h2>
+                            <div className="flex items-center gap-4 mt-4 text-sm font-medium">
+                                <span className="flex items-center gap-1 text-gray-600"><Monitor className="w-3 h-3"/> {formatNumber(result.monthlyPcQc)}</span>
+                                <span className="flex items-center gap-1 text-blue-600"><Smartphone className="w-3 h-3"/> {formatNumber(result.monthlyMobileQc)}</span>
                             </div>
                         </div>
                     </div>
-                </RevealOnScroll>
 
-                {/* 2. Charts Section */}
-                <RevealOnScroll>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Trend Chart */}
-                        <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
-                             <div className="flex items-center justify-between mb-8">
-                                <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-gray-400" />
-                                    최근 1년 검색 트렌드
-                                    {result.source === 'open_api' && <span className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded ml-2">데이터랩 기반</span>}
-                                </h3>
-                             </div>
-                             <div className="h-64 flex items-end justify-between gap-3 px-2">
-                                {result.monthlyTrend.map((val, i) => {
-                                     // 값이 너무 작으면 최소 높이 보장
-                                     const max = Math.max(...result.monthlyTrend, 1);
-                                     const height = (val / max) * 100;
-                                     // 최근 달은 파란색, 나머지는 회색톤
-                                     const isLast = i === result.monthlyTrend.length - 1;
-                                     return (
-                                         <div key={i} className="flex-1 flex flex-col justify-end items-center group relative">
-                                             <div 
-                                                className={`w-full rounded-t-lg transition-all duration-500 relative overflow-hidden ${isLast ? 'bg-brand-accent' : 'bg-gray-100 group-hover:bg-gray-200'}`} 
-                                                style={{height: `${Math.max(height, 5)}%`}}
-                                             >
-                                             </div>
-                                             <span className="text-[10px] text-gray-400 mt-3 font-medium">M-{12-i-1}</span>
-                                             
-                                             {/* Tooltip */}
-                                             <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-bold py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-xl">
-                                                {Math.round(val)}
-                                             </div>
-                                         </div>
-                                     )
-                                 })}
-                             </div>
+                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden flex flex-col justify-center">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-2"><PieChart className="w-4 h-4 text-gray-400"/> 성별 비율</h3>
                         </div>
-
-                        {/* Device Ratio */}
-                        <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 flex flex-col items-center justify-center">
-                            <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2 mb-8 w-full">
-                                <PieChart className="w-5 h-5 text-gray-400" />
-                                디바이스 비율
-                            </h3>
-                            <div className="relative w-48 h-48">
-                                <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
-                                    {/* PC Circle (Background) */}
-                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f1f5f9" strokeWidth="20" />
-                                    {/* Mobile Circle (Foreground) */}
-                                    <circle 
-                                        cx="50" cy="50" r="40" 
-                                        fill="transparent" 
-                                        stroke="#2563eb" 
-                                        strokeWidth="20" 
-                                        strokeDasharray={`${(result.adsData.monthlyMobileQc / (result.adsData.monthlyTotalQc || 1)) * 251.2} 251.2`}
-                                        className="transition-all duration-1000 ease-out"
-                                    />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-3xl font-extrabold text-brand-accent">
-                                        {Math.round((result.adsData.monthlyMobileQc / (result.adsData.monthlyTotalQc || 1)) * 100)}%
-                                    </span>
-                                    <span className="text-xs text-gray-400 font-bold uppercase">Mobile</span>
-                                </div>
-                            </div>
-                            <div className="flex justify-center gap-6 mt-8 w-full">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-gray-200"></div>
-                                    <span className="text-sm text-gray-500 font-medium">PC</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-brand-accent"></div>
-                                    <span className="text-sm text-gray-500 font-medium">Mobile</span>
-                                </div>
-                            </div>
+                        <div className="flex items-center gap-4">
+                             <div className="flex-1">
+                                 <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex">
+                                     <div style={{width: `${result.demographics.male}%`}} className="bg-blue-500 h-full"></div>
+                                     <div style={{width: `${result.demographics.female}%`}} className="bg-pink-400 h-full"></div>
+                                 </div>
+                                 <div className="flex justify-between mt-2 text-xs font-bold">
+                                     <span className="text-blue-600">남성 {result.demographics.male}%</span>
+                                     <span className="text-pink-500">여성 {result.demographics.female}%</span>
+                                 </div>
+                             </div>
                         </div>
                     </div>
-                </RevealOnScroll>
 
-                {/* 3. Related Keywords Table */}
-                <RevealOnScroll>
-                    <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-                        <div className="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                            <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                                연관 키워드 추천
-                            </h3>
-                            <span className="text-xs text-gray-500 font-medium bg-white px-3 py-1 rounded-full border border-gray-200">
-                                {result.source === 'ad_api' ? '연관도순 정렬' : '파생 키워드 제안'}
-                            </span>
+                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-4"><Users className="w-4 h-4 text-gray-400"/> 연령별 분포</h3>
+                        <div className="flex items-end justify-between h-24 gap-1">
+                            {result.demographics.ages.map((val, i) => (
+                                <div key={i} className="flex-1 flex flex-col items-center group">
+                                    <div className="w-full bg-blue-100 rounded-t-sm relative transition-all group-hover:bg-blue-500" style={{height: `${val}%`}}>
+                                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white px-1 rounded">{val}%</div>
+                                    </div>
+                                    <span className="text-[10px] text-gray-400 mt-1">{(i+1)*10}대</span>
+                                </div>
+                            ))}
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase font-bold tracking-wider text-left">
-                                    <tr>
-                                        <th className="px-6 py-4">연관 키워드</th>
-                                        <th className="px-6 py-4">월간 검색수</th>
-                                        <th className="px-6 py-4 text-center">경쟁정도</th>
-                                        <th className="px-6 py-4 text-right">분석</th>
+                    </div>
+                </div>
+
+                {/* 2. Trend Chart */}
+                <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-gray-400" /> 월간 검색수 추이 (최근 1년)
+                        </h3>
+                    </div>
+                    <TrendChart data={result.trend} />
+                </div>
+
+                {/* 3. Related Keywords */}
+                <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 bg-gray-50">
+                        <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" /> 연관 키워드 TOP 5
+                        </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase font-bold tracking-wider text-left">
+                                <tr>
+                                    <th className="px-6 py-4">키워드</th>
+                                    <th className="px-6 py-4">총 검색수</th>
+                                    <th className="px-6 py-4">PC</th>
+                                    <th className="px-6 py-4">Mobile</th>
+                                    <th className="px-6 py-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {result.relKeywords.map((k, idx) => (
+                                    <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                                        <td className="px-6 py-4 font-bold text-gray-800">{k.keyword}</td>
+                                        <td className="px-6 py-4 font-bold text-blue-600">{formatNumber(k.total)}</td>
+                                        <td className="px-6 py-4 text-gray-500 text-sm">{formatNumber(k.pc)}</td>
+                                        <td className="px-6 py-4 text-gray-500 text-sm">{formatNumber(k.mo)}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button 
+                                                onClick={() => {
+                                                    setKeyword(k.keyword);
+                                                    window.scrollTo({top: 0, behavior: 'smooth'});
+                                                }}
+                                                className="text-xs font-bold text-brand-accent border border-brand-accent px-3 py-1.5 rounded-full hover:bg-brand-accent hover:text-white transition-colors"
+                                            >
+                                                분석하기
+                                            </button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {result.relatedKeywords.map((k, idx) => (
-                                        <tr key={idx} className="hover:bg-blue-50/50 transition-colors group">
-                                            <td className="px-6 py-4 font-bold text-gray-800">
-                                                <div className="flex items-center gap-2">
-                                                    {k.keyword}
-                                                    {idx === 0 && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">HOT</span>}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600 font-medium">{formatNumber(k.monthlyTotalQc)}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
-                                                    k.compIdx === '높음' ? 'bg-red-100 text-red-600' :
-                                                    k.compIdx === '중간' ? 'bg-yellow-100 text-yellow-600' :
-                                                    k.compIdx === '낮음' ? 'bg-green-100 text-green-600' :
-                                                    'bg-gray-100 text-gray-500'
-                                                }`}>
-                                                    {k.compIdx}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button 
-                                                    onClick={() => {
-                                                        setKeyword(k.keyword);
-                                                        window.scrollTo({top: 0, behavior: 'smooth'});
-                                                    }}
-                                                    className="text-brand-accent hover:text-blue-700 font-bold text-sm flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    분석하기 <ArrowRight className="w-4 h-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                </RevealOnScroll>
+                </div>
             </div>
         )}
       </div>
