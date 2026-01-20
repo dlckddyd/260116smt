@@ -7,39 +7,43 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-// Cloudtype injects the PORT environment variable. Fallback to 8001 if local.
 const PORT = process.env.PORT || 8001; 
 
 const distPath = path.join(__dirname, 'dist');
+
+// Middleware
 app.use(express.json());
 
-// Health check endpoint for Cloudtype
+// Cloudtype Health Check (Critical for deployment success)
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
+// Serve Static Files
 if (fs.existsSync(distPath)) {
-  // Add simple cache headers for static assets
   app.use(express.static(distPath, {
-    maxAge: '1d', // Cache static assets for 1 day
+    maxAge: '1d',
     setHeaders: (res, path) => {
-      if (path.endsWith('.html')) {
-        // No cache for index.html to ensure updates are seen immediately
+      // Don't cache index.html to ensure updates happen immediately
+      if (path.endsWith('index.html')) {
         res.setHeader('Cache-Control', 'no-cache');
       }
     }
   }));
 } else {
-  console.warn(`WARNING: Directory ${distPath} does not exist. Did the build finish successfully?`);
+  console.error("CRITICAL ERROR: 'dist' folder not found. Build likely failed.");
 }
 
+// SPA Routing (Catch-all)
 app.get('*', (req, res) => {
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(500).send('Server Error: index.html not found. Please check build output.');
+    // If index.html is missing, the build definitely failed.
+    res.status(500).send('Deployment Error: App build files not found. Please check build logs.');
   }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running and listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Serving files from: ${distPath}`);
 });

@@ -9,7 +9,7 @@
     <meta name="description" content="플레이스 상위노출, 네이버 클립, 체험단 마케팅 전문. 데이터로 증명하는 확실한 성과를 경험하세요." />
     <meta name="keywords" content="플레이스마케팅, 네이버클립, 체험단, 유튜브관리, 인스타그램광고, 스마트마케팅" />
     
-    <!-- Open Graph (KakaoTalk, Facebook, LinkedIn) -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="스마트마케팅 플레이스" />
     <meta property="og:description" content="매출 상승의 핵심, 데이터 기반 퍼포먼스 마케팅 솔루션" />
@@ -28,11 +28,11 @@
             colors: {
               brand: {
                 black: '#111111',
-                dark: '#1a1f2c', // Deep Navy for footer
-                gray: '#f8f9fa', // Light background
+                dark: '#1a1f2c',
+                gray: '#f8f9fa',
                 text: '#333333',
-                accent: '#2563eb', // Trustworthy Royal Blue
-                success: '#059669', // Professional Green
+                accent: '#2563eb',
+                success: '#059669',
               }
             },
             fontFamily: {
@@ -71,7 +71,6 @@
     <style>
       @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
       body { font-family: 'Pretendard', sans-serif; background-color: #ffffff; color: #111111; overflow-x: hidden; }
-      /* Custom Scrollbar */
       ::-webkit-scrollbar { width: 8px; }
       ::-webkit-scrollbar-track { background: #f1f1f1; }
       ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
@@ -83,19 +82,10 @@
         -webkit-backdrop-filter: blur(12px);
       }
       
-      spline-viewer {
-        pointer-events: none; /* Critical for scrolling over the 3D element */
-      }
+      spline-viewer { pointer-events: none; }
       
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      .no-scrollbar::-webkit-scrollbar {
-          display: none;
-      }
-      /* Hide scrollbar for IE, Edge and Firefox */
-      .no-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
-      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
   <script type="importmap">
 {
