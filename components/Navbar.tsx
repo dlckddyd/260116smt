@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Activity, MapPin, Video, Camera, Users, BarChart, Search } from 'lucide-react';
+import { Menu, X, ChevronDown, Activity, MapPin, Video, Camera, Users, BarChart } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -102,14 +102,6 @@ const Navbar: React.FC = () => {
           >
             고객후기
           </Link>
-          
-          <Link 
-            to="/search-analysis" 
-            className={`text-[15px] font-semibold hover:text-brand-accent transition-colors flex items-center gap-1 ${location.pathname === '/search-analysis' ? 'text-brand-accent' : ''}`}
-          >
-            <Search className="w-4 h-4" />
-            검색량 조회
-          </Link>
 
           <Link 
             to="/faq" 
@@ -146,9 +138,6 @@ const Navbar: React.FC = () => {
           </div>
           <Link to="/reward" className="text-lg font-bold text-gray-800" onClick={closeMenu}>리워드</Link>
           <Link to="/reviews" className="text-lg font-bold text-gray-800" onClick={closeMenu}>고객후기</Link>
-          <Link to="/search-analysis" className="text-lg font-bold text-gray-800 flex items-center gap-2" onClick={closeMenu}>
-             <Search className="w-5 h-5" /> 검색량 조회
-          </Link>
           <Link to="/faq" className="text-lg font-bold text-gray-800" onClick={closeMenu}>자주묻는질문</Link>
           <Link to="/contact" className="text-lg font-bold text-brand-accent" onClick={closeMenu}>문의하기</Link>
         </div>

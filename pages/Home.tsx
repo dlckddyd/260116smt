@@ -18,9 +18,10 @@ const Home: React.FC = () => {
   const { serviceImages } = useData();
 
   useEffect(() => {
+    // Shorter timeout to improve perceived speed
     const timer = setTimeout(() => {
       setIsLoaded(true);
-    }, 500);
+    }, 300);
 
     const element = splineRef.current;
     
@@ -233,9 +234,10 @@ const Home: React.FC = () => {
                             src="https://images.unsplash.com/photo-1577412647305-991150c7d163?q=80&w=1200&auto=format&fit=crop" 
                             alt="Strategy Meeting" 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            loading="lazy" 
                          />
                          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                         {/* Chart Floating UI - Reusing simple card here or manual */}
+                         {/* Chart Floating UI */}
                          <div className="absolute top-10 right-10 animate-float-medium">
                             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-3 flex items-center gap-3">
                                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
@@ -246,12 +248,6 @@ const Home: React.FC = () => {
                                   <div className="text-sm font-bold">+245%</div>
                                </div>
                             </div>
-                         </div>
-                         <div className="absolute bottom-8 left-8 bg-white/90 backdrop-blur px-6 py-4 rounded-2xl shadow-lg">
-                            <p className="text-black font-bold text-lg flex items-center gap-2">
-                               <Sparkles className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                               Strategic Planning
-                            </p>
                          </div>
                       </div>
                   </div>
