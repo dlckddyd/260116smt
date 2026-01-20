@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, TrendingUp, Monitor, Smartphone, AlertCircle, BarChart2, Loader2, ArrowRight, FileText, Coffee, Percent, PieChart, Activity, Info } from 'lucide-react';
+import { Search, TrendingUp, AlertCircle, BarChart2, Loader2, FileText, PieChart, Activity, Info, ShoppingBag, Newspaper, HelpCircle, Globe, Image as ImageIcon, MousePointer2 } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 
 interface KeywordData {
@@ -20,8 +20,13 @@ interface AnalysisResult {
     mainKeyword: KeywordData;
     relatedKeywords: KeywordData[];
     content: {
-        blogTotal: number;
-        cafeTotal: number;
+        blog: number;
+        cafe: number;
+        news: number;
+        shop: number;
+        kin: number;
+        web: number;
+        image: number;
     };
     trend: TrendData[];
 }
@@ -66,11 +71,10 @@ const SearchAnalysis: React.FC = () => {
     return num.toLocaleString();
   };
 
-  // Helper to safely parse string numbers like "< 10"
   const safeParseInt = (val: string | number | undefined): number => {
       if (typeof val === 'number') return val;
       if (!val) return 0;
-      if (val.includes('<')) return 5; // Treat < 10 as 5
+      if (val.includes('<')) return 5;
       return parseInt(val.replace(/,/g, ''), 10);
   };
 
@@ -88,7 +92,7 @@ const SearchAnalysis: React.FC = () => {
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">데이터로 보는 키워드의 가치</h1>
             <p className="text-gray-400 mb-10 text-lg">
-              검색량부터 콘텐츠 발행량, 경쟁 강도까지 한눈에 확인하세요.
+              네이버 빅데이터(검색, 쇼핑, 뉴스, 지식iN)를 실시간으로 분석합니다.
             </p>
 
             <form onSubmit={handleSearch} className="relative w-full max-w-xl mx-auto">
@@ -131,21 +135,18 @@ const SearchAnalysis: React.FC = () => {
                    <div className={`px-3 py-1 rounded-lg text-sm font-bold border ${data.mainKeyword.compIdx === '높음' ? 'bg-red-50 border-red-200 text-red-600' : data.mainKeyword.compIdx === '중간' ? 'bg-yellow-50 border-yellow-200 text-yellow-600' : 'bg-green-50 border-green-200 text-green-600'}`}>
                       경쟁강도: {data.mainKeyword.compIdx || '보통'}
                    </div>
-                   <div className="px-3 py-1 bg-gray-200 text-gray-600 rounded-lg text-sm font-bold border border-gray-300">
-                      월간 조회수 기준
-                   </div>
                </div>
                <div className="text-sm text-gray-400 flex items-center gap-2">
                    <Info className="w-4 h-4" /> 최근 30일 평균 데이터 (Naver Official API)
                </div>
             </div>
 
-            {/* 2. Key Metrics Grid */}
+            {/* 2. Key Metrics Grid (Search & Content) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Search Volume */}
                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-gray-500 font-bold">총 검색량</span>
+                        <span className="text-gray-500 font-bold">월간 총 검색량</span>
                         <Search className="w-5 h-5 text-blue-500" />
                     </div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">
@@ -157,18 +158,17 @@ const SearchAnalysis: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Content Volume */}
+                {/* Total Content Volume */}
                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-gray-500 font-bold">콘텐츠 발행량</span>
+                        <span className="text-gray-500 font-bold">총 콘텐츠 발행량</span>
                         <FileText className="w-5 h-5 text-purple-500" />
                     </div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">
-                        {formatNumber(data.content.blogTotal + data.content.cafeTotal)}
+                        {formatNumber(Object.values(data.content).reduce((a, b) => a + b, 0))}
                     </div>
-                    <div className="flex gap-2 text-xs font-medium">
-                        <span className="bg-green-50 text-green-600 px-2 py-1 rounded">블로그 {formatNumber(data.content.blogTotal)}</span>
-                        <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded">카페 {formatNumber(data.content.cafeTotal)}</span>
+                    <div className="flex gap-2 text-xs font-medium text-gray-400">
+                        블로그, 뉴스, 쇼핑, 카페 등 합계
                     </div>
                 </div>
 
@@ -181,14 +181,14 @@ const SearchAnalysis: React.FC = () => {
                     <div className="text-3xl font-bold text-gray-900 mb-2">
                         {(() => {
                             const totalSearch = safeParseInt(data.mainKeyword.monthlyPcQc) + safeParseInt(data.mainKeyword.monthlyMobileQc);
-                            const totalContent = data.content.blogTotal + data.content.cafeTotal;
+                            const totalContent = Object.values(data.content).reduce((a, b) => a + b, 0);
                             if (totalSearch === 0) return '-';
                             const index = (totalContent / totalSearch * 100).toFixed(1);
                             return index + '%';
                         })()}
                     </div>
                     <div className="text-xs text-gray-400">
-                        (발행량 / 검색량) * 100
+                        (총 발행량 / 총 검색량) * 100
                     </div>
                 </div>
 
@@ -196,7 +196,7 @@ const SearchAnalysis: React.FC = () => {
                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-gray-500 font-bold">예상 클릭수</span>
-                        <MousePointer className="w-5 h-5 text-indigo-500" />
+                        <MousePointer2 className="w-5 h-5 text-indigo-500" />
                     </div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">
                         {formatNumber(safeParseInt(data.mainKeyword.monthlyAvePcClkCnt) + safeParseInt(data.mainKeyword.monthlyAveMobileClkCnt))}
@@ -207,12 +207,51 @@ const SearchAnalysis: React.FC = () => {
                 </div>
             </div>
 
-            {/* 3. Trend Graph */}
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-brand-accent" /> 최근 1년 검색 트렌드 (DataLab)
+            {/* 3. Detailed Content Breakdown Cards */}
+            <div>
+                <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-gray-400" /> 채널별 발행량 분석
                 </h3>
-                {data.trend && data.trend.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex flex-col items-center text-center">
+                        <div className="p-2 bg-white rounded-full mb-2"><FileText className="w-5 h-5 text-green-600"/></div>
+                        <span className="text-xs text-gray-500 font-bold mb-1">블로그</span>
+                        <span className="text-lg font-bold text-green-700">{formatNumber(data.content.blog)}</span>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex flex-col items-center text-center">
+                        <div className="p-2 bg-white rounded-full mb-2"><Activity className="w-5 h-5 text-orange-600"/></div>
+                        <span className="text-xs text-gray-500 font-bold mb-1">카페</span>
+                        <span className="text-lg font-bold text-orange-700">{formatNumber(data.content.cafe)}</span>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col items-center text-center">
+                        <div className="p-2 bg-white rounded-full mb-2"><Newspaper className="w-5 h-5 text-blue-600"/></div>
+                        <span className="text-xs text-gray-500 font-bold mb-1">뉴스</span>
+                        <span className="text-lg font-bold text-blue-700">{formatNumber(data.content.news)}</span>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col items-center text-center">
+                        <div className="p-2 bg-white rounded-full mb-2"><ShoppingBag className="w-5 h-5 text-purple-600"/></div>
+                        <span className="text-xs text-gray-500 font-bold mb-1">쇼핑</span>
+                        <span className="text-lg font-bold text-purple-700">{formatNumber(data.content.shop)}</span>
+                    </div>
+                    <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 flex flex-col items-center text-center">
+                        <div className="p-2 bg-white rounded-full mb-2"><HelpCircle className="w-5 h-5 text-teal-600"/></div>
+                        <span className="text-xs text-gray-500 font-bold mb-1">지식iN</span>
+                        <span className="text-lg font-bold text-teal-700">{formatNumber(data.content.kin)}</span>
+                    </div>
+                    <div className="bg-gray-100 p-4 rounded-xl border border-gray-200 flex flex-col items-center text-center">
+                        <div className="p-2 bg-white rounded-full mb-2"><ImageIcon className="w-5 h-5 text-gray-600"/></div>
+                        <span className="text-xs text-gray-500 font-bold mb-1">이미지</span>
+                        <span className="text-lg font-bold text-gray-700">{formatNumber(data.content.image)}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* 4. Trend Graph (Conditionally Rendered) */}
+            {data.trend && data.trend.length > 0 && (
+                <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
+                    <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-brand-accent" /> 최근 1년 검색 트렌드 (DataLab)
+                    </h3>
                     <div className="h-64 w-full flex items-end justify-between gap-1 px-4">
                         {data.trend.map((t, idx) => (
                             <div key={idx} className="flex-1 flex flex-col items-center group relative">
@@ -230,25 +269,8 @@ const SearchAnalysis: React.FC = () => {
                             </div>
                         ))}
                     </div>
-                ) : (
-                    <div className="h-40 flex items-center justify-center text-gray-400 bg-gray-50 rounded-xl">
-                        트렌드 데이터가 부족하거나 제공되지 않는 키워드입니다.
-                    </div>
-                )}
-            </div>
-
-            {/* 4. Limitations Info Box */}
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex gap-4 text-sm text-gray-600">
-                <AlertCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                <div>
-                    <p className="font-bold mb-1">데이터 제공 안내</p>
-                    <p>
-                        본 서비스는 네이버 공식 API(검색광고, 데이터랩, 검색)를 사용하여 데이터를 제공합니다.<br/>
-                        * <strong>성별/연령별 비율, 섹션 배치 순서</strong>는 네이버 API에서 제공하지 않아 표시되지 않습니다.<br/>
-                        * 콘텐츠 발행량은 네이버 뷰(블로그+카페) 탭의 검색 결과 수치입니다.
-                    </p>
                 </div>
-            </div>
+            )}
 
             {/* 5. Related Keywords Table */}
             <div>
@@ -293,17 +315,12 @@ const SearchAnalysis: React.FC = () => {
             <div className="text-center py-32 text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
                <Search className="w-16 h-16 mx-auto mb-6 opacity-20" />
                <h3 className="text-xl font-bold text-gray-500 mb-2">키워드를 입력해보세요</h3>
-               <p>네이버 빅데이터를 실시간으로 분석해드립니다.</p>
+               <p>네이버 빅데이터(검색/뉴스/쇼핑/지식iN)를 실시간으로 분석해드립니다.</p>
             </div>
         )}
       </div>
     </div>
   );
 };
-
-// Simple icon wrapper
-const MousePointer = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
-);
 
 export default SearchAnalysis;

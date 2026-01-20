@@ -16,8 +16,6 @@ const distPath = path.join(__dirname, 'dist');
 
 // =================================================================
 // [API Key Configuration]
-// 주의: 네이버 검색광고 API는 'IP 허용 설정'이 필수입니다.
-// 로컬이나 클라우드 서버의 IP가 허용되어 있는지 확인해야 합니다.
 // =================================================================
 const AD_CUSTOMER_ID = "4242810";
 const AD_ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
@@ -57,10 +55,8 @@ function doRequest(url, options, postData) {
                     resolve({ success: false, error: "JSON Parse Error", raw: data }); 
                 }
             } else {
-                // API 실패 시 상세 로그 출력
                 console.warn(`[API FAILED] URL: ${url}`);
                 console.warn(`[API FAILED] Status: ${res.statusCode}`);
-                console.warn(`[API FAILED] Body: ${data}`);
                 
                 try {
                     const parsed = JSON.parse(data);
@@ -118,29 +114,30 @@ app.get('/api/keywords', async (req, res) => {
     });
 
     // -----------------------------------------------------------
-    // 2. 오픈 API - 블로그 검색 (Content Count)
+    // 2. 오픈 API - 콘텐츠 발행량 (Parallel Fetch)
     // -----------------------------------------------------------
-    const blogPromise = doRequest(`https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim`, {
-        method: 'GET',
-        headers: {
-            'X-Naver-Client-Id': OPEN_CLIENT_ID,
-            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET
-        }
-    });
+    const openApiHeaders = {
+        'X-Naver-Client-Id': OPEN_CLIENT_ID,
+        'X-Naver-Client-Secret': OPEN_CLIENT_SECRET
+    };
+
+    const targets = [
+        { key: 'blog', url: `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim` },
+        { key: 'cafe', url: `https://openapi.naver.com/v1/search/cafearticle.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim` },
+        { key: 'news', url: `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim` },
+        { key: 'shop', url: `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim` },
+        { key: 'kin', url: `https://openapi.naver.com/v1/search/kin.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim` },
+        { key: 'web', url: `https://openapi.naver.com/v1/search/webkr.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim` },
+        { key: 'image', url: `https://openapi.naver.com/v1/search/image.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim` }
+    ];
+
+    const openApiPromises = targets.map(target => 
+        doRequest(target.url, { method: 'GET', headers: openApiHeaders })
+            .then(res => ({ key: target.key, ...res }))
+    );
 
     // -----------------------------------------------------------
-    // 3. 오픈 API - 카페 검색 (Content Count)
-    // -----------------------------------------------------------
-    const cafePromise = doRequest(`https://openapi.naver.com/v1/search/cafearticle.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim`, {
-        method: 'GET',
-        headers: {
-            'X-Naver-Client-Id': OPEN_CLIENT_ID,
-            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET
-        }
-    });
-
-    // -----------------------------------------------------------
-    // 4. 데이터랩 API (Search Trend - Last 1 Year)
+    // 3. 데이터랩 API (Search Trend)
     // -----------------------------------------------------------
     const today = new Date();
     const oneYearAgo = new Date();
@@ -156,18 +153,26 @@ app.get('/api/keywords', async (req, res) => {
     const datalabPromise = doRequest(`https://openapi.naver.com/v1/datalab/search`, {
         method: 'POST',
         headers: {
-            'X-Naver-Client-Id': OPEN_CLIENT_ID,
-            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET,
+            ...openApiHeaders,
             'Content-Type': 'application/json'
         }
     }, datalabBody);
 
-    // Wait for all requests
-    const [adRes, blogRes, cafeRes, datalabRes] = await Promise.all([adPromise, blogPromise, cafePromise, datalabPromise]);
+    // Wait for everything
+    const [adRes, datalabRes, ...openApiResults] = await Promise.all([
+        adPromise, 
+        datalabPromise, 
+        ...openApiPromises
+    ]);
 
     // -----------------------------------------------------------
-    // 결과 조합 (Robust Fallback Logic)
+    // Result Assembly
     // -----------------------------------------------------------
+    const contentData = {};
+    openApiResults.forEach(r => {
+        contentData[r.key] = r.success && r.data ? (r.data.total || 0) : 0;
+    });
+
     let mainKeyword = null;
     let relatedKeywords = [];
     let dataSource = 'combined_api';
@@ -175,7 +180,7 @@ app.get('/api/keywords', async (req, res) => {
         adApiStatus: adRes.success ? 'OK' : adRes.status || 'Error',
         adApiError: adRes.error,
         datalabStatus: datalabRes.success ? 'OK' : datalabRes.status || 'Error',
-        datalabError: datalabRes.error
+        openApiErrors: openApiResults.filter(r => !r.success).map(r => r.key)
     };
 
     // 1순위: 광고 API 데이터 사용
@@ -184,9 +189,9 @@ app.get('/api/keywords', async (req, res) => {
         relatedKeywords = adRes.data.keywordList.slice(1, 21);
     } 
     // 2순위: 광고 API 실패 시, 오픈 API(블로그) 데이터로 추정
-    else if (blogRes.success && (blogRes.data.total !== undefined)) {
+    else if (contentData.blog > 0) {
         console.warn("[API Warning] Ad API failed. Using Open API fallback.");
-        const total = blogRes.data.total;
+        const total = contentData.blog;
         dataSource = 'open_api_fallback';
         
         mainKeyword = {
@@ -197,7 +202,7 @@ app.get('/api/keywords', async (req, res) => {
             monthlyAveMobileClkCnt: Math.floor(total * 0.1),
             compIdx: total > 50000 ? "높음" : "중간"
         };
-
+        // Generate simulated related keywords
         const suffixes = ["추천", "가격", "비용", "후기", "예약", "위치", "잘하는곳", "정보", "할인", "이벤트"];
         relatedKeywords = suffixes.map((suffix, index) => ({
             relKeyword: `${cleanKeyword} ${suffix}`,
@@ -206,40 +211,26 @@ app.get('/api/keywords', async (req, res) => {
             compIdx: index % 3 === 0 ? "높음" : index % 3 === 1 ? "중간" : "낮음"
         }));
     } else {
-        // 모든 API 실패
         console.error("[API Error] All APIs failed.");
         return res.status(500).json({ error: "데이터 조회 실패", debug: debugInfo });
     }
 
-    // -----------------------------------------------------------
-    // Trend Data Logic
-    // -----------------------------------------------------------
+    // Trend Data: If failed, return empty array (do NOT fake it)
     let trendData = [];
     if (datalabRes.success && datalabRes.data.results && datalabRes.data.results[0] && datalabRes.data.results[0].data) {
         trendData = datalabRes.data.results[0].data;
     } else {
-        console.warn("[API Warning] DataLab API failed. Using simulated trend.");
-        // Fallback: Generate Simulated Trend
-        for (let i = 0; i < 12; i++) {
-            const date = new Date();
-            date.setMonth(date.getMonth() - (11 - i));
-            trendData.push({
-                period: date.toISOString().split('T')[0],
-                ratio: 30 + Math.random() * 70
-            });
-        }
+        console.warn("[API Warning] DataLab API failed. Hiding graph.");
+        trendData = []; // No fake data
     }
 
     const result = {
         mainKeyword,
         relatedKeywords,
-        content: {
-            blogTotal: blogRes.success ? blogRes.data.total : 0,
-            cafeTotal: cafeRes.success ? cafeRes.data.total : 0,
-        },
+        content: contentData, // Contains blog, cafe, news, shop, kin, web, image
         trend: trendData,
         _source: dataSource,
-        _debug: debugInfo // 프론트엔드에서 확인 가능하도록 디버그 정보 포함
+        _debug: debugInfo
     };
 
     console.log('[API] Response sent successfully.');
