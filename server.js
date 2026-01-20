@@ -15,17 +15,19 @@ const distPath = path.join(__dirname, 'dist');
 app.use(express.json());
 
 // ----------------------------------------------------------------------
-// 1. 네이버 검색광고 API Credentials
+// 1. 네이버 검색광고 API (IP제한이 엄격함 - 실패 시 오픈 API로 자동 전환)
 // ----------------------------------------------------------------------
 const AD_CUSTOMER_ID = "4242810";
 const AD_ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
 const AD_SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 
 // ----------------------------------------------------------------------
-// 2. 네이버 오픈 API Credentials
+// 2. 네이버 오픈 API (개발자센터에서 등록한 Client ID)
 // ----------------------------------------------------------------------
 const OPEN_CLIENT_ID = "vQAN_RNU8A7kvy4N_aZI";
 const OPEN_CLIENT_SECRET = "0efwCNoAP7";
+// 네이버 개발자 센터에 등록한 "Web 서비스 URL"과 일치해야 함
+const SERVICE_URL = "https://port-0-smt-9144-mkkldwi351bd93e1.sel3.cloudtype.app";
 
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
@@ -42,7 +44,7 @@ app.get('/api/naver-keywords', async (req, res) => {
   }
 
   const cleanKeyword = keyword.trim().replace(/\s+/g, '');
-  let adApiErrorDetail = '';
+  let adApiFailReason = '';
 
   // 1순위: 검색광고 API 시도
   try {
@@ -50,11 +52,11 @@ app.get('/api/naver-keywords', async (req, res) => {
     const adData = await fetchFromAdApi(cleanKeyword);
     return res.json({ ...adData, _source: 'ad_api' });
   } catch (adError) {
-    // 에러 상세 분석
-    const status = adError.response?.status || 500;
-    const msg = adError.response?.data?.message || adError.message;
-    adApiErrorDetail = `Ad API Error(${status}): ${msg}`;
-    console.warn(`[Fail 1] ${adApiErrorDetail}. Switching to Open API.`);
+    // 에러 로그 구체화
+    const status = adError.response?.status || 'Unknown';
+    const msg = JSON.stringify(adError.response?.data || adError.message);
+    adApiFailReason = `Ad API(${status}): ${msg}`;
+    console.warn(`[Fail 1] ${adApiFailReason}. Switching to Open API.`);
     
     // 2순위: 오픈 API (블로그 + 데이터랩) 시도
     try {
@@ -71,17 +73,18 @@ app.get('/api/naver-keywords', async (req, res) => {
         return res.json({ ...combinedData, _source: 'open_api' });
 
     } catch (openError) {
-        const openStatus = openError.response?.status || 500;
-        const openMsg = openError.response?.data?.message || openError.message;
-        const openApiErrorDetail = `Open API Error(${openStatus}): ${openMsg}`;
+        const status = openError.response?.status || 'Unknown';
+        const msg = JSON.stringify(openError.response?.data || openError.message);
+        const openApiFailReason = `Open API(${status}): ${msg}`;
 
-        console.error(`[Fail 2] All APIs failed.`);
-        console.error(`1. ${adApiErrorDetail}`);
-        console.error(`2. ${openApiErrorDetail}`);
+        console.error(`[Fail 2] Final Failure.`);
+        console.error(`Reason 1: ${adApiFailReason}`);
+        console.error(`Reason 2: ${openApiFailReason}`);
 
+        // 프론트엔드에 구체적인 에러 메시지 전달
         return res.status(500).json({ 
-            error: '데이터 조회 실패',
-            details: `검색광고 API와 오픈 API 모두 응답하지 않습니다.\n1차 실패: ${adApiErrorDetail}\n2차 실패: ${openApiErrorDetail}`
+            error: 'API 호출 실패',
+            details: `검색광고 API와 오픈 API 모두 실패했습니다.\n[광고API 오류]: ${adApiFailReason}\n[오픈API 오류]: ${openApiFailReason}`
         });
     }
   }
@@ -105,7 +108,8 @@ async function fetchFromAdApi(keyword) {
             'X-API-KEY': AD_ACCESS_LICENSE,
             'X-Customer': AD_CUSTOMER_ID,
             'X-Signature': signature
-        }
+        },
+        timeout: 3000 // 3초 안에 응답 없으면 포기 (빠른 전환 위해)
     });
     return response.data;
 }
@@ -121,8 +125,11 @@ async function fetchFromBlogApi(keyword) {
         },
         headers: {
             'X-Naver-Client-Id': OPEN_CLIENT_ID,
-            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET
-        }
+            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET,
+            // 중요: 네이버 개발자 센터에 등록된 URL을 Referer로 보냄
+            'Referer': SERVICE_URL 
+        },
+        timeout: 5000
     });
     return response.data;
 }
@@ -138,13 +145,19 @@ async function fetchFromDataLabApi(keyword) {
         startDate: formatDate(oneYearAgo),
         endDate: formatDate(today),
         timeUnit: 'month',
-        keywordGroups: [{ groupName: keyword, keywords: [keyword] }]
+        keywordGroups: [{ groupName: keyword, keywords: [keyword] }],
+        device: "", // pc, mo, or empty(all)
+        ages: [], 
+        gender: ""
     }, {
         headers: {
             'X-Naver-Client-Id': OPEN_CLIENT_ID,
             'X-Naver-Client-Secret': OPEN_CLIENT_SECRET,
-            'Content-Type': 'application/json'
-        }
+            'Content-Type': 'application/json',
+            // 중요: 네이버 개발자 센터에 등록된 URL을 Referer로 보냄
+            'Referer': SERVICE_URL
+        },
+        timeout: 5000
     });
     return response.data;
 }

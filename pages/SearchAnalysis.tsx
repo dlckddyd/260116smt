@@ -142,17 +142,25 @@ const SearchAnalysis: React.FC = () => {
 
     } catch (err: any) {
       console.error("Analysis Error:", err);
-      // 에러 메시지 포맷팅 개선
       let displayMsg = '분석 중 오류가 발생했습니다.';
       
-      if (err.response?.data) {
-          if (err.response.data.details) {
-              displayMsg = err.response.data.details; // 백엔드가 보내준 상세 메시지 사용
-          } else if (err.response.data.error) {
+      // Axios Error Handling
+      if (err.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          if (err.response.data && err.response.data.details) {
+              displayMsg = err.response.data.details;
+          } else if (err.response.data && err.response.data.error) {
               displayMsg = err.response.data.error;
+          } else {
+              displayMsg = `서버 오류 (${err.response.status})`;
           }
-      } else if (err.message) {
-          displayMsg = err.message;
+      } else if (err.request) {
+          // The request was made but no response was received
+          displayMsg = '서버로부터 응답이 없습니다. 잠시 후 다시 시도해주세요.';
+      } else {
+          // Something happened in setting up the request that triggered an Error
+          displayMsg = err.message || '알 수 없는 오류가 발생했습니다.';
       }
       
       setError(displayMsg);
@@ -211,12 +219,14 @@ const SearchAnalysis: React.FC = () => {
       {/* Results Dashboard */}
       <div className="max-w-7xl mx-auto px-6 py-12 -mt-10 relative z-20">
         {error && (
-            <div className="bg-red-50 text-red-600 p-6 rounded-xl text-center border border-red-100 flex flex-col items-center justify-center gap-2 whitespace-pre-line">
+            <div className="bg-red-50 text-red-600 p-6 rounded-xl text-center border border-red-100 flex flex-col items-center justify-center gap-2 whitespace-pre-line shadow-lg">
                 <div className="flex items-center gap-2 font-bold text-lg mb-2">
                     <AlertCircle className="w-6 h-6" /> 분석 실패
                 </div>
-                <p className="text-sm">{error}</p>
-                <p className="text-xs text-red-400 mt-2">API 설정(IP, 키값 등)을 확인해주세요.</p>
+                <p className="text-sm font-medium">{error}</p>
+                <div className="mt-4 text-xs text-red-400 bg-white/50 px-4 py-2 rounded-lg">
+                   오류가 지속되면 관리자에게 문의해주세요.
+                </div>
             </div>
         )}
 
