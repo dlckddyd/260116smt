@@ -9,7 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 8001; 
+// [중요] Cloudtype 설정(스크린샷)에 맞춰 포트를 3000으로 변경합니다.
+const PORT = process.env.PORT || 3000; 
 
 const distPath = path.join(__dirname, 'dist');
 
@@ -26,6 +27,12 @@ const OPEN_CLIENT_SECRET = "0efwCNoAP7";
 
 // Middleware
 app.use(express.json());
+
+// Request Logging Middleware (디버깅용 로그)
+app.use((req, res, next) => {
+  console.log(`[Request] ${req.method} ${req.url}`);
+  next();
+});
 
 // Helper: HTTPS Request Wrapper
 function doRequest(url, options, postData) {
@@ -65,7 +72,7 @@ app.get('/api/keywords', async (req, res) => {
   const cleanKeyword = keyword.toString().replace(/\s+/g, '');
   const timestamp = Date.now().toString();
 
-  console.log(`[API] 검색 요청: ${keyword} (clean: ${cleanKeyword})`);
+  console.log(`[API] Processing Keyword: ${keyword} (clean: ${cleanKeyword})`);
 
   try {
     // -----------------------------------------------------------
@@ -75,7 +82,7 @@ app.get('/api/keywords', async (req, res) => {
         .update(`${timestamp}.GET./keywordstool`)
         .digest('base64');
     
-    console.log('[API] 검색광고 API 호출 중...');
+    console.log('[API] Calling Naver Ad API...');
     const adData = await doRequest(`https://api.naver.com/keywordstool?hintKeywords=${encodeURIComponent(cleanKeyword)}&showDetail=1`, {
         method: 'GET',
         headers: {
@@ -86,17 +93,17 @@ app.get('/api/keywords', async (req, res) => {
         }
     });
 
-    console.log('[API] 검색광고 API 성공');
+    console.log('[API] Ad API Success');
     res.json({ ...adData, _source: 'ad_api' });
 
   } catch (adError) {
-    console.error("[API] 검색광고 API 실패, 오픈 API로 전환:", adError.message);
+    console.error("[API] Ad API Failed, switching to fallback:", adError.message);
 
     try {
         // -----------------------------------------------------------
         // 2. Fallback: 네이버 오픈 API (블로그 검색 결과수로 추정)
         // -----------------------------------------------------------
-        console.log('[API] 오픈 API (블로그) 호출 중...');
+        console.log('[API] Calling Naver Open API (Blog Search)...');
         const blogData = await doRequest(`https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(cleanKeyword)}&display=1&sort=sim`, {
             method: 'GET',
             headers: {
@@ -119,11 +126,11 @@ app.get('/api/keywords', async (req, res) => {
             meta: { blogTotal: total }
         };
         
-        console.log('[API] 오픈 API 성공 (Fallback 데이터 반환)');
+        console.log('[API] Open API Success (Fallback data)');
         res.json(fallbackData);
 
     } catch (openError) {
-        console.error("[API] 모든 API 호출 실패:", openError.message);
+        console.error("[API] All APIs Failed:", openError.message);
         res.status(500).json({ error: "데이터를 가져오는데 실패했습니다.", details: openError.message });
     }
   }
@@ -134,10 +141,13 @@ app.get('/api/keywords', async (req, res) => {
 // =================================================================
 
 // Cloudtype Health Check
-app.get('/healthz', (req, res) => res.status(200).send('OK'));
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK');
+});
 
 // Serve Static Files
 if (fs.existsSync(distPath)) {
+  console.log(`[System] Serving static files from ${distPath}`);
   app.use(express.static(distPath, {
     maxAge: '1d',
     setHeaders: (res, path) => {
@@ -157,10 +167,13 @@ app.get('*', (req, res) => {
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(500).send('Deployment Error: App build files not found.');
+    res.status(500).send('Deployment Error: App build files not found. Please check build logs.');
   }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`===========================================`);
+  console.log(`   Server running on port ${PORT}`);
+  console.log(`   API Endpoint: /api/keywords`);
+  console.log(`===========================================`);
 });
