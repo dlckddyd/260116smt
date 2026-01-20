@@ -42,9 +42,8 @@ const Admin: React.FC = () => {
   // Auto-attempt login on mount if admin
   useEffect(() => {
     if (isAdmin && !auth.currentUser) {
-        signInAnonymously(auth).catch((e) => {
-            console.warn("Auto-login failed. If your database is in Test Mode, this is fine.", e);
-        });
+        // Try silent login
+        signInAnonymously(auth).catch(() => {});
     }
   }, [isAdmin]);
 
@@ -59,13 +58,21 @@ const Admin: React.FC = () => {
     }
   };
 
-  // Helper: Try auth, but don't block if it fails (allows Public/Test mode to work)
-  const tryAuth = async () => {
+  // Helper: Promise with timeout
+  const withTimeout = <T,>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> => {
+      return Promise.race([
+          promise,
+          new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms))
+      ]);
+  };
+
+  // Helper: Try auth with short timeout
+  const ensureAuth = async () => {
     if (!auth.currentUser) {
         try {
-            await signInAnonymously(auth);
+            await withTimeout(signInAnonymously(auth), 3000, "Auth Timeout");
         } catch (e) {
-            console.warn("Auth attempt failed. Proceeding anyway.", e);
+            console.warn("Auth attempt skipped (timeout or error). Proceeding assuming public rules.");
         }
     }
   };
@@ -74,28 +81,35 @@ const Admin: React.FC = () => {
   const handleFileUpload = async (file: File): Promise<string> => {
     if (!file) return "";
     
-    // Try auth first
-    await tryAuth();
+    setIsUploading(true);
 
     try {
-      setIsUploading(true);
-      
+      await ensureAuth();
+
       const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
       const fileName = `uploads/${Date.now()}_${safeName}`;
       const storageRef = ref(storage, fileName);
       
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      // Upload with 15s timeout
+      const snapshot = await withTimeout(
+          uploadBytes(storageRef, file), 
+          15000, 
+          "업로드 시간이 초과되었습니다."
+      ) as any;
+      
+      const downloadURL = await getDownloadURL(snapshot.ref);
       return downloadURL;
 
     } catch (error: any) {
       console.error("Upload failed", error);
       let msg = "이미지 업로드에 실패했습니다.";
-      if (error.code === 'storage/unauthorized') {
-          msg = "업로드 권한이 없습니다. Firebase Console에서 Storage Rules를 확인하거나 Authentication(익명 로그인)을 활성화해주세요.";
-      } else if (error.code === 'storage/retry-limit-exceeded') {
-          msg = "시간이 초과되었습니다. 인터넷 연결을 확인해주세요.";
+      
+      if (error.message === "업로드 시간이 초과되었습니다.") {
+          msg = "서버 응답이 너무 느립니다. (시간 초과)";
+      } else if (error.code === 'storage/unauthorized') {
+          msg = "업로드 권한이 없습니다. Firebase Storage 규칙을 확인해주세요.";
       }
+      
       alert(msg);
       return "";
     } finally {
@@ -115,14 +129,24 @@ const Admin: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || !activeServiceIdForUpload) return;
 
+    // Reset input immediately to allow re-selection of same file if needed
+    if (mainImageInputRef.current) mainImageInputRef.current.value = '';
+
     const url = await handleFileUpload(file);
     if (url) {
-        await updateServiceImage(activeServiceIdForUpload, url);
-        alert("이미지가 변경되었습니다.");
+        try {
+            setIsUploading(true);
+            await updateServiceImage(activeServiceIdForUpload, url);
+            alert("이미지가 변경되었습니다.");
+        } catch(e) {
+            alert("이미지는 업로드되었으나 데이터베이스 저장에 실패했습니다.");
+        } finally {
+            setIsUploading(false);
+            setActiveServiceIdForUpload(null);
+        }
+    } else {
+        setActiveServiceIdForUpload(null);
     }
-    
-    if (mainImageInputRef.current) mainImageInputRef.current.value = '';
-    setActiveServiceIdForUpload(null);
   };
 
   // --- FAQ Management ---
@@ -137,12 +161,12 @@ const Admin: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || !activeBlockIdForUpload) return;
 
+    if (faqFileInputRef.current) faqFileInputRef.current.value = '';
+
     const url = await handleFileUpload(file);
     if (url) {
         setNewFaqBlocks(prev => prev.map(b => b.id === activeBlockIdForUpload ? { ...b, content: url } : b));
     }
-
-    if (faqFileInputRef.current) faqFileInputRef.current.value = '';
     setActiveBlockIdForUpload(null);
   };
 
@@ -150,22 +174,22 @@ const Admin: React.FC = () => {
     if (!newFaqQuestion.trim()) return alert("질문을 입력해주세요.");
     if (newFaqBlocks.length === 0) return alert("내용을 입력해주세요.");
     
-    await tryAuth();
-
     setIsUploading(true); 
     try {
-        await addFaq({
+        await ensureAuth();
+        await withTimeout(addFaq({
             category: newFaqCategory,
             question: newFaqQuestion,
             blocks: newFaqBlocks
-        });
+        }), 10000, "DB 저장 시간 초과");
+        
         setShowFaqModal(false);
         setNewFaqQuestion('');
         setNewFaqBlocks([]);
         alert("FAQ가 등록되었습니다.");
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
-        alert("등록 실패: Firebase 권한을 확인해주세요.");
+        alert(`등록 실패: ${e.message || "오류가 발생했습니다."}`);
     } finally {
         setIsUploading(false);
     }
@@ -202,30 +226,31 @@ const Admin: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (reviewFileInputRef.current) reviewFileInputRef.current.value = '';
+
     const url = await handleFileUpload(file);
     if (url) {
         setNewReview(prev => ({ ...prev, imageUrl: url, type: 'image' }));
     }
-    if (reviewFileInputRef.current) reviewFileInputRef.current.value = '';
   };
 
   const handleAddReview = async () => {
     if (!newReview.name || !newReview.company) return alert("이름과 업체명을 입력해주세요.");
     
-    await tryAuth();
-
     setIsUploading(true);
     try {
-        await addReview({
+        await ensureAuth();
+        await withTimeout(addReview({
             ...newReview,
             type: newReview.type as 'text' | 'image'
-        });
+        }), 10000, "DB 저장 시간 초과");
+        
         setShowReviewModal(false);
         setNewReview({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
         alert("후기가 등록되었습니다.");
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
-        alert("등록 실패: Firebase 권한을 확인해주세요.");
+        alert(`등록 실패: ${e.message || "오류가 발생했습니다."}`);
     } finally {
         setIsUploading(false);
     }
@@ -273,12 +298,19 @@ const Admin: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
-      {/* Loading Overlay */}
+      {/* Loading Overlay with Cancel Button */}
       {isUploading && (
-          <div className="fixed inset-0 bg-black/50 z-[60] flex flex-col items-center justify-center text-white backdrop-blur-sm">
-              <Loader2 className="w-12 h-12 animate-spin mb-4" />
+          <div className="fixed inset-0 bg-black/70 z-[60] flex flex-col items-center justify-center text-white backdrop-blur-sm">
+              <Loader2 className="w-12 h-12 animate-spin mb-4 text-brand-accent" />
               <p className="text-lg font-bold">처리 중입니다...</p>
-              <p className="text-sm opacity-80 mt-2">잠시만 기다려주세요</p>
+              <p className="text-sm opacity-80 mt-2 text-gray-300">잠시만 기다려주세요</p>
+              
+              <button 
+                onClick={() => setIsUploading(false)}
+                className="mt-8 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-medium border border-white/20 transition-colors flex items-center gap-2"
+              >
+                <X className="w-4 h-4" /> 취소하기
+              </button>
           </div>
       )}
 
