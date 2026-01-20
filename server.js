@@ -16,6 +16,8 @@ const distPath = path.join(__dirname, 'dist');
 
 // =================================================================
 // [API Key Configuration]
+// 주의: 네이버 검색광고 API는 'IP 허용 설정'이 필수입니다.
+// 로컬이나 클라우드 서버의 IP가 허용되어 있는지 확인해야 합니다.
 // =================================================================
 const AD_CUSTOMER_ID = "4242810";
 const AD_ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
@@ -31,7 +33,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Helper: HTTPS Request Wrapper
+// Helper: HTTPS Request Wrapper with Detailed Logging
 function doRequest(url, options, postData) {
   return new Promise((resolve, reject) => {
     const requestOptions = { ...options };
@@ -49,24 +51,29 @@ function doRequest(url, options, postData) {
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
             if (res.statusCode >= 200 && res.statusCode < 300) {
-                try { resolve(JSON.parse(data)); } catch(e) { 
-                    console.error("JSON Parse Error:", e);
-                    resolve(null); 
+                try { resolve({ success: true, data: JSON.parse(data) }); } 
+                catch(e) { 
+                    console.error("[JSON Parse Error]", e);
+                    resolve({ success: false, error: "JSON Parse Error", raw: data }); 
                 }
             } else {
+                // API 실패 시 상세 로그 출력
+                console.warn(`[API FAILED] URL: ${url}`);
+                console.warn(`[API FAILED] Status: ${res.statusCode}`);
+                console.warn(`[API FAILED] Body: ${data}`);
+                
                 try {
                     const parsed = JSON.parse(data);
-                    console.warn(`[API Fail] ${url} (${res.statusCode}):`, parsed.message || parsed);
+                    resolve({ success: false, status: res.statusCode, error: parsed.message || parsed, raw: parsed });
                 } catch(e) {
-                    console.warn(`[API Fail] ${url} (${res.statusCode}):`, data);
+                    resolve({ success: false, status: res.statusCode, error: data, raw: data });
                 }
-                resolve(null);
             }
         });
     });
     req.on('error', (e) => {
         console.error(`[Network Error] ${url}:`, e.message);
-        resolve(null);
+        resolve({ success: false, error: e.message });
     });
     if (postData) req.write(postData);
     req.end();
@@ -156,7 +163,7 @@ app.get('/api/keywords', async (req, res) => {
     }, datalabBody);
 
     // Wait for all requests
-    const [adData, blogData, cafeData, datalabData] = await Promise.all([adPromise, blogPromise, cafePromise, datalabPromise]);
+    const [adRes, blogRes, cafeRes, datalabRes] = await Promise.all([adPromise, blogPromise, cafePromise, datalabPromise]);
 
     // -----------------------------------------------------------
     // 결과 조합 (Robust Fallback Logic)
@@ -164,19 +171,24 @@ app.get('/api/keywords', async (req, res) => {
     let mainKeyword = null;
     let relatedKeywords = [];
     let dataSource = 'combined_api';
+    let debugInfo = {
+        adApiStatus: adRes.success ? 'OK' : adRes.status || 'Error',
+        adApiError: adRes.error,
+        datalabStatus: datalabRes.success ? 'OK' : datalabRes.status || 'Error',
+        datalabError: datalabRes.error
+    };
 
     // 1순위: 광고 API 데이터 사용
-    if (adData && adData.keywordList && adData.keywordList.length > 0) {
-        mainKeyword = adData.keywordList[0];
-        relatedKeywords = adData.keywordList.slice(1, 21);
+    if (adRes.success && adRes.data && adRes.data.keywordList && adRes.data.keywordList.length > 0) {
+        mainKeyword = adRes.data.keywordList[0];
+        relatedKeywords = adRes.data.keywordList.slice(1, 21);
     } 
     // 2순위: 광고 API 실패 시, 오픈 API(블로그) 데이터로 추정
-    else if (blogData && (blogData.total !== undefined)) {
-        console.warn("[API Warning] Ad API failed or returned empty. Using Open API fallback.");
-        const total = blogData.total;
+    else if (blogRes.success && (blogRes.data.total !== undefined)) {
+        console.warn("[API Warning] Ad API failed. Using Open API fallback.");
+        const total = blogRes.data.total;
         dataSource = 'open_api_fallback';
         
-        // 블로그 발행량을 기반으로 검색량 추정 (Heuristic)
         mainKeyword = {
             relKeyword: cleanKeyword,
             monthlyPcQc: Math.floor(total * 0.5),
@@ -186,7 +198,6 @@ app.get('/api/keywords', async (req, res) => {
             compIdx: total > 50000 ? "높음" : "중간"
         };
 
-        // Fallback: Generate Synthetic Related Keywords
         const suffixes = ["추천", "가격", "비용", "후기", "예약", "위치", "잘하는곳", "정보", "할인", "이벤트"];
         relatedKeywords = suffixes.map((suffix, index) => ({
             relKeyword: `${cleanKeyword} ${suffix}`,
@@ -195,23 +206,23 @@ app.get('/api/keywords', async (req, res) => {
             compIdx: index % 3 === 0 ? "높음" : index % 3 === 1 ? "중간" : "낮음"
         }));
     } else {
+        // 모든 API 실패
         console.error("[API Error] All APIs failed.");
-        return res.status(500).json({ error: "데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요." });
+        return res.status(500).json({ error: "데이터 조회 실패", debug: debugInfo });
     }
 
     // -----------------------------------------------------------
-    // Trend Data Logic (With Fallback)
+    // Trend Data Logic
     // -----------------------------------------------------------
     let trendData = [];
-    if (datalabData && datalabData.results && datalabData.results[0] && datalabData.results[0].data) {
-        trendData = datalabData.results[0].data;
+    if (datalabRes.success && datalabRes.data.results && datalabRes.data.results[0] && datalabRes.data.results[0].data) {
+        trendData = datalabRes.data.results[0].data;
     } else {
-        console.warn("[API Warning] DataLab API failed or empty. Using simulated trend.");
+        console.warn("[API Warning] DataLab API failed. Using simulated trend.");
         // Fallback: Generate Simulated Trend
         for (let i = 0; i < 12; i++) {
             const date = new Date();
             date.setMonth(date.getMonth() - (11 - i));
-            // Random trend curve
             trendData.push({
                 period: date.toISOString().split('T')[0],
                 ratio: 30 + Math.random() * 70
@@ -223,11 +234,12 @@ app.get('/api/keywords', async (req, res) => {
         mainKeyword,
         relatedKeywords,
         content: {
-            blogTotal: blogData?.total || 0,
-            cafeTotal: cafeData?.total || 0,
+            blogTotal: blogRes.success ? blogRes.data.total : 0,
+            cafeTotal: cafeRes.success ? cafeRes.data.total : 0,
         },
         trend: trendData,
-        _source: dataSource
+        _source: dataSource,
+        _debug: debugInfo // 프론트엔드에서 확인 가능하도록 디버그 정보 포함
     };
 
     console.log('[API] Response sent successfully.');
