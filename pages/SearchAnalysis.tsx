@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Monitor, Smartphone, TrendingUp, AlertCircle, BarChart2, Zap, ArrowRight, PieChart, Users, Target } from 'lucide-react';
+import { Search, Monitor, Smartphone, TrendingUp, AlertCircle, BarChart2, Zap, ArrowRight, PieChart, Users, Target, Activity } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import { useData } from '../context/DataContext';
 import axios from 'axios';
@@ -45,23 +45,16 @@ const SearchAnalysis: React.FC = () => {
       const response = await axios.get(`/api/naver-keywords?keyword=${encodeURIComponent(keyword)}`);
       const data = response.data;
 
-      // 데이터가 0인 경우에 대한 방어 로직 (소스가 추정이어도 0이면 실패로 간주)
-      if (data.monthlyTotalQc === 0 && data.source === 'estimation') {
-         setError("검색 데이터가 부족하여 분석할 수 없습니다.");
+      // 만약 데이터가 완전히 비어있다면 에러
+      if (data.status === 'error' || (!data.monthlyTotalQc && !data.source)) {
+         setError("데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
       } else {
          setResult(data);
       }
 
     } catch (err: any) {
       console.error("Analysis Error:", err);
-      let displayMsg = '분석 중 오류가 발생했습니다.';
-      
-      if (err.response?.data?.details) {
-          displayMsg = err.response.data.details;
-      } else if (err.response?.data?.error) {
-          displayMsg = err.response.data.error;
-      }
-      setError(displayMsg);
+      setError("서버 연결이 원활하지 않습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -189,20 +182,29 @@ const SearchAnalysis: React.FC = () => {
         )}
 
         {result && (
-            <div className="space-y-6">
-                <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <div className="space-y-6 animate-fade-in-up">
+                <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 gap-4">
                     <h2 className="text-xl font-bold text-gray-900">
                         '<span className="text-brand-accent">{result.keyword}</span>' 분석 결과
                     </h2>
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full border ${result.source === 'ad_api' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                        {result.source === 'ad_api' ? '데이터 출처: 네이버 검색광고 API (정확)' : '데이터 출처: 오픈 API 추정 (시뮬레이션)'}
-                    </span>
+                    
+                    {result.source === 'ad_api' ? (
+                        <span className="text-xs font-bold px-3 py-1.5 rounded-full border bg-green-50 text-green-700 border-green-200 flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            데이터 출처: 네이버 검색광고 (실시간 정확)
+                        </span>
+                    ) : (
+                        <span className="text-xs font-bold px-3 py-1.5 rounded-full border bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-2">
+                            <Activity className="w-3 h-3" />
+                            데이터 출처: AI 트렌드 종합 분석 (Simulated)
+                        </span>
+                    )}
                 </div>
 
                 {/* 1. Key Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8"></div>
+                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 transition-colors group-hover:bg-blue-100"></div>
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-4 text-gray-500 font-bold text-sm">
                                 <Search className="w-4 h-4"/> 월간 검색수 (최근 1개월)
@@ -224,7 +226,7 @@ const SearchAnalysis: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden flex flex-col justify-center">
+                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden flex flex-col justify-center group hover:-translate-y-1 transition-transform">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bold text-gray-900 flex items-center gap-2"><PieChart className="w-4 h-4 text-gray-400"/> 성별 비율</h3>
                         </div>
@@ -249,14 +251,14 @@ const SearchAnalysis: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden">
+                    <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden group hover:-translate-y-1 transition-transform">
                         <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-6"><Users className="w-4 h-4 text-gray-400"/> 연령별 분포</h3>
                         <div className="flex items-end justify-between h-32 gap-2">
                             {result.demographics.ages.map((val, i) => (
-                                <div key={i} className="flex-1 flex flex-col items-center group relative">
-                                    <div className="w-full bg-blue-100 rounded-t-md relative transition-all group-hover:bg-blue-600" style={{height: `${val}%`}}></div>
+                                <div key={i} className="flex-1 flex flex-col items-center group/bar relative">
+                                    <div className="w-full bg-blue-100 rounded-t-md relative transition-all group-hover/bar:bg-blue-600" style={{height: `${Math.max(val, 10)}%`}}></div>
                                     <span className="text-[10px] text-gray-400 mt-2 font-medium">{(i+1)*10}대</span>
-                                    <div className="absolute -top-8 text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">{val}%</div>
+                                    <div className="absolute -top-8 text-xs font-bold text-blue-600 opacity-0 group-hover/bar:opacity-100 transition-opacity">{val}%</div>
                                 </div>
                             ))}
                         </div>
@@ -270,7 +272,7 @@ const SearchAnalysis: React.FC = () => {
                             <TrendingUp className="w-5 h-5 text-gray-400" /> 월간 검색수 추이 (최근 1년)
                         </h3>
                         <div className="flex gap-4 text-xs font-medium text-gray-500">
-                           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div> Total Search</span>
+                           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div> Search Volume</span>
                         </div>
                     </div>
                     <TrendChart data={result.trend} />
