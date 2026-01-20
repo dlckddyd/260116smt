@@ -15,14 +15,14 @@ const distPath = path.join(__dirname, 'dist');
 app.use(express.json());
 
 // ----------------------------------------------------------------------
-// 1. 네이버 검색광고 API Info
+// 1. 네이버 검색광고 API (IP 제한으로 인해 Cloudtype에서는 실패할 확률 99%)
 // ----------------------------------------------------------------------
 const AD_CUSTOMER_ID = "4242810";
 const AD_ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
 const AD_SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 
 // ----------------------------------------------------------------------
-// 2. 네이버 오픈 API Info
+// 2. 네이버 오픈 API (IP 제한 없음 - 데이터 추정용)
 // ----------------------------------------------------------------------
 const OPEN_CLIENT_ID = "vQAN_RNU8A7kvy4N_aZI";
 const OPEN_CLIENT_SECRET = "0efwCNoAP7";
@@ -34,12 +34,6 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
 }
 
-// 에러 상세 파싱
-function getErrorDetails(error) {
-    if (error.response) return `Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`;
-    return error.message;
-}
-
 // 통합 API 핸들러
 app.get('/api/naver-keywords', async (req, res) => {
   const keyword = req.query.keyword;
@@ -47,120 +41,130 @@ app.get('/api/naver-keywords', async (req, res) => {
 
   const cleanKeyword = keyword.trim().replace(/\s+/g, '');
   
-  // 결과 객체 초기화
+  // 기본 데이터 구조 (실패 시에도 UI가 깨지지 않게 초기화)
   let result = {
       keyword: cleanKeyword,
       monthlyPcQc: 0,
       monthlyMobileQc: 0,
-      totalQc: 0,
+      monthlyTotalQc: 0,
       relKeywords: [],
       trend: [], // 12개월 추이
-      demographics: { male: 50, female: 50, ages: [10, 20, 30, 20, 10, 10] }, // 기본값
+      demographics: { male: 50, female: 50, ages: [10, 20, 30, 20, 10, 10] },
       source: 'none',
       status: 'ok'
   };
 
   try {
-      // 1. 병렬 호출 (속도 향상 및 독립성 보장)
-      // Ad API는 IP제한으로 실패 확률 높음 -> 실패해도 trend/blog 데이터로 복구
+      console.log(`Analyzing: ${cleanKeyword}`);
+
+      // 1. API 병렬 호출
+      // Ad API는 IP 문제로 실패할 가능성이 높지만 일단 시도합니다.
       const [adResult, dataLabResult, blogResult] = await Promise.allSettled([
           fetchFromAdApi(cleanKeyword),
           fetchFromDataLabApi(cleanKeyword),
           fetchFromBlogApi(cleanKeyword)
       ]);
 
-      // --- A. 검색광고 API 처리 ---
-      if (adResult.status === 'fulfilled' && adResult.value) {
-          const mainKw = adResult.value.keywordList?.[0];
-          if (mainKw) {
-            result.source = 'ad_api';
-            result.monthlyPcQc = parseCount(mainKw.monthlyPcQc);
-            result.monthlyMobileQc = parseCount(mainKw.monthlyMobileQc);
-            result.totalQc = result.monthlyPcQc + result.monthlyMobileQc;
-            
-            // 연관검색어
-            result.relKeywords = adResult.value.keywordList.slice(1, 6).map(k => ({
-                keyword: k.relKeyword,
-                total: parseCount(k.monthlyPcQc) + parseCount(k.monthlyMobileQc),
-                pc: parseCount(k.monthlyPcQc),
-                mo: parseCount(k.monthlyMobileQc)
-            }));
+      let adApiSuccess = false;
+
+      // --- A. 검색광고 API 성공 시 (데이터가 가장 정확함) ---
+      if (adResult.status === 'fulfilled' && adResult.value && adResult.value.keywordList && adResult.value.keywordList.length > 0) {
+          const mainKw = adResult.value.keywordList[0];
+          // 검색광고 API는 정확히 일치하는 키워드가 아닐 수도 있으므로 확인
+          if (mainKw.relKeyword.replace(/\s/g,'') === cleanKeyword) {
+              result.source = 'ad_api';
+              result.monthlyPcQc = parseCount(mainKw.monthlyPcQc);
+              result.monthlyMobileQc = parseCount(mainKw.monthlyMobileQc);
+              result.monthlyTotalQc = result.monthlyPcQc + result.monthlyMobileQc;
+              
+              // 연관검색어
+              result.relKeywords = adResult.value.keywordList.slice(1, 6).map(k => ({
+                  keyword: k.relKeyword,
+                  total: parseCount(k.monthlyPcQc) + parseCount(k.monthlyMobileQc),
+                  pc: parseCount(k.monthlyPcQc),
+                  mo: parseCount(k.monthlyMobileQc),
+                  compIdx: k.compIdx || "중간"
+              }));
+              adApiSuccess = true;
           }
-      } else {
-          console.warn("Ad API Failed:", adResult.reason ? getErrorDetails(adResult.reason) : "Unknown");
       }
 
-      // --- B. 데이터랩(트렌드) API 처리 ---
+      // --- B. 데이터랩(트렌드) 데이터 파싱 ---
       let trendRatios = [];
       if (dataLabResult.status === 'fulfilled' && dataLabResult.value?.results?.[0]?.data) {
           // data: [{period: '2023-01-01', ratio: 12.5}, ...]
           trendRatios = dataLabResult.value.results[0].data.map(d => d.ratio);
       }
 
-      // --- C. 블로그 API 처리 (Fallback Volume) ---
+      // --- C. 블로그 문서수 (추정용) ---
       let blogTotal = 0;
       if (blogResult.status === 'fulfilled' && blogResult.value?.total) {
           blogTotal = blogResult.value.total;
       }
 
-      // --- D. 데이터 합성 및 보정 ---
-      
-      // 1. Volume이 0인 경우 (Ad API 실패) -> 블로그 수로 추정
-      if (result.totalQc === 0 && blogTotal > 0) {
-          result.source = 'open_api';
-          // 트렌드가 있으면 인기 키워드 (x2.5), 없으면 (x0.5)
-          const multiplier = trendRatios.length > 0 ? 2.5 : 0.5;
-          const estimated = Math.floor(blogTotal * multiplier);
-          
-          // PC/Mobile 비율 (일반적인 35:65 적용)
-          result.monthlyPcQc = Math.floor(estimated * 0.35);
-          result.monthlyMobileQc = Math.floor(estimated * 0.65);
-          result.totalQc = estimated;
+      // --- D. 실패 시 Fallback 로직 (추정 데이터 생성) ---
+      // 광고 API가 실패했거나(IP차단), 조회수가 0인 경우 오픈 API로 추정치 계산
+      if (!adApiSuccess || result.monthlyTotalQc === 0) {
+          console.log("Switching to Estimation Mode (Ad API blocked or empty)");
+          result.source = 'estimation'; // UI에서 '추정 데이터'로 표시
 
-          // 연관검색어 가짜 데이터 생성 (접미사 활용)
-          const suffix = [" 추천", " 맛집", " 가격", " 후기", " 예약"];
+          // [로직] 블로그 문서수 * 트렌드 가중치 = 추정 검색량
+          // 인기 키워드(트렌드 존재)는 블로그 수의 약 1.5~3배 검색량이 발생
+          // 비인기 키워드는 블로그 수의 0.3~0.5배
+          const multiplier = trendRatios.length > 0 ? 2.5 : 0.5;
+          
+          // 최소값 보정 (블로그가 0이어도 검색은 있을 수 있음)
+          let estimatedTotal = Math.max(Math.floor(blogTotal * multiplier), trendRatios.length > 0 ? 100 : 0);
+          
+          // 모바일 비중이 높은 요즘 추세 반영 (35:65)
+          result.monthlyPcQc = Math.floor(estimatedTotal * 0.35);
+          result.monthlyMobileQc = Math.floor(estimatedTotal * 0.65);
+          result.monthlyTotalQc = estimatedTotal;
+
+          // 연관 검색어 가짜 생성 (실제 연관검색어 API는 없으므로 파생 키워드 제공)
+          const suffix = [" 맛집", " 추천", " 가격", " 예약", " 후기"];
           result.relKeywords = suffix.map(s => ({
               keyword: cleanKeyword + s,
-              total: Math.floor(estimated * 0.3),
-              pc: Math.floor(estimated * 0.3 * 0.35),
-              mo: Math.floor(estimated * 0.3 * 0.65)
+              total: Math.floor(estimatedTotal * 0.3),
+              pc: Math.floor(estimatedTotal * 0.3 * 0.35),
+              mo: Math.floor(estimatedTotal * 0.3 * 0.65),
+              compIdx: "분석필요"
           }));
       }
 
-      // 2. Trend 데이터 생성 (TotalQc를 Trend Ratio에 맞춰 분배)
-      // DataLab은 0~100의 상대지수임.
+      // --- E. 트렌드 그래프 데이터 완성 ---
+      // DataLab은 0~100 상대값만 주므로, TotalQc에 맞춰 절대값으로 변환
       if (trendRatios.length > 0) {
-          // 최근 12개월 데이터로 맞춤 (부족하면 앞을 채움)
+          // 최근 12개월 데이터 맞추기
           let recentTrends = trendRatios.slice(-12);
-          while(recentTrends.length < 12) recentTrends.unshift(0);
+          // 데이터가 부족하면 앞쪽을 0이나 평균으로 채움
+          while(recentTrends.length < 12) {
+             recentTrends.unshift(recentTrends.length > 0 ? recentTrends[0] * 0.8 : 0);
+          }
           
-          // 평균 Ratio 구하기
-          const avgRatio = recentTrends.reduce((a,b)=>a+b, 0) / recentTrends.length || 1;
-          
-          // TotalQc는 "월간 평균"이므로, Ratio 1당 볼륨을 역산
-          // 월평균 = (Sum(Ratios) * UnitVolume) / 12
-          // UnitVolume = (TotalQc * 12) / Sum(Ratios)
-          const unitVol = (result.totalQc * 12) / recentTrends.reduce((a,b)=>a+b, 0);
+          const sumRatio = recentTrends.reduce((a,b)=>a+b, 0) || 1;
+          // 월평균 볼륨 = (Total 1년치 / 12) 가 아니라, 지금 구한 TotalQc가 '최근 한달' 기준이라 가정하고 역산
+          // 편의상 TotalQc를 최근달 값으로 보고 비율 역산
+          const lastRatio = recentTrends[recentTrends.length-1] || 1;
+          const unitVal = result.monthlyTotalQc / (lastRatio > 0 ? lastRatio : 1);
 
-          result.trend = recentTrends.map(r => Math.round(r * unitVol));
+          result.trend = recentTrends.map(r => Math.round(r * unitVal));
       } else {
           // 트렌드 정보도 없으면 평탄하게
-          result.trend = Array(12).fill(result.totalQc);
+          result.trend = Array(12).fill(result.monthlyTotalQc);
       }
 
-      // 3. Demographics (Ad API에서 안주므로 랜덤/고정값 처리하되, 키워드 특성 반영 시늉)
-      // 여기서는 UI 구현을 위해 임의의 그럴듯한 데이터를 생성합니다.
-      // (실제 데이터는 네이버 데이터랩 쇼핑인사이트 API 등을 써야 함)
+      // --- F. 인구통계 (성별/나이) 시뮬레이션 ---
+      // 광고 API가 차단되면 인구통계 정보가 아예 없습니다.
+      // 따라서 키워드 문자열을 해시값으로 사용하여 '고정된 난수'를 생성해 채워넣습니다.
+      // (새로고침해도 같은 키워드면 같은 그래프가 나옴)
       result.demographics = generateMockDemographics(cleanKeyword);
 
       return res.json(result);
 
   } catch (error) {
       console.error("Critical Error:", error);
-      return res.status(500).json({ 
-          error: "분석 중 서버 오류 발생", 
-          details: getErrorDetails(error) 
-      });
+      return res.status(500).json({ error: "Server Error", details: error.message });
   }
 });
 
@@ -175,60 +179,71 @@ function parseCount(val) {
     return 0;
 }
 
-// Mock Demographics Generator
+// -----------------------------------------------------------
+// Mock Demographics Generator (Deterministic based on keyword)
+// -----------------------------------------------------------
 function generateMockDemographics(keyword) {
-    // 키워드 해시를 이용해 "랜덤하지만 고정된" 값 생성
+    // 키워드를 시드로 사용하여 항상 같은 랜덤값이 나오도록 함
     let hash = 0;
-    for (let i = 0; i < keyword.length; i++) hash = keyword.charCodeAt(i) + ((hash << 5) - hash);
-    const normalize = (n) => Math.abs(n) % 100;
+    for (let i = 0; i < keyword.length; i++) {
+        hash = keyword.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const pseudoRandom = (seed) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+    };
     
-    let male = 30 + (normalize(hash) % 40); // 30~70%
-    let female = 100 - male;
+    // 1. 성별 (30% ~ 70% 사이 변동)
+    let maleRatio = 30 + Math.floor(pseudoRandom(hash) * 40);
     
-    // Ages: 10~60대
-    let ages = [
-        10 + (normalize(hash + 1) % 20),
-        20 + (normalize(hash + 2) % 30),
-        30 + (normalize(hash + 3) % 20),
-        20 + (normalize(hash + 4) % 10),
-        10 + (normalize(hash + 5) % 10),
-        5
-    ];
-    // Normalize to 100
-    const totalAge = ages.reduce((a,b)=>a+b,0);
-    ages = ages.map(a => Math.round(a / totalAge * 100));
+    // 2. 연령 (10대~60대 분포 생성)
+    // 키워드 길이에 따라 가중치를 다르게 주어 다양성 확보
+    let ages = [];
+    for(let i=1; i<=6; i++) {
+        ages.push(Math.floor(pseudoRandom(hash + i) * 100));
+    }
+    
+    // 합계 100으로 정규화
+    const totalAge = ages.reduce((a,b)=>a+b, 0);
+    ages = ages.map(a => Math.round((a / totalAge) * 100));
 
-    return { male, female, ages };
+    return { 
+        male: maleRatio, 
+        female: 100 - maleRatio, 
+        ages: ages 
+    };
 }
 
-// 1. Search Ad API
+// --- API Call Functions ---
+
 async function fetchFromAdApi(keyword) {
-    const timestamp = Date.now().toString();
-    const uri = '/keywordstool';
-    const method = 'GET';
-    const signature = crypto.createHmac('sha256', AD_SECRET_KEY)
-        .update(`${timestamp}.${method}.${uri}`)
-        .digest('base64');
+    try {
+        const timestamp = Date.now().toString();
+        const signature = crypto.createHmac('sha256', AD_SECRET_KEY)
+            .update(`${timestamp}.GET./keywordstool`)
+            .digest('base64');
 
-    const response = await axios.get(`https://api.naver.com${uri}`, {
-        params: { hintKeywords: keyword, showDetail: 1 },
-        headers: {
-            'X-Timestamp': timestamp,
-            'X-API-KEY': AD_ACCESS_LICENSE,
-            'X-Customer': AD_CUSTOMER_ID, // String type enforced
-            'X-Signature': signature
-        },
-        timeout: 4000
-    });
-    return response.data;
+        const response = await axios.get(`https://api.naver.com/keywordstool`, {
+            params: { hintKeywords: keyword, showDetail: 1 },
+            headers: {
+                'X-Timestamp': timestamp,
+                'X-API-KEY': AD_ACCESS_LICENSE,
+                'X-Customer': AD_CUSTOMER_ID,
+                'X-Signature': signature
+            },
+            timeout: 2500 // 짧은 타임아웃 (Cloudtype IP 차단시 빨리 포기하고 넘어가기 위함)
+        });
+        return response.data;
+    } catch (e) {
+        // 403, 500 등 에러 발생 시 throw하여 Promise.allSettled에서 rejected 처리
+        throw e;
+    }
 }
 
-// 2. DataLab API (Trend)
 async function fetchFromDataLabApi(keyword) {
     const today = new Date();
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(today.getFullYear() - 1);
-    
     const formatDate = d => d.toISOString().split('T')[0];
 
     const body = {
@@ -236,29 +251,26 @@ async function fetchFromDataLabApi(keyword) {
         endDate: formatDate(today),
         timeUnit: 'month',
         keywordGroups: [{ groupName: keyword, keywords: [keyword] }],
-        // device, gender, ages 필드 생략 (필요시 'pc', 'mo' 등으로 추가 요청해야 함)
+        // device, gender, ages는 필수값이 아니므로 생략 (보내면 400 에러 가능성 있음)
     };
 
     const response = await axios.post('https://openapi.naver.com/v1/datalab/search', body, {
         headers: {
             'X-Naver-Client-Id': OPEN_CLIENT_ID,
             'X-Naver-Client-Secret': OPEN_CLIENT_SECRET,
-            'Content-Type': 'application/json',
-            'Referer': SERVICE_URL
+            'Content-Type': 'application/json'
         },
         timeout: 4000
     });
     return response.data;
 }
 
-// 3. Blog API
 async function fetchFromBlogApi(keyword) {
     const response = await axios.get('https://openapi.naver.com/v1/search/blog.json', {
         params: { query: keyword, display: 1, sort: 'sim' },
         headers: {
             'X-Naver-Client-Id': OPEN_CLIENT_ID,
-            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET,
-            'Referer': SERVICE_URL
+            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET
         },
         timeout: 4000
     });
