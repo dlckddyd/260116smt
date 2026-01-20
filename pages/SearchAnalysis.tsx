@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Monitor, Smartphone, TrendingUp, AlertCircle, Lock, BarChart2, FileText, Target, Zap, ArrowRight, PieChart, Users, Calendar } from 'lucide-react';
+import { Search, Monitor, Smartphone, TrendingUp, AlertCircle, BarChart2, Zap, ArrowRight, PieChart, Users, Target } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import { useData } from '../context/DataContext';
 import axios from 'axios';
@@ -28,7 +28,6 @@ interface AnalysisResult {
 }
 
 const SearchAnalysis: React.FC = () => {
-  const { isAdmin } = useData(); 
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -46,7 +45,7 @@ const SearchAnalysis: React.FC = () => {
       const response = await axios.get(`/api/naver-keywords?keyword=${encodeURIComponent(keyword)}`);
       const data = response.data;
 
-      // 만약 0이라면 에러메시지보다는 안내를 표시
+      // 데이터가 0인 경우에 대한 방어 로직 (소스가 추정이어도 0이면 실패로 간주)
       if (data.monthlyTotalQc === 0 && data.source === 'estimation') {
          setError("검색 데이터가 부족하여 분석할 수 없습니다.");
       } else {
@@ -70,7 +69,7 @@ const SearchAnalysis: React.FC = () => {
 
   const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(num);
 
-  // 차트: 트렌드 (Green Line style like reference)
+  // 차트 컴포넌트: 트렌드 (Green Line)
   const TrendChart = ({ data }: { data: number[] }) => {
      const max = Math.max(...data, 100);
      const points = data.map((val, i) => {
@@ -89,7 +88,7 @@ const SearchAnalysis: React.FC = () => {
                  <line x1="0" y1="75" x2="100" y2="75" stroke="#f1f5f9" strokeWidth="0.5" strokeDasharray="2" />
                  <line x1="0" y1="100" x2="100" y2="100" stroke="#f1f5f9" strokeWidth="0.5" />
                  
-                 {/* Y-Axis Labels (Approximate) */}
+                 {/* Y-Axis Labels */}
                  <text x="-2" y="5" fontSize="3" fill="#94a3b8" textAnchor="end">{formatNumber(max)}</text>
                  <text x="-2" y="55" fontSize="3" fill="#94a3b8" textAnchor="end">{formatNumber(Math.round(max/2))}</text>
                  <text x="-2" y="100" fontSize="3" fill="#94a3b8" textAnchor="end">0</text>

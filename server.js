@@ -15,7 +15,7 @@ const distPath = path.join(__dirname, 'dist');
 app.use(express.json());
 
 // ----------------------------------------------------------------------
-// 1. 네이버 검색광고 API (IP 제한으로 인해 Cloudtype에서는 실패할 확률 99%)
+// 1. 네이버 검색광고 API (고정 IP 필요)
 // ----------------------------------------------------------------------
 const AD_CUSTOMER_ID = "4242810";
 const AD_ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
@@ -26,13 +26,26 @@ const AD_SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 // ----------------------------------------------------------------------
 const OPEN_CLIENT_ID = "vQAN_RNU8A7kvy4N_aZI";
 const OPEN_CLIENT_SECRET = "0efwCNoAP7";
-const SERVICE_URL = "https://port-0-smt-9144-mkkldwi351bd93e1.sel3.cloudtype.app";
 
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
 }
+
+// 서버 시작 시 현재 공인 IP 확인 (디버깅용)
+async function checkPublicIP() {
+    try {
+        const res = await axios.get('https://api.ipify.org?format=json');
+        console.log("------------------------------------------------");
+        console.log(`Current Server Public IP: ${res.data.ip}`);
+        console.log("이 IP를 네이버 광고시스템 API 설정에 등록해야 합니다.");
+        console.log("------------------------------------------------");
+    } catch (e) {
+        console.log("Failed to check public IP");
+    }
+}
+checkPublicIP();
 
 // 통합 API 핸들러
 app.get('/api/naver-keywords', async (req, res) => {
@@ -41,7 +54,7 @@ app.get('/api/naver-keywords', async (req, res) => {
 
   const cleanKeyword = keyword.trim().replace(/\s+/g, '');
   
-  // 기본 데이터 구조 (실패 시에도 UI가 깨지지 않게 초기화)
+  // 기본 결과 객체 (UI 깨짐 방지용 기본값)
   let result = {
       keyword: cleanKeyword,
       monthlyPcQc: 0,
@@ -55,10 +68,10 @@ app.get('/api/naver-keywords', async (req, res) => {
   };
 
   try {
-      console.log(`Analyzing: ${cleanKeyword}`);
+      console.log(`Analyzing Keyword: ${cleanKeyword}`);
 
-      // 1. API 병렬 호출
-      // Ad API는 IP 문제로 실패할 가능성이 높지만 일단 시도합니다.
+      // 1. 병렬 호출: 광고 API(우선순위) + 데이터랩/블로그(보조/대체)
+      // 광고 API는 IP 차단 가능성이 높지만, 성공하면 가장 정확하므로 무조건 시도합니다.
       const [adResult, dataLabResult, blogResult] = await Promise.allSettled([
           fetchFromAdApi(cleanKeyword),
           fetchFromDataLabApi(cleanKeyword),
@@ -67,17 +80,17 @@ app.get('/api/naver-keywords', async (req, res) => {
 
       let adApiSuccess = false;
 
-      // --- A. 검색광고 API 성공 시 (데이터가 가장 정확함) ---
+      // --- A. 검색광고 API 성공 시 (정확한 데이터) ---
       if (adResult.status === 'fulfilled' && adResult.value && adResult.value.keywordList && adResult.value.keywordList.length > 0) {
           const mainKw = adResult.value.keywordList[0];
-          // 검색광고 API는 정확히 일치하는 키워드가 아닐 수도 있으므로 확인
+          // 검색어가 정확히 일치하는지 확인 (유사 키워드가 올 수 있음)
           if (mainKw.relKeyword.replace(/\s/g,'') === cleanKeyword) {
-              result.source = 'ad_api';
+              result.source = 'ad_api'; // 출처: 광고 API
               result.monthlyPcQc = parseCount(mainKw.monthlyPcQc);
               result.monthlyMobileQc = parseCount(mainKw.monthlyMobileQc);
               result.monthlyTotalQc = result.monthlyPcQc + result.monthlyMobileQc;
               
-              // 연관검색어
+              // 연관검색어 (실제 데이터)
               result.relKeywords = adResult.value.keywordList.slice(1, 6).map(k => ({
                   keyword: k.relKeyword,
                   total: parseCount(k.monthlyPcQc) + parseCount(k.monthlyMobileQc),
@@ -96,32 +109,31 @@ app.get('/api/naver-keywords', async (req, res) => {
           trendRatios = dataLabResult.value.results[0].data.map(d => d.ratio);
       }
 
-      // --- C. 블로그 문서수 (추정용) ---
+      // --- C. 블로그 문서수 (추정 로직용) ---
       let blogTotal = 0;
       if (blogResult.status === 'fulfilled' && blogResult.value?.total) {
           blogTotal = blogResult.value.total;
       }
 
       // --- D. 실패 시 Fallback 로직 (추정 데이터 생성) ---
-      // 광고 API가 실패했거나(IP차단), 조회수가 0인 경우 오픈 API로 추정치 계산
+      // IP 차단으로 광고 API가 실패했거나, 검색량이 0으로 잡히는 경우 -> 오픈 API로 추정
       if (!adApiSuccess || result.monthlyTotalQc === 0) {
-          console.log("Switching to Estimation Mode (Ad API blocked or empty)");
-          result.source = 'estimation'; // UI에서 '추정 데이터'로 표시
+          console.log(">> Ad API blocked or empty. Switching to Estimation Mode.");
+          result.source = 'estimation'; // 출처: 추정
 
-          // [로직] 블로그 문서수 * 트렌드 가중치 = 추정 검색량
-          // 인기 키워드(트렌드 존재)는 블로그 수의 약 1.5~3배 검색량이 발생
-          // 비인기 키워드는 블로그 수의 0.3~0.5배
+          // [로직] 블로그 문서수와 트렌드 유무로 검색량 역산 추정
+          // 트렌드 데이터가 있으면 인기 키워드(x2.5), 없으면(x0.5)
           const multiplier = trendRatios.length > 0 ? 2.5 : 0.5;
           
           // 최소값 보정 (블로그가 0이어도 검색은 있을 수 있음)
-          let estimatedTotal = Math.max(Math.floor(blogTotal * multiplier), trendRatios.length > 0 ? 100 : 0);
+          let estimatedTotal = Math.max(Math.floor(blogTotal * multiplier), trendRatios.length > 0 ? 500 : 0);
           
-          // 모바일 비중이 높은 요즘 추세 반영 (35:65)
+          // 모바일 비중이 높은 요즘 추세 반영 (PC 35 : Mobile 65)
           result.monthlyPcQc = Math.floor(estimatedTotal * 0.35);
           result.monthlyMobileQc = Math.floor(estimatedTotal * 0.65);
           result.monthlyTotalQc = estimatedTotal;
 
-          // 연관 검색어 가짜 생성 (실제 연관검색어 API는 없으므로 파생 키워드 제공)
+          // 연관 검색어 가짜 생성 (접미사 활용)
           const suffix = [" 맛집", " 추천", " 가격", " 예약", " 후기"];
           result.relKeywords = suffix.map(s => ({
               keyword: cleanKeyword + s,
@@ -133,31 +145,28 @@ app.get('/api/naver-keywords', async (req, res) => {
       }
 
       // --- E. 트렌드 그래프 데이터 완성 ---
-      // DataLab은 0~100 상대값만 주므로, TotalQc에 맞춰 절대값으로 변환
+      // DataLab은 0~100 상대값만 주므로, TotalQc에 맞춰 절대값으로 변환하여 그래프용 배열 생성
       if (trendRatios.length > 0) {
-          // 최근 12개월 데이터 맞추기
+          // 최근 12개월 데이터 슬라이싱
           let recentTrends = trendRatios.slice(-12);
-          // 데이터가 부족하면 앞쪽을 0이나 평균으로 채움
           while(recentTrends.length < 12) {
+             // 데이터 부족 시 앞부분 채움
              recentTrends.unshift(recentTrends.length > 0 ? recentTrends[0] * 0.8 : 0);
           }
           
-          const sumRatio = recentTrends.reduce((a,b)=>a+b, 0) || 1;
-          // 월평균 볼륨 = (Total 1년치 / 12) 가 아니라, 지금 구한 TotalQc가 '최근 한달' 기준이라 가정하고 역산
-          // 편의상 TotalQc를 최근달 값으로 보고 비율 역산
+          // 가장 최근 달의 Ratio를 기준으로 전체 볼륨 역산
           const lastRatio = recentTrends[recentTrends.length-1] || 1;
           const unitVal = result.monthlyTotalQc / (lastRatio > 0 ? lastRatio : 1);
 
           result.trend = recentTrends.map(r => Math.round(r * unitVal));
       } else {
-          // 트렌드 정보도 없으면 평탄하게
+          // 트렌드 정보도 없으면 평탄한 그래프
           result.trend = Array(12).fill(result.monthlyTotalQc);
       }
 
       // --- F. 인구통계 (성별/나이) 시뮬레이션 ---
-      // 광고 API가 차단되면 인구통계 정보가 아예 없습니다.
-      // 따라서 키워드 문자열을 해시값으로 사용하여 '고정된 난수'를 생성해 채워넣습니다.
-      // (새로고침해도 같은 키워드면 같은 그래프가 나옴)
+      // 광고 API가 차단되면 인구통계 정보가 없습니다. UI를 위해 키워드 기반 난수 생성.
+      // (새로고침해도 키워드가 같으면 동일한 그래프가 나옴)
       result.demographics = generateMockDemographics(cleanKeyword);
 
       return res.json(result);
@@ -168,7 +177,7 @@ app.get('/api/naver-keywords', async (req, res) => {
   }
 });
 
-// 숫자 파싱 (< 10 같은 문자열 처리)
+// 숫자 파싱 함수 (< 10 같은 문자열 처리)
 function parseCount(val) {
     if (typeof val === 'number') return val;
     if (!val) return 0;
@@ -179,11 +188,8 @@ function parseCount(val) {
     return 0;
 }
 
-// -----------------------------------------------------------
-// Mock Demographics Generator (Deterministic based on keyword)
-// -----------------------------------------------------------
+// 인구통계 시뮬레이터 (키워드 해시 기반)
 function generateMockDemographics(keyword) {
-    // 키워드를 시드로 사용하여 항상 같은 랜덤값이 나오도록 함
     let hash = 0;
     for (let i = 0; i < keyword.length; i++) {
         hash = keyword.charCodeAt(i) + ((hash << 5) - hash);
@@ -193,17 +199,16 @@ function generateMockDemographics(keyword) {
         return x - Math.floor(x);
     };
     
-    // 1. 성별 (30% ~ 70% 사이 변동)
+    // 성별 (남성비율 30~70% 랜덤)
     let maleRatio = 30 + Math.floor(pseudoRandom(hash) * 40);
     
-    // 2. 연령 (10대~60대 분포 생성)
-    // 키워드 길이에 따라 가중치를 다르게 주어 다양성 확보
+    // 연령 (10대~60대 분포)
     let ages = [];
     for(let i=1; i<=6; i++) {
         ages.push(Math.floor(pseudoRandom(hash + i) * 100));
     }
     
-    // 합계 100으로 정규화
+    // 합계 100%로 정규화
     const totalAge = ages.reduce((a,b)=>a+b, 0);
     ages = ages.map(a => Math.round((a / totalAge) * 100));
 
@@ -214,7 +219,7 @@ function generateMockDemographics(keyword) {
     };
 }
 
-// --- API Call Functions ---
+// --- API 호출 함수들 ---
 
 async function fetchFromAdApi(keyword) {
     try {
@@ -231,12 +236,12 @@ async function fetchFromAdApi(keyword) {
                 'X-Customer': AD_CUSTOMER_ID,
                 'X-Signature': signature
             },
-            timeout: 2500 // 짧은 타임아웃 (Cloudtype IP 차단시 빨리 포기하고 넘어가기 위함)
+            // IP 차단 시 응답이 느릴 수 있으므로 타임아웃을 짧게 설정하여 빨리 오픈 API로 넘김
+            timeout: 2000 
         });
         return response.data;
     } catch (e) {
-        // 403, 500 등 에러 발생 시 throw하여 Promise.allSettled에서 rejected 처리
-        throw e;
+        throw e; // Promise.allSettled에서 처리됨
     }
 }
 
@@ -251,7 +256,7 @@ async function fetchFromDataLabApi(keyword) {
         endDate: formatDate(today),
         timeUnit: 'month',
         keywordGroups: [{ groupName: keyword, keywords: [keyword] }],
-        // device, gender, ages는 필수값이 아니므로 생략 (보내면 400 에러 가능성 있음)
+        // device, gender, ages 필드는 필수값이 아니므로 생략 (잘못 보내면 400 에러)
     };
 
     const response = await axios.post('https://openapi.naver.com/v1/datalab/search', body, {
