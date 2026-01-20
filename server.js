@@ -76,11 +76,6 @@ function doRequest(url, options, postData) {
   });
 }
 
-// Helper: Get Date String (YYYY-MM-DD)
-function getDateString(date) {
-    return date.toISOString().split('T')[0];
-}
-
 // =================================================================
 // [API Endpoint] 키워드 종합 분석
 // =================================================================
@@ -115,6 +110,7 @@ app.get('/api/keywords', async (req, res) => {
 
     // -----------------------------------------------------------
     // 2. 오픈 API - 콘텐츠 발행량 (Parallel Fetch)
+    // 데이터랩(DataLab)은 제거하고 확실한 Content Volume 데이터만 수집
     // -----------------------------------------------------------
     const openApiHeaders = {
         'X-Naver-Client-Id': OPEN_CLIENT_ID,
@@ -136,32 +132,9 @@ app.get('/api/keywords', async (req, res) => {
             .then(res => ({ key: target.key, ...res }))
     );
 
-    // -----------------------------------------------------------
-    // 3. 데이터랩 API (Search Trend)
-    // -----------------------------------------------------------
-    const today = new Date();
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(today.getFullYear() - 1);
-
-    const datalabBody = JSON.stringify({
-        startDate: getDateString(oneYearAgo),
-        endDate: getDateString(today),
-        timeUnit: 'month',
-        keywordGroups: [{ groupName: cleanKeyword, keywords: [cleanKeyword] }]
-    });
-
-    const datalabPromise = doRequest(`https://openapi.naver.com/v1/datalab/search`, {
-        method: 'POST',
-        headers: {
-            ...openApiHeaders,
-            'Content-Type': 'application/json'
-        }
-    }, datalabBody);
-
     // Wait for everything
-    const [adRes, datalabRes, ...openApiResults] = await Promise.all([
+    const [adRes, ...openApiResults] = await Promise.all([
         adPromise, 
-        datalabPromise, 
         ...openApiPromises
     ]);
 
@@ -170,6 +143,7 @@ app.get('/api/keywords', async (req, res) => {
     // -----------------------------------------------------------
     const contentData = {};
     openApiResults.forEach(r => {
+        // total 값이 있으면 사용, 없으면 0
         contentData[r.key] = r.success && r.data ? (r.data.total || 0) : 0;
     });
 
@@ -178,8 +152,6 @@ app.get('/api/keywords', async (req, res) => {
     let dataSource = 'combined_api';
     let debugInfo = {
         adApiStatus: adRes.success ? 'OK' : adRes.status || 'Error',
-        adApiError: adRes.error,
-        datalabStatus: datalabRes.success ? 'OK' : datalabRes.status || 'Error',
         openApiErrors: openApiResults.filter(r => !r.success).map(r => r.key)
     };
 
@@ -215,20 +187,10 @@ app.get('/api/keywords', async (req, res) => {
         return res.status(500).json({ error: "데이터 조회 실패", debug: debugInfo });
     }
 
-    // Trend Data: If failed, return empty array (do NOT fake it)
-    let trendData = [];
-    if (datalabRes.success && datalabRes.data.results && datalabRes.data.results[0] && datalabRes.data.results[0].data) {
-        trendData = datalabRes.data.results[0].data;
-    } else {
-        console.warn("[API Warning] DataLab API failed. Hiding graph.");
-        trendData = []; // No fake data
-    }
-
     const result = {
         mainKeyword,
         relatedKeywords,
         content: contentData, // Contains blog, cafe, news, shop, kin, web, image
-        trend: trendData,
         _source: dataSource,
         _debug: debugInfo
     };

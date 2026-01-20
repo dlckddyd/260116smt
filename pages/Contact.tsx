@@ -49,7 +49,7 @@ const Contact: React.FC = () => {
                <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">Contact Us</h1>
                <p className="text-xl text-gray-300 font-light tracking-wide">
                   성공적인 비즈니스를 위한 첫 걸음,<br/>
-                  GROWTH LAB이 함께합니다.
+                  스마트마케팅 플레이스가 함께합니다.
                </p>
             </RevealOnScroll>
          </div>
@@ -85,7 +85,7 @@ const Contact: React.FC = () => {
                               </div>
                               <div>
                                  <span className="block text-sm text-gray-400 mb-1">Email</span>
-                                 <p className="text-lg font-medium">contact@growthlab.kr</p>
+                                 <p className="text-lg font-medium">yonging@kakao.com</p>
                               </div>
                            </div>
                            <div className="flex items-start gap-4">
@@ -136,7 +136,7 @@ const Contact: React.FC = () => {
                                  type="text" 
                                  required
                                  className="w-full px-6 py-4 rounded-xl bg-gray-50 border border-gray-100 focus:bg-white focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/10 transition-all outline-none font-medium"
-                                 placeholder="(주)그로스랩"
+                                 placeholder="(주)스마트마케팅"
                                  value={formState.company}
                                  onChange={(e) => setFormState({...formState, company: e.target.value})}
                               />
@@ -206,7 +206,7 @@ const Contact: React.FC = () => {
       <section className="py-20 px-6">
          <div className="max-w-7xl mx-auto rounded-[3rem] overflow-hidden h-96 relative group shadow-lg border border-gray-100">
              <iframe 
-                title="Growth Lab Contact Map"
+                title="Smart Place Contact Map"
                 className="w-full h-full grayscale hover:grayscale-0 transition-all duration-700"
                 src="https://maps.google.com/maps?q=%EC%84%9C%EC%9A%B8%EC%8B%9C%20%EA%B0%95%EC%84%9C%EA%B5%AC%20%EC%96%91%EC%B2%9C%EB%A1%9C%20547%20%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B0%B8%EB%A5%98&t=&z=16&ie=UTF8&iwloc=&output=embed"
                 loading="lazy"

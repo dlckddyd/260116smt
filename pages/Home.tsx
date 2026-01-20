@@ -176,11 +176,11 @@ const Home: React.FC = () => {
           <RevealOnScroll>
             <div className="flex justify-center mb-8 pointer-events-auto">
               <span className="px-4 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md text-white/90 text-sm font-medium tracking-[0.2em] uppercase shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-                Digital Growth Partner
+                Digital Marketing Partner
               </span>
             </div>
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-none mb-8 text-white tracking-tighter mix-blend-overlay opacity-90 pointer-events-auto">
-              GROWTH LAB
+              SMART PLACE
             </h1>
             <p className="text-xl md:text-3xl text-gray-200 font-light max-w-3xl mx-auto leading-normal mb-12 pointer-events-auto">
                데이터로 증명하는 <span className="text-green-400 font-semibold">확실한 성과</span><br/>
@@ -210,7 +210,7 @@ const Home: React.FC = () => {
                         We Design<br/>Success.
                      </h2>
                      <p className="text-gray-500 text-xl leading-relaxed mb-12">
-                        그로스랩은 감이 아닌 데이터로 움직입니다.<br/>
+                        스마트마케팅 플레이스는 감이 아닌 데이터로 움직입니다.<br/>
                         수천 건의 성공 사례를 통해 검증된 알고리즘 분석 시스템과
                         트래픽 최적화 솔루션으로 비즈니스의 확실한 성장을 약속합니다.
                      </p>
@@ -290,7 +290,7 @@ const Home: React.FC = () => {
       <section className="py-24 bg-slate-50 border-b border-gray-100 overflow-hidden relative">
          <div className="max-w-7xl mx-auto px-6 mb-12 text-center">
              <h3 className="text-3xl font-bold text-gray-900 mb-4">Trusted by Market Leaders</h3>
-             <p className="text-gray-500">1,200+ 파트너사가 그로스랩과 함께 성장하고 있습니다.</p>
+             <p className="text-gray-500">1,200+ 파트너사가 스마트마케팅 플레이스와 함께 성장하고 있습니다.</p>
          </div>
 
          <div className="flex flex-col gap-8 opacity-80">

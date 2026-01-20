@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, TrendingUp, AlertCircle, BarChart2, Loader2, FileText, PieChart, Activity, Info, ShoppingBag, Newspaper, HelpCircle, Globe, Image as ImageIcon, MousePointer2 } from 'lucide-react';
+import { Search, AlertCircle, BarChart2, Loader2, FileText, PieChart, Activity, Info, ShoppingBag, Newspaper, HelpCircle, Globe, Image as ImageIcon, MousePointer2, TrendingUp, Layers } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 
 interface KeywordData {
@@ -9,11 +9,6 @@ interface KeywordData {
   monthlyAvePcClkCnt?: number | string;
   monthlyAveMobileClkCnt?: number | string;
   compIdx?: string;
-}
-
-interface TrendData {
-    period: string;
-    ratio: number;
 }
 
 interface AnalysisResult {
@@ -28,7 +23,6 @@ interface AnalysisResult {
         web: number;
         image: number;
     };
-    trend: TrendData[];
 }
 
 const SearchAnalysis: React.FC = () => {
@@ -76,6 +70,51 @@ const SearchAnalysis: React.FC = () => {
       if (!val) return 0;
       if (val.includes('<')) return 5;
       return parseInt(val.replace(/,/g, ''), 10);
+  };
+
+  // Helper to calculate percentages for the bar chart
+  const renderContentChart = (content: AnalysisResult['content']) => {
+    const items = [
+        { key: 'blog', label: '블로그', icon: FileText, count: content.blog, color: 'bg-green-500', text: 'text-green-600', bg: 'bg-green-50' },
+        { key: 'cafe', label: '카페', icon: Activity, count: content.cafe, color: 'bg-orange-500', text: 'text-orange-600', bg: 'bg-orange-50' },
+        { key: 'shop', label: '쇼핑', icon: ShoppingBag, count: content.shop, color: 'bg-purple-500', text: 'text-purple-600', bg: 'bg-purple-50' },
+        { key: 'news', label: '뉴스', icon: Newspaper, count: content.news, color: 'bg-blue-500', text: 'text-blue-600', bg: 'bg-blue-50' },
+        { key: 'kin', label: '지식iN', icon: HelpCircle, count: content.kin, color: 'bg-teal-500', text: 'text-teal-600', bg: 'bg-teal-50' },
+        { key: 'image', label: '이미지', icon: ImageIcon, count: content.image, color: 'bg-pink-500', text: 'text-pink-600', bg: 'bg-pink-50' },
+    ].sort((a, b) => b.count - a.count); // Sort by count desc
+
+    const maxCount = Math.max(...items.map(i => i.count)) || 1;
+
+    return (
+        <div className="space-y-4">
+            {items.map((item, idx) => {
+                const percentage = Math.round((item.count / maxCount) * 100);
+                const isDominant = idx === 0;
+
+                return (
+                    <div key={item.key} className="relative">
+                        <div className="flex items-center gap-3 mb-1">
+                            <div className={`p-1.5 rounded-lg ${item.bg}`}>
+                                <item.icon className={`w-4 h-4 ${item.text}`} />
+                            </div>
+                            <span className="text-sm font-bold text-gray-700 w-16">{item.label}</span>
+                            <div className="flex-1">
+                                <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full rounded-full ${item.color} transition-all duration-1000 ease-out`}
+                                        style={{ width: `${percentage}%` }}
+                                    />
+                                </div>
+                            </div>
+                            <span className={`text-sm font-bold min-w-[60px] text-right ${isDominant ? 'text-brand-black' : 'text-gray-500'}`}>
+                                {formatNumber(item.count)}
+                            </span>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
   };
 
   return (
@@ -207,72 +246,45 @@ const SearchAnalysis: React.FC = () => {
                 </div>
             </div>
 
-            {/* 3. Detailed Content Breakdown Cards */}
-            <div>
-                <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-gray-400" /> 채널별 발행량 분석
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex flex-col items-center text-center">
-                        <div className="p-2 bg-white rounded-full mb-2"><FileText className="w-5 h-5 text-green-600"/></div>
-                        <span className="text-xs text-gray-500 font-bold mb-1">블로그</span>
-                        <span className="text-lg font-bold text-green-700">{formatNumber(data.content.blog)}</span>
+            {/* 3. Content Volume Distribution Chart (Replaces DataLab Graph) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
+                    <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                        <Layers className="w-5 h-5 text-brand-accent" /> 채널별 콘텐츠 발행량 순위
+                    </h3>
+                    <div className="min-h-[250px] flex flex-col justify-center">
+                        {renderContentChart(data.content)}
                     </div>
-                    <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex flex-col items-center text-center">
-                        <div className="p-2 bg-white rounded-full mb-2"><Activity className="w-5 h-5 text-orange-600"/></div>
-                        <span className="text-xs text-gray-500 font-bold mb-1">카페</span>
-                        <span className="text-lg font-bold text-orange-700">{formatNumber(data.content.cafe)}</span>
-                    </div>
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col items-center text-center">
-                        <div className="p-2 bg-white rounded-full mb-2"><Newspaper className="w-5 h-5 text-blue-600"/></div>
-                        <span className="text-xs text-gray-500 font-bold mb-1">뉴스</span>
-                        <span className="text-lg font-bold text-blue-700">{formatNumber(data.content.news)}</span>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col items-center text-center">
-                        <div className="p-2 bg-white rounded-full mb-2"><ShoppingBag className="w-5 h-5 text-purple-600"/></div>
-                        <span className="text-xs text-gray-500 font-bold mb-1">쇼핑</span>
-                        <span className="text-lg font-bold text-purple-700">{formatNumber(data.content.shop)}</span>
-                    </div>
-                    <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 flex flex-col items-center text-center">
-                        <div className="p-2 bg-white rounded-full mb-2"><HelpCircle className="w-5 h-5 text-teal-600"/></div>
-                        <span className="text-xs text-gray-500 font-bold mb-1">지식iN</span>
-                        <span className="text-lg font-bold text-teal-700">{formatNumber(data.content.kin)}</span>
-                    </div>
-                    <div className="bg-gray-100 p-4 rounded-xl border border-gray-200 flex flex-col items-center text-center">
-                        <div className="p-2 bg-white rounded-full mb-2"><ImageIcon className="w-5 h-5 text-gray-600"/></div>
-                        <span className="text-xs text-gray-500 font-bold mb-1">이미지</span>
-                        <span className="text-lg font-bold text-gray-700">{formatNumber(data.content.image)}</span>
+                </div>
+                
+                {/* Insight / Dominant Channel Card */}
+                <div className="flex flex-col gap-6">
+                    <div className="bg-gradient-to-br from-brand-black to-gray-800 p-8 rounded-2xl text-white shadow-xl h-full flex flex-col justify-center">
+                        <h3 className="text-lg font-bold text-gray-300 mb-4 flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-green-400" /> 분석 인사이트
+                        </h3>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-gray-400 text-sm mb-1">가장 활발한 마케팅 채널</p>
+                                <p className="text-3xl font-bold text-white">
+                                    {Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'blog' ? '블로그 (Blog)' :
+                                     Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'cafe' ? '카페 (Cafe)' :
+                                     Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'shop' ? '네이버 쇼핑' :
+                                     Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'news' ? '뉴스 기사' : '웹 문서'}
+                                </p>
+                            </div>
+                            <div className="h-px bg-white/10 w-full"></div>
+                            <p className="text-gray-300 leading-relaxed text-sm">
+                                현재 <span className="text-brand-accent font-bold">'{data.mainKeyword.relKeyword}'</span> 키워드는 
+                                <span className="font-bold text-white"> {Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'blog' ? '블로그' : '해당 채널'}</span> 영역에서 
+                                가장 많은 콘텐츠가 생성되고 있습니다. 경쟁 우위를 점하기 위해서는 해당 채널의 상위 노출 전략이 필수적입니다.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* 4. Trend Graph (Conditionally Rendered) */}
-            {data.trend && data.trend.length > 0 && (
-                <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-                    <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-brand-accent" /> 최근 1년 검색 트렌드 (DataLab)
-                    </h3>
-                    <div className="h-64 w-full flex items-end justify-between gap-1 px-4">
-                        {data.trend.map((t, idx) => (
-                            <div key={idx} className="flex-1 flex flex-col items-center group relative">
-                                <div 
-                                    className="w-full bg-blue-100 rounded-t-sm hover:bg-brand-accent transition-colors relative"
-                                    style={{ height: `${t.ratio}%` }}
-                                >
-                                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                       {t.ratio.toFixed(1)}
-                                   </div>
-                                </div>
-                                <div className="text-[10px] text-gray-400 mt-2 -rotate-45 origin-top-left translate-y-2">
-                                    {t.period.slice(2, 7)}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* 5. Related Keywords Table */}
+            {/* 4. Related Keywords Table */}
             <div>
                  <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
                     <BarChart2 className="w-5 h-5 text-gray-400" /> 연관 키워드 ({data.relatedKeywords.length}개)

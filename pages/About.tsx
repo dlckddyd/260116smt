@@ -29,7 +29,7 @@ const About: React.FC = () => {
          <div className="absolute inset-0 bg-black/60"></div>
          <div className="relative z-10 text-center px-6 max-w-5xl">
             <RevealOnScroll>
-               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">About Growth Lab</h1>
+               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">About Smart Place</h1>
                <p className="text-xl text-gray-200">
                   데이터와 기술로 비즈니스의 문제를 해결하는<br/>
                   <span className="font-bold text-white">Digital Growth Partner</span>
@@ -105,7 +105,7 @@ const About: React.FC = () => {
                { year: "2024", title: "Global Expansion", desc: "해외 마케팅 솔루션 런칭, 누적 클라이언트 1,200사 돌파" },
                { year: "2023", title: "Award Winning", desc: "대한민국 디지털 광고 대상 '퍼포먼스 부문' 대상 수상" },
                { year: "2022", title: "Tech Innovation", desc: "AI 기반 광고 자동화 시스템 'G-Bot' 개발 및 상용화" },
-               { year: "2021", title: "Growth Lab Founded", desc: "주식회사 그로스랩 설립, 벤처기업 인증 획득" }
+               { year: "2021", title: "Smart Place Founded", desc: "스마트마케팅 플레이스 설립, 벤처기업 인증 획득" }
             ].map((item, idx) => (
                <RevealOnScroll key={idx} className="relative pl-12 md:pl-0 md:flex md:gap-12 md:items-center group">
                   <div className="hidden md:block w-1/2 text-right pr-12">
@@ -147,7 +147,7 @@ const About: React.FC = () => {
             </div>
             <div className="w-full md:w-2/3 h-96 bg-gray-800 rounded-3xl overflow-hidden relative shadow-2xl">
                <iframe 
-                  title="Growth Lab Location"
+                  title="Smart Place Location"
                   className="w-full h-full grayscale hover:grayscale-0 transition-all duration-700"
                   src="https://maps.google.com/maps?q=%EC%84%9C%EC%9A%B8%EC%8B%9C%20%EA%B0%95%EC%84%9C%EA%B5%AC%20%EC%96%91%EC%B2%9C%EB%A1%9C%20547%20%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B0%B8%EB%A5%98&t=&z=16&ie=UTF8&iwloc=&output=embed"
                   loading="lazy"

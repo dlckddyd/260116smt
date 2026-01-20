@@ -47,7 +47,7 @@ const Navbar: React.FC = () => {
           <div className={`w-9 h-9 rounded-full flex items-center justify-center group-hover:scale-110 transition-all shadow-lg ${logoBgClass}`}>
              <BarChart className="w-5 h-5" />
           </div>
-          <span className="text-xl font-bold tracking-tight transition-colors">GROWTH LAB</span>
+          <span className="text-xl font-bold tracking-tight transition-colors">SMART PLACE</span>
         </Link>
 
         {/* Desktop Menu */}

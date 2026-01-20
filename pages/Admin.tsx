@@ -81,11 +81,16 @@ const Admin: React.FC = () => {
     try {
       setIsUploading(true);
       
-      // Resize
-      const resizedBlob = await resizeImage(file);
+      // Try to resize, if fails use original file
+      let uploadBlob: Blob = file;
+      try {
+          uploadBlob = await resizeImage(file);
+      } catch (resizeErr) {
+          console.warn("Image resize failed, uploading original file.", resizeErr);
+          uploadBlob = file;
+      }
       
       // Sanitize Filename & Path
-      // Replace non-alphanumeric chars with _ to avoid path issues
       const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
       const fileName = `uploads/${Date.now()}_${safeName}`;
       const storageRef = ref(storage, fileName);
@@ -95,7 +100,7 @@ const Admin: React.FC = () => {
         contentType: 'image/jpeg',
       };
       
-      await uploadBytes(storageRef, resizedBlob, metadata);
+      await uploadBytes(storageRef, uploadBlob, metadata);
       const downloadURL = await getDownloadURL(storageRef);
       setIsUploading(false);
       return downloadURL;
@@ -205,12 +210,23 @@ const Admin: React.FC = () => {
 
   // --- Main Image Upload ---
   const triggerMainImageUpload = (serviceId: string) => {
+    console.log("Setting active upload service ID to:", serviceId);
     setActiveServiceIdForUpload(serviceId);
-    mainImageInputRef.current?.click();
+    // Use timeout to allow state to settle, although click is synchronous
+    setTimeout(() => {
+        mainImageInputRef.current?.click();
+    }, 0);
   };
 
   const onMainImageFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] && activeServiceIdForUpload) {
+    // Check local closure activeServiceId first, but state is better.
+    // If e.target.files is present, we process.
+    if (!activeServiceIdForUpload) {
+        console.error("Active Service ID is missing during upload event.");
+        return;
+    }
+
+    if (e.target.files && e.target.files[0]) {
         const url = await handleFileUpload(e.target.files[0]);
         if (url) {
             await updateServiceImage(activeServiceIdForUpload, url);
@@ -218,6 +234,10 @@ const Admin: React.FC = () => {
         }
     }
     if (mainImageInputRef.current) mainImageInputRef.current.value = '';
+    // Do NOT clear activeServiceIdForUpload immediately here if using async logic above 
+    // or ensure it's cleared only after everything is done.
+    // However, for safety, we can leave it or clear it. 
+    // Clearing it might race with the async upload if we rely on it inside upload (we don't anymore, passed to updateServiceImage)
     setActiveServiceIdForUpload(null);
   };
 
@@ -266,7 +286,7 @@ const Admin: React.FC = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
            <div className="font-bold text-xl flex items-center gap-2">
               <Lock className="w-5 h-5 text-green-400" />
-              Growth Lab Admin
+              Smart Place Admin
            </div>
            <button onClick={logout} className="text-sm bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 flex items-center gap-2">
               <LogOut className="w-4 h-4" /> 로그아웃
@@ -352,7 +372,7 @@ const Admin: React.FC = () => {
                          </div>
                          <button 
                             onClick={() => triggerMainImageUpload(service.id)}
-                            className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black font-bold flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                             disabled={isUploading}
                          >
                             {isUploading && activeServiceIdForUpload === service.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Upload className="w-4 h-4"/>}
