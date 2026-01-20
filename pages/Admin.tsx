@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, FileText, Image as ImageIcon, ArrowDown, ArrowUp, Upload, Loader2, Layout } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, FileText, Image as ImageIcon, ArrowDown, ArrowUp, Upload, Loader2, Layout, AlertTriangle } from 'lucide-react';
 import { faqCategories, ContentBlock } from '../data/content';
 import { storage, auth } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -39,6 +39,15 @@ const Admin: React.FC = () => {
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-attempt login on mount if admin
+  useEffect(() => {
+    if (isAdmin && !auth.currentUser) {
+        signInAnonymously(auth).catch((e) => {
+            console.warn("Auto-login failed. If your database is in Test Mode, this is fine.", e);
+        });
+    }
+  }, [isAdmin]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
@@ -50,29 +59,27 @@ const Admin: React.FC = () => {
     }
   };
 
-  // Ensure auth before any operation
-  const ensureAuth = async () => {
+  // Helper: Try auth, but don't block if it fails (allows Public/Test mode to work)
+  const tryAuth = async () => {
     if (!auth.currentUser) {
-      try {
-        await signInAnonymously(auth);
-      } catch (e) {
-        console.error("Auth Error", e);
-        alert("서버 연결에 실패했습니다. 새로고침 후 다시 시도해주세요.");
-        return false;
-      }
+        try {
+            await signInAnonymously(auth);
+        } catch (e) {
+            console.warn("Auth attempt failed. Proceeding anyway.", e);
+        }
     }
-    return true;
   };
 
   // --- Robust File Upload ---
   const handleFileUpload = async (file: File): Promise<string> => {
     if (!file) return "";
-    if (!(await ensureAuth())) return "";
+    
+    // Try auth first
+    await tryAuth();
 
     try {
       setIsUploading(true);
       
-      // Upload raw file without resizing to prevent hanging
       const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
       const fileName = `uploads/${Date.now()}_${safeName}`;
       const storageRef = ref(storage, fileName);
@@ -84,7 +91,11 @@ const Admin: React.FC = () => {
     } catch (error: any) {
       console.error("Upload failed", error);
       let msg = "이미지 업로드에 실패했습니다.";
-      if (error.code === 'storage/unauthorized') msg = "업로드 권한이 없습니다.";
+      if (error.code === 'storage/unauthorized') {
+          msg = "업로드 권한이 없습니다. Firebase Console에서 Storage Rules를 확인하거나 Authentication(익명 로그인)을 활성화해주세요.";
+      } else if (error.code === 'storage/retry-limit-exceeded') {
+          msg = "시간이 초과되었습니다. 인터넷 연결을 확인해주세요.";
+      }
       alert(msg);
       return "";
     } finally {
@@ -95,7 +106,6 @@ const Admin: React.FC = () => {
   // --- Main Image Management ---
   const triggerMainImageUpload = (serviceId: string) => {
     setActiveServiceIdForUpload(serviceId);
-    // Slight delay to ensure state update before click (safer)
     setTimeout(() => {
         mainImageInputRef.current?.click();
     }, 50);
@@ -111,7 +121,6 @@ const Admin: React.FC = () => {
         alert("이미지가 변경되었습니다.");
     }
     
-    // Cleanup
     if (mainImageInputRef.current) mainImageInputRef.current.value = '';
     setActiveServiceIdForUpload(null);
   };
@@ -140,9 +149,10 @@ const Admin: React.FC = () => {
   const handleAddFaq = async () => {
     if (!newFaqQuestion.trim()) return alert("질문을 입력해주세요.");
     if (newFaqBlocks.length === 0) return alert("내용을 입력해주세요.");
-    if (!(await ensureAuth())) return;
+    
+    await tryAuth();
 
-    setIsUploading(true); // Reuse uploading state for submission
+    setIsUploading(true); 
     try {
         await addFaq({
             category: newFaqCategory,
@@ -155,7 +165,7 @@ const Admin: React.FC = () => {
         alert("FAQ가 등록되었습니다.");
     } catch (e) {
         console.error(e);
-        alert("등록 중 오류가 발생했습니다.");
+        alert("등록 실패: Firebase 권한을 확인해주세요.");
     } finally {
         setIsUploading(false);
     }
@@ -201,7 +211,8 @@ const Admin: React.FC = () => {
 
   const handleAddReview = async () => {
     if (!newReview.name || !newReview.company) return alert("이름과 업체명을 입력해주세요.");
-    if (!(await ensureAuth())) return;
+    
+    await tryAuth();
 
     setIsUploading(true);
     try {
@@ -214,7 +225,7 @@ const Admin: React.FC = () => {
         alert("후기가 등록되었습니다.");
     } catch (e) {
         console.error(e);
-        alert("등록 중 오류가 발생했습니다.");
+        alert("등록 실패: Firebase 권한을 확인해주세요.");
     } finally {
         setIsUploading(false);
     }
@@ -264,9 +275,10 @@ const Admin: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pt-20">
       {/* Loading Overlay */}
       {isUploading && (
-          <div className="fixed inset-0 bg-black/50 z-[60] flex flex-col items-center justify-center text-white">
+          <div className="fixed inset-0 bg-black/50 z-[60] flex flex-col items-center justify-center text-white backdrop-blur-sm">
               <Loader2 className="w-12 h-12 animate-spin mb-4" />
               <p className="text-lg font-bold">처리 중입니다...</p>
+              <p className="text-sm opacity-80 mt-2">잠시만 기다려주세요</p>
           </div>
       )}
 
@@ -459,7 +471,7 @@ const Admin: React.FC = () => {
 
       {/* FAQ Modal */}
       {showFaqModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
            <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
               <div className="flex justify-between items-center mb-6">
                  <h3 className="text-xl font-bold">질문 등록</h3>
@@ -563,7 +575,7 @@ const Admin: React.FC = () => {
 
       {/* Review Modal */}
       {showReviewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
            <div className="bg-white rounded-2xl w-full max-w-lg p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
               <div className="flex justify-between items-center mb-6">
                  <h3 className="text-xl font-bold">새로운 후기 등록</h3>

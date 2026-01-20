@@ -48,13 +48,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (!user && isAdmin) {
-            // If supposed to be admin but not logged in, try login
-            signInAnonymously(auth).catch(console.error);
-        }
+        // Just listening, no action needed here as we handle login via 'login' function or Auto-Login in Admin.tsx
     });
     return () => unsubscribe();
-  }, [isAdmin]);
+  }, []);
 
   // --- Firebase Realtime Listeners ---
 
@@ -213,7 +210,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         await signInAnonymously(auth);
       } catch (error) {
-        console.error("Firebase Login Error:", error);
+        console.warn("Firebase Auth Warning: Anonymous login failed. If your database rules are public (Test Mode), this is fine.", error);
       }
       setIsAdmin(true);
       return true;

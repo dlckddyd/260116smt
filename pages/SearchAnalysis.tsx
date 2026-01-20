@@ -189,7 +189,7 @@ const SearchAnalysis: React.FC = () => {
                         <Search className="w-5 h-5 text-blue-500" />
                     </div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">
-                        {formatNumber(safeParseInt(data.mainKeyword.monthlyPcQc) + safeParseInt(data.mainKeyword.monthlyMobileQc))}
+                        {formatNumber(safeParseInt(data.mainKeyword.monthlyPcQc as string | number) + safeParseInt(data.mainKeyword.monthlyMobileQc as string | number))}
                     </div>
                     <div className="flex gap-2 text-xs font-medium">
                         <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded">PC {formatNumber(data.mainKeyword.monthlyPcQc)}</span>
@@ -204,7 +204,7 @@ const SearchAnalysis: React.FC = () => {
                         <FileText className="w-5 h-5 text-purple-500" />
                     </div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">
-                        {formatNumber(Object.values(data.content).reduce((a, b) => a + b, 0))}
+                        {formatNumber((Object.values(data.content) as number[]).reduce((a, b) => a + b, 0))}
                     </div>
                     <div className="flex gap-2 text-xs font-medium text-gray-400">
                         블로그, 뉴스, 쇼핑, 카페 등 합계
@@ -219,8 +219,8 @@ const SearchAnalysis: React.FC = () => {
                     </div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">
                         {(() => {
-                            const totalSearch = safeParseInt(data.mainKeyword.monthlyPcQc) + safeParseInt(data.mainKeyword.monthlyMobileQc);
-                            const totalContent = Object.values(data.content).reduce((a, b) => a + b, 0);
+                            const totalSearch = safeParseInt(data.mainKeyword.monthlyPcQc as string | number) + safeParseInt(data.mainKeyword.monthlyMobileQc as string | number);
+                            const totalContent = (Object.values(data.content) as number[]).reduce((a, b) => a + b, 0);
                             if (totalSearch === 0) return '-';
                             const index = (totalContent / totalSearch * 100).toFixed(1);
                             return index + '%';
@@ -238,7 +238,7 @@ const SearchAnalysis: React.FC = () => {
                         <MousePointer2 className="w-5 h-5 text-indigo-500" />
                     </div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">
-                        {formatNumber(safeParseInt(data.mainKeyword.monthlyAvePcClkCnt) + safeParseInt(data.mainKeyword.monthlyAveMobileClkCnt))}
+                        {formatNumber(safeParseInt(data.mainKeyword.monthlyAvePcClkCnt as string | number | undefined) + safeParseInt(data.mainKeyword.monthlyAveMobileClkCnt as string | number | undefined))}
                     </div>
                     <div className="flex gap-2 text-xs font-medium">
                          <span className="text-gray-400">평균 클릭률을 기반으로 함</span>
@@ -267,16 +267,16 @@ const SearchAnalysis: React.FC = () => {
                             <div>
                                 <p className="text-gray-400 text-sm mb-1">가장 활발한 마케팅 채널</p>
                                 <p className="text-3xl font-bold text-white">
-                                    {Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'blog' ? '블로그 (Blog)' :
-                                     Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'cafe' ? '카페 (Cafe)' :
-                                     Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'shop' ? '네이버 쇼핑' :
-                                     Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'news' ? '뉴스 기사' : '웹 문서'}
+                                    {Object.entries(data.content).sort(([,a], [,b]) => (b as number) - (a as number))[0][0] === 'blog' ? '블로그 (Blog)' :
+                                     Object.entries(data.content).sort(([,a], [,b]) => (b as number) - (a as number))[0][0] === 'cafe' ? '카페 (Cafe)' :
+                                     Object.entries(data.content).sort(([,a], [,b]) => (b as number) - (a as number))[0][0] === 'shop' ? '네이버 쇼핑' :
+                                     Object.entries(data.content).sort(([,a], [,b]) => (b as number) - (a as number))[0][0] === 'news' ? '뉴스 기사' : '웹 문서'}
                                 </p>
                             </div>
                             <div className="h-px bg-white/10 w-full"></div>
                             <p className="text-gray-300 leading-relaxed text-sm">
                                 현재 <span className="text-brand-accent font-bold">'{data.mainKeyword.relKeyword}'</span> 키워드는 
-                                <span className="font-bold text-white"> {Object.entries(data.content).sort(([,a], [,b]) => b - a)[0][0] === 'blog' ? '블로그' : '해당 채널'}</span> 영역에서 
+                                <span className="font-bold text-white"> {Object.entries(data.content).sort(([,a], [,b]) => (b as number) - (a as number))[0][0] === 'blog' ? '블로그' : '해당 채널'}</span> 영역에서 
                                 가장 많은 콘텐츠가 생성되고 있습니다. 경쟁 우위를 점하기 위해서는 해당 채널의 상위 노출 전략이 필수적입니다.
                             </p>
                         </div>
@@ -305,7 +305,7 @@ const SearchAnalysis: React.FC = () => {
                                <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-blue-50/50 transition-colors text-sm">
                                   <td className="py-4 px-6 font-bold text-gray-800">{item.relKeyword}</td>
                                   <td className="py-4 px-6 text-right font-bold text-gray-900">
-                                      {formatNumber(safeParseInt(item.monthlyPcQc) + safeParseInt(item.monthlyMobileQc))}
+                                      {formatNumber(safeParseInt(item.monthlyPcQc as string | number) + safeParseInt(item.monthlyMobileQc as string | number))}
                                   </td>
                                   <td className="py-4 px-6 text-right text-gray-600">{formatNumber(item.monthlyPcQc)}</td>
                                   <td className="py-4 px-6 text-right text-gray-600">{formatNumber(item.monthlyMobileQc)}</td>
