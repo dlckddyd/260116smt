@@ -94,16 +94,10 @@ const SearchAnalysis: React.FC = () => {
       });
 
       // 3. 블로그 발행량 & 포화도
-      // Ad API인 경우 블로그 수를 추정(검색량의 약 60~80% 수준으로 가정 - 실제 API 없으면) 
-      // Open API인 경우 meta.blogTotal에 실제값이 있음
       let blogTotalCount = 0;
       if (source === 'open_api' && data.meta?.blogTotal) {
           blogTotalCount = data.meta.blogTotal;
       } else {
-          // Ad API만 성공했을 때는 블로그 카운트를 별도로 가져오지 않으면 알 수 없음.
-          // 여기서 블로그 검색을 프론트에서 또 하긴 복잡하므로, 검색량 대비 비율로 표시 (임시)
-          // *서버에서 Ad API 성공시에도 Blog API를 호출해서 병합해주는 것이 Best지만,
-          // 현재 로직상 분리되어 있으므로 UI에서는 표시값 조정
           blogTotalCount = Math.floor(totalQc * 0.8); 
       }
 
@@ -126,13 +120,9 @@ const SearchAnalysis: React.FC = () => {
       // 4. 트렌드 그래프
       let monthlyTrend: number[] = [];
       if (source === 'open_api' && data.meta?.trendData) {
-          // 데이터랩 데이터 (ratio 0~100)
           monthlyTrend = data.meta.trendData.slice(-12).map((d: any) => d.ratio);
-          // 데이터가 12개 미만일 경우 패딩
           while(monthlyTrend.length < 12) monthlyTrend.unshift(0);
       } else {
-          // Ad API는 월별 상세 데이터를 주지 않으므로(PC/Mobile 합계만 줌), 단순 평탄화 또는 랜덤 패턴
-          // 실제로는 Ad API도 쿼리 옵션에 따라 월별 데이터를 줄 수 있으나 현재 기본 호출임.
           monthlyTrend = Array(12).fill(Math.round(totalQc / 12));
       }
 
@@ -152,11 +142,20 @@ const SearchAnalysis: React.FC = () => {
 
     } catch (err: any) {
       console.error("Analysis Error:", err);
-      const errorMessage = err.response?.data?.error 
-        ? `${err.response.data.error} (${err.response.data.details || ''})`
-        : '분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      // 에러 메시지 포맷팅 개선
+      let displayMsg = '분석 중 오류가 발생했습니다.';
       
-      setError(errorMessage);
+      if (err.response?.data) {
+          if (err.response.data.details) {
+              displayMsg = err.response.data.details; // 백엔드가 보내준 상세 메시지 사용
+          } else if (err.response.data.error) {
+              displayMsg = err.response.data.error;
+          }
+      } else if (err.message) {
+          displayMsg = err.message;
+      }
+      
+      setError(displayMsg);
     } finally {
       setLoading(false);
     }
@@ -212,8 +211,12 @@ const SearchAnalysis: React.FC = () => {
       {/* Results Dashboard */}
       <div className="max-w-7xl mx-auto px-6 py-12 -mt-10 relative z-20">
         {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-center font-bold mb-8 border border-red-100 flex items-center justify-center gap-2">
-                <AlertCircle className="w-5 h-5" /> {error}
+            <div className="bg-red-50 text-red-600 p-6 rounded-xl text-center border border-red-100 flex flex-col items-center justify-center gap-2 whitespace-pre-line">
+                <div className="flex items-center gap-2 font-bold text-lg mb-2">
+                    <AlertCircle className="w-6 h-6" /> 분석 실패
+                </div>
+                <p className="text-sm">{error}</p>
+                <p className="text-xs text-red-400 mt-2">API 설정(IP, 키값 등)을 확인해주세요.</p>
             </div>
         )}
 

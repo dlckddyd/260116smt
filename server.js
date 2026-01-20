@@ -15,14 +15,14 @@ const distPath = path.join(__dirname, 'dist');
 app.use(express.json());
 
 // ----------------------------------------------------------------------
-// 1. 네이버 검색광고 API (정확한 월간 조회수)
+// 1. 네이버 검색광고 API Credentials
 // ----------------------------------------------------------------------
 const AD_CUSTOMER_ID = "4242810";
 const AD_ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
 const AD_SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 
 // ----------------------------------------------------------------------
-// 2. 네이버 오픈 API (블로그 검색 + 데이터랩)
+// 2. 네이버 오픈 API Credentials
 // ----------------------------------------------------------------------
 const OPEN_CLIENT_ID = "vQAN_RNU8A7kvy4N_aZI";
 const OPEN_CLIENT_SECRET = "0efwCNoAP7";
@@ -42,6 +42,7 @@ app.get('/api/naver-keywords', async (req, res) => {
   }
 
   const cleanKeyword = keyword.trim().replace(/\s+/g, '');
+  let adApiErrorDetail = '';
 
   // 1순위: 검색광고 API 시도
   try {
@@ -49,13 +50,17 @@ app.get('/api/naver-keywords', async (req, res) => {
     const adData = await fetchFromAdApi(cleanKeyword);
     return res.json({ ...adData, _source: 'ad_api' });
   } catch (adError) {
-    console.warn(`[Fail 1] Ad API failed. Reason: ${adError.message}. Switching to Open API.`);
+    // 에러 상세 분석
+    const status = adError.response?.status || 500;
+    const msg = adError.response?.data?.message || adError.message;
+    adApiErrorDetail = `Ad API Error(${status}): ${msg}`;
+    console.warn(`[Fail 1] ${adApiErrorDetail}. Switching to Open API.`);
     
     // 2순위: 오픈 API (블로그 + 데이터랩) 시도
     try {
         console.log(`[Attempt 2] Open API (Blog + DataLab)...`);
         
-        // 두 API를 병렬로 호출하여 속도 개선
+        // 두 API를 병렬로 호출
         const [blogData, dataLabData] = await Promise.all([
             fetchFromBlogApi(cleanKeyword),
             fetchFromDataLabApi(cleanKeyword)
@@ -66,16 +71,23 @@ app.get('/api/naver-keywords', async (req, res) => {
         return res.json({ ...combinedData, _source: 'open_api' });
 
     } catch (openError) {
-        console.error(`[Fail 2] Open API failed:`, openError);
+        const openStatus = openError.response?.status || 500;
+        const openMsg = openError.response?.data?.message || openError.message;
+        const openApiErrorDetail = `Open API Error(${openStatus}): ${openMsg}`;
+
+        console.error(`[Fail 2] All APIs failed.`);
+        console.error(`1. ${adApiErrorDetail}`);
+        console.error(`2. ${openApiErrorDetail}`);
+
         return res.status(500).json({ 
-            error: '네이버 API 호출에 실패했습니다.',
-            details: '검색광고 API와 오픈 API 모두 응답하지 않습니다. 잠시 후 다시 시도해주세요.'
+            error: '데이터 조회 실패',
+            details: `검색광고 API와 오픈 API 모두 응답하지 않습니다.\n1차 실패: ${adApiErrorDetail}\n2차 실패: ${openApiErrorDetail}`
         });
     }
   }
 });
 
-// Helper: 검색광고 API (서명 생성 및 호출)
+// Helper: 검색광고 API
 async function fetchFromAdApi(keyword) {
     const timestamp = Date.now().toString();
     const method = "GET";
@@ -95,13 +107,11 @@ async function fetchFromAdApi(keyword) {
             'X-Signature': signature
         }
     });
-
     return response.data;
 }
 
-// Helper: 블로그 검색 API (문서량 조회)
+// Helper: 블로그 검색 API
 async function fetchFromBlogApi(keyword) {
-    // sim(정확도순)으로 1개만 가져와서 total 값을 확인
     const response = await axios.get('https://openapi.naver.com/v1/search/blog.json', {
         params: {
             query: keyword,
@@ -114,27 +124,21 @@ async function fetchFromBlogApi(keyword) {
             'X-Naver-Client-Secret': OPEN_CLIENT_SECRET
         }
     });
-    return response.data; // { total: number, ... }
+    return response.data;
 }
 
-// Helper: 데이터랩 API (검색어 트렌드 조회)
+// Helper: 데이터랩 API
 async function fetchFromDataLabApi(keyword) {
     const today = new Date();
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(today.getFullYear() - 1);
-
     const formatDate = (date) => date.toISOString().split('T')[0];
 
     const response = await axios.post('https://openapi.naver.com/v1/datalab/search', {
         startDate: formatDate(oneYearAgo),
         endDate: formatDate(today),
         timeUnit: 'month',
-        keywordGroups: [
-            {
-                groupName: keyword,
-                keywords: [keyword]
-            }
-        ]
+        keywordGroups: [{ groupName: keyword, keywords: [keyword] }]
     }, {
         headers: {
             'X-Naver-Client-Id': OPEN_CLIENT_ID,
@@ -142,25 +146,20 @@ async function fetchFromDataLabApi(keyword) {
             'Content-Type': 'application/json'
         }
     });
-    
-    return response.data; // { results: [ { data: [ { period, ratio }, ... ] } ] }
+    return response.data;
 }
 
-// Helper: 오픈 API 데이터 가공 (Fallback용)
+// Helper: 데이터 가공
 function processOpenApiData(keyword, blogData, dataLabData) {
     const totalBlogDocs = blogData.total || 0;
-    
-    // 데이터랩 트렌드 데이터 추출 (비율 데이터 0~100)
     const trendList = dataLabData.results?.[0]?.data || [];
     
-    // 검색량 추정 (블로그 발행량 기반 휴리스틱, 실제 검색량이 아님을 UI에 표시해야 함)
-    // 보통 인기 키워드는 블로그 발행량의 3~10배 정도의 검색량이 발생함. 보수적으로 3배 적용.
-    // 하지만 검색량이 아예 없는 경우도 있으므로 trendList가 비어있으면 0으로 처리.
+    // 블로그 문서를 기반으로 대략적인 관심도 추정 (정확한 검색량은 아님을 명시)
+    // 데이터랩 트렌드가 있으면 인기 키워드임
     const hasTrend = trendList.length > 0;
-    const estimatedTotalVol = hasTrend ? Math.floor(totalBlogDocs * 2.5) : 0;
-    const pcRatio = 0.3; // 일반적인 평균 PC 검색 비율
+    const estimatedTotalVol = hasTrend ? Math.floor(totalBlogDocs * 2.5) : Math.floor(totalBlogDocs * 0.5);
+    const pcRatio = 0.35;
 
-    // 관련 키워드 생성 (접미사 조합 - 오픈 API는 연관키워드를 안 주므로)
     const suffix = [" 맛집", " 추천", " 후기", " 가격", " 정보"];
     const relKeywords = suffix.map(s => ({
         relKeyword: keyword + s,
@@ -169,7 +168,6 @@ function processOpenApiData(keyword, blogData, dataLabData) {
         compIdx: "분석필요"
     }));
 
-    // 메인 키워드 데이터 구조 맞추기 (Ad API 형식과 호환되게)
     return {
         keywordList: [
             {
@@ -182,10 +180,9 @@ function processOpenApiData(keyword, blogData, dataLabData) {
             },
             ...relKeywords
         ],
-        // 추가 메타데이터 (프론트엔드에서 활용)
         meta: {
             blogTotal: totalBlogDocs,
-            trendData: trendList // [{ period: '2023-01-01', ratio: 10.5 }, ...]
+            trendData: trendList
         }
     };
 }
