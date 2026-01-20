@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronDown, Loader2, Sparkles, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2 } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import CountUp from '../components/CountUp';
 import ServiceVisual from '../components/ServiceVisual';
@@ -235,20 +235,10 @@ const Home: React.FC = () => {
                             alt="Strategy Meeting" 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy" 
+                            decoding="async"
                          />
                          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                         {/* Chart Floating UI */}
-                         <div className="absolute top-10 right-10 animate-float-medium">
-                            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-3 flex items-center gap-3">
-                               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                  <TrendingUp className="w-5 h-5 text-green-600" />
-                                </div>
-                               <div>
-                                  <div className="text-[10px] text-gray-400 font-bold">Growth Rate</div>
-                                  <div className="text-sm font-bold">+245%</div>
-                               </div>
-                            </div>
-                         </div>
+                         {/* Floating Card removed as requested */}
                       </div>
                   </div>
                </div>

@@ -15,7 +15,16 @@ app.use(express.json());
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
+  // Add simple cache headers for static assets
+  app.use(express.static(distPath, {
+    maxAge: '1d', // Cache static assets for 1 day
+    setHeaders: (res, path) => {
+      if (path.endsWith('.html')) {
+        // No cache for index.html to ensure updates are seen immediately
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    }
+  }));
 }
 
 app.get('*', (req, res) => {
@@ -23,7 +32,7 @@ app.get('*', (req, res) => {
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(500).send('Server Error: index.html not found.');
+    res.status(500).send('Server Error: index.html not found. Please run "npm run build" first.');
   }
 });
 

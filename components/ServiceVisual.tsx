@@ -41,7 +41,13 @@ const ServiceVisual: React.FC<ServiceVisualProps> = ({ image, groups }) => {
       
       {/* Main Image (Phone/Product Mockup) */}
       <div className="relative w-[65%] h-[85%] rounded-[2rem] shadow-2xl overflow-hidden bg-white border-4 border-white z-10 transition-transform duration-700 hover:scale-[1.01]">
-        <img src={image} alt="Service Mockup" className="w-full h-full object-cover" />
+        <img 
+            src={image} 
+            alt="Service Mockup" 
+            className="w-full h-full object-cover" 
+            loading="lazy"
+            decoding="async"
+        />
       </div>
 
       {/* Floating UI Groups */}
