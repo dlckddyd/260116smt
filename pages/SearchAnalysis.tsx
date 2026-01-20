@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, TrendingUp, Monitor, Smartphone, AlertCircle, BarChart2, Loader2, ArrowRight } from 'lucide-react';
+import { Search, TrendingUp, Monitor, Smartphone, AlertCircle, BarChart2, Loader2, ArrowRight, FileText, Coffee, Percent, PieChart, Activity, Info } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 
 interface KeywordData {
@@ -11,10 +11,24 @@ interface KeywordData {
   compIdx?: string;
 }
 
+interface TrendData {
+    period: string;
+    ratio: number;
+}
+
+interface AnalysisResult {
+    mainKeyword: KeywordData;
+    relatedKeywords: KeywordData[];
+    content: {
+        blogTotal: number;
+        cafeTotal: number;
+    };
+    trend: TrendData[];
+}
+
 const SearchAnalysis: React.FC = () => {
   const [keyword, setKeyword] = useState('');
-  const [result, setResult] = useState<KeywordData | null>(null);
-  const [relatedKeywords, setRelatedKeywords] = useState<KeywordData[]>([]);
+  const [data, setData] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -24,23 +38,18 @@ const SearchAnalysis: React.FC = () => {
 
     setLoading(true);
     setError('');
-    setResult(null);
-    setRelatedKeywords([]);
+    setData(null);
 
     try {
       const response = await fetch(`/api/keywords?keyword=${encodeURIComponent(keyword)}`);
-      const data = await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || '검색에 실패했습니다.');
+        throw new Error(result.error || '검색에 실패했습니다.');
       }
 
-      if (data.keywordList && data.keywordList.length > 0) {
-        // The first exact match or first result is the main keyword
-        const main = data.keywordList[0];
-        setResult(main);
-        // Others are related
-        setRelatedKeywords(data.keywordList.slice(1, 11)); // Show top 10 related
+      if (result.mainKeyword) {
+        setData(result);
       } else {
         setError('검색 결과가 없습니다.');
       }
@@ -52,27 +61,34 @@ const SearchAnalysis: React.FC = () => {
   };
 
   const formatNumber = (num: number | string | undefined) => {
-    if (typeof num === 'undefined') return '-';
-    if (typeof num === 'string') return num; // '< 10' case
+    if (typeof num === 'undefined' || num === null) return '0';
+    if (typeof num === 'string') return num;
     return num.toLocaleString();
+  };
+
+  // Helper to safely parse string numbers like "< 10"
+  const safeParseInt = (val: string | number | undefined): number => {
+      if (typeof val === 'number') return val;
+      if (!val) return 0;
+      if (val.includes('<')) return 5; // Treat < 10 as 5
+      return parseInt(val.replace(/,/g, ''), 10);
   };
 
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
-      <section className="relative w-full py-32 bg-brand-black text-white flex flex-col items-center justify-center overflow-hidden">
+      <section className="relative w-full py-24 bg-brand-black text-white flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black z-0" />
-        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] z-0"></div>
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] z-0"></div>
         
         <div className="relative z-10 text-center px-6 max-w-3xl w-full">
           <RevealOnScroll>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-accent/20 border border-brand-accent/30 text-brand-accent mb-6 font-bold text-sm">
-                <BarChart2 className="w-4 h-4" /> 빅데이터 분석
+                <Activity className="w-4 h-4" /> 키워드 종합 분석
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">키워드 검색량 조회</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">데이터로 보는 키워드의 가치</h1>
             <p className="text-gray-400 mb-10 text-lg">
-              네이버 광고 API 데이터를 기반으로 정확한 검색량을 분석합니다.<br/>
-              고객이 찾는 키워드를 발굴하여 상위노출 전략을 수립하세요.
+              검색량부터 콘텐츠 발행량, 경쟁 강도까지 한눈에 확인하세요.
             </p>
 
             <form onSubmit={handleSearch} className="relative w-full max-w-xl mx-auto">
@@ -80,8 +96,8 @@ const SearchAnalysis: React.FC = () => {
                 type="text"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                placeholder="분석할 키워드를 입력하세요 (예: 강남맛집)"
-                className="w-full py-5 pl-8 pr-16 rounded-full bg-white text-gray-900 placeholder-gray-400 text-lg font-medium shadow-2xl focus:ring-4 focus:ring-brand-accent/50 outline-none transition-all"
+                placeholder="키워드를 입력하세요 (예: 강남맛집)"
+                className="w-full py-4 pl-8 pr-16 rounded-full bg-white text-gray-900 placeholder-gray-400 text-lg font-medium shadow-2xl focus:ring-4 focus:ring-brand-accent/50 outline-none transition-all"
               />
               <button 
                 type="submit" 
@@ -96,7 +112,7 @@ const SearchAnalysis: React.FC = () => {
       </section>
 
       {/* Results Section */}
-      <div className="max-w-6xl mx-auto px-6 py-20 min-h-[400px]">
+      <div className="max-w-7xl mx-auto px-6 py-12 min-h-[400px]">
         {error && (
           <div className="text-center p-8 bg-red-50 rounded-2xl border border-red-100 text-red-600 font-medium animate-fade-in-up">
             <AlertCircle className="w-8 h-8 mx-auto mb-2" />
@@ -104,102 +120,190 @@ const SearchAnalysis: React.FC = () => {
           </div>
         )}
 
-        {result && (
-          <div className="animate-fade-in-up">
-            <div className="flex items-center gap-3 mb-8">
-               <h2 className="text-3xl font-bold text-gray-900">
-                  '<span className="text-brand-accent">{result.relKeyword}</span>' 분석 결과
-               </h2>
-               <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold">
-                  경쟁정도: <span className={result.compIdx === '높음' ? 'text-red-500' : 'text-green-500'}>{result.compIdx || '보통'}</span>
-               </span>
+        {data && (
+          <div className="animate-fade-in-up space-y-8">
+            {/* 1. Header & Summary */}
+            <div className="flex flex-col md:flex-row justify-between items-center bg-gray-50 p-6 rounded-2xl border border-gray-100">
+               <div className="flex items-center gap-4 mb-4 md:mb-0">
+                   <h2 className="text-3xl font-bold text-gray-900">
+                      <span className="text-brand-accent">{data.mainKeyword.relKeyword}</span>
+                   </h2>
+                   <div className={`px-3 py-1 rounded-lg text-sm font-bold border ${data.mainKeyword.compIdx === '높음' ? 'bg-red-50 border-red-200 text-red-600' : data.mainKeyword.compIdx === '중간' ? 'bg-yellow-50 border-yellow-200 text-yellow-600' : 'bg-green-50 border-green-200 text-green-600'}`}>
+                      경쟁강도: {data.mainKeyword.compIdx || '보통'}
+                   </div>
+                   <div className="px-3 py-1 bg-gray-200 text-gray-600 rounded-lg text-sm font-bold border border-gray-300">
+                      월간 조회수 기준
+                   </div>
+               </div>
+               <div className="text-sm text-gray-400 flex items-center gap-2">
+                   <Info className="w-4 h-4" /> 최근 30일 평균 데이터 (Naver Official API)
+               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-              {/* PC Volume */}
-              <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 flex flex-col items-center justify-center text-center group hover:-translate-y-1 transition-transform">
-                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <Monitor className="w-8 h-8" />
-                </div>
-                <p className="text-gray-500 font-medium mb-1">월간 PC 검색량</p>
-                <p className="text-4xl font-bold text-gray-900">{formatNumber(result.monthlyPcQc)}</p>
-              </div>
-
-              {/* Mobile Volume */}
-              <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 flex flex-col items-center justify-center text-center group hover:-translate-y-1 transition-transform">
-                <div className="w-16 h-16 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-green-600 group-hover:text-white transition-colors">
-                  <Smartphone className="w-8 h-8" />
-                </div>
-                <p className="text-gray-500 font-medium mb-1">월간 모바일 검색량</p>
-                <p className="text-4xl font-bold text-gray-900">{formatNumber(result.monthlyMobileQc)}</p>
-              </div>
-
-              {/* Total Volume */}
-              <div className="bg-brand-black p-8 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center text-white relative overflow-hidden group hover:-translate-y-1 transition-transform">
-                <div className="absolute top-0 right-0 p-3">
-                   <TrendingUp className="w-6 h-6 text-brand-accent" />
-                </div>
-                <p className="text-gray-400 font-medium mb-1">총 검색 합계</p>
-                <p className="text-4xl font-bold text-white">
-                  {formatNumber(Number(result.monthlyPcQc) + Number(result.monthlyMobileQc))}
-                </p>
-                <div className="mt-4 text-sm bg-white/10 px-3 py-1 rounded-full text-gray-300">
-                   최근 30일 기준
-                </div>
-              </div>
-            </div>
-
-            {/* Related Keywords */}
-            {relatedKeywords.length > 0 && (
-              <div>
-                 <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-gray-400" /> 연관 키워드 TOP 10
-                 </h3>
-                 <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                    <div className="grid grid-cols-12 bg-gray-50 p-4 font-bold text-gray-500 text-sm border-b border-gray-200">
-                       <div className="col-span-4 pl-4">키워드</div>
-                       <div className="col-span-3 text-right">PC 검색수</div>
-                       <div className="col-span-3 text-right">모바일 검색수</div>
-                       <div className="col-span-2 text-center">클릭률(PC/Mo)</div>
+            {/* 2. Key Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Search Volume */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-gray-500 font-bold">총 검색량</span>
+                        <Search className="w-5 h-5 text-blue-500" />
                     </div>
-                    {relatedKeywords.map((item, idx) => (
-                       <div key={idx} className="grid grid-cols-12 p-4 border-b border-gray-100 last:border-0 hover:bg-blue-50/50 transition-colors items-center text-sm">
-                          <div className="col-span-4 pl-4 font-bold text-gray-800">{item.relKeyword}</div>
-                          <div className="col-span-3 text-right text-gray-600">{formatNumber(item.monthlyPcQc)}</div>
-                          <div className="col-span-3 text-right text-gray-600">{formatNumber(item.monthlyMobileQc)}</div>
-                          <div className="col-span-2 text-center text-gray-400 text-xs">
-                             {item.monthlyAvePcClkCnt || '-'} / {item.monthlyAveMobileClkCnt || '-'}
-                          </div>
-                       </div>
-                    ))}
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                        {formatNumber(safeParseInt(data.mainKeyword.monthlyPcQc) + safeParseInt(data.mainKeyword.monthlyMobileQc))}
+                    </div>
+                    <div className="flex gap-2 text-xs font-medium">
+                        <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded">PC {formatNumber(data.mainKeyword.monthlyPcQc)}</span>
+                        <span className="bg-green-50 text-green-600 px-2 py-1 rounded">Mo {formatNumber(data.mainKeyword.monthlyMobileQc)}</span>
+                    </div>
+                </div>
+
+                {/* Content Volume */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-gray-500 font-bold">콘텐츠 발행량</span>
+                        <FileText className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                        {formatNumber(data.content.blogTotal + data.content.cafeTotal)}
+                    </div>
+                    <div className="flex gap-2 text-xs font-medium">
+                        <span className="bg-green-50 text-green-600 px-2 py-1 rounded">블로그 {formatNumber(data.content.blogTotal)}</span>
+                        <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded">카페 {formatNumber(data.content.cafeTotal)}</span>
+                    </div>
+                </div>
+
+                {/* Saturation Index */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-gray-500 font-bold">콘텐츠 포화지수</span>
+                        <PieChart className="w-5 h-5 text-red-500" />
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                        {(() => {
+                            const totalSearch = safeParseInt(data.mainKeyword.monthlyPcQc) + safeParseInt(data.mainKeyword.monthlyMobileQc);
+                            const totalContent = data.content.blogTotal + data.content.cafeTotal;
+                            if (totalSearch === 0) return '-';
+                            const index = (totalContent / totalSearch * 100).toFixed(1);
+                            return index + '%';
+                        })()}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                        (발행량 / 검색량) * 100
+                    </div>
+                </div>
+
+                {/* Click Rate (Est) */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-gray-500 font-bold">예상 클릭수</span>
+                        <MousePointer className="w-5 h-5 text-indigo-500" />
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                        {formatNumber(safeParseInt(data.mainKeyword.monthlyAvePcClkCnt) + safeParseInt(data.mainKeyword.monthlyAveMobileClkCnt))}
+                    </div>
+                    <div className="flex gap-2 text-xs font-medium">
+                         <span className="text-gray-400">평균 클릭률을 기반으로 함</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. Trend Graph */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-brand-accent" /> 최근 1년 검색 트렌드 (DataLab)
+                </h3>
+                {data.trend && data.trend.length > 0 ? (
+                    <div className="h-64 w-full flex items-end justify-between gap-1 px-4">
+                        {data.trend.map((t, idx) => (
+                            <div key={idx} className="flex-1 flex flex-col items-center group relative">
+                                <div 
+                                    className="w-full bg-blue-100 rounded-t-sm hover:bg-brand-accent transition-colors relative"
+                                    style={{ height: `${t.ratio}%` }}
+                                >
+                                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                       {t.ratio.toFixed(1)}
+                                   </div>
+                                </div>
+                                <div className="text-[10px] text-gray-400 mt-2 -rotate-45 origin-top-left translate-y-2">
+                                    {t.period.slice(2, 7)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="h-40 flex items-center justify-center text-gray-400 bg-gray-50 rounded-xl">
+                        트렌드 데이터가 부족하거나 제공되지 않는 키워드입니다.
+                    </div>
+                )}
+            </div>
+
+            {/* 4. Limitations Info Box */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex gap-4 text-sm text-gray-600">
+                <AlertCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                <div>
+                    <p className="font-bold mb-1">데이터 제공 안내</p>
+                    <p>
+                        본 서비스는 네이버 공식 API(검색광고, 데이터랩, 검색)를 사용하여 데이터를 제공합니다.<br/>
+                        * <strong>성별/연령별 비율, 섹션 배치 순서</strong>는 네이버 API에서 제공하지 않아 표시되지 않습니다.<br/>
+                        * 콘텐츠 발행량은 네이버 뷰(블로그+카페) 탭의 검색 결과 수치입니다.
+                    </p>
+                </div>
+            </div>
+
+            {/* 5. Related Keywords Table */}
+            <div>
+                 <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                    <BarChart2 className="w-5 h-5 text-gray-400" /> 연관 키워드 ({data.relatedKeywords.length}개)
+                 </h3>
+                 <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                    <table className="w-full min-w-[600px]">
+                        <thead>
+                            <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200">
+                                <th className="py-4 px-6 text-left">키워드</th>
+                                <th className="py-4 px-6 text-right">총 검색수</th>
+                                <th className="py-4 px-6 text-right">PC 검색</th>
+                                <th className="py-4 px-6 text-right">모바일 검색</th>
+                                <th className="py-4 px-6 text-center">경쟁정도</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.relatedKeywords.map((item, idx) => (
+                               <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-blue-50/50 transition-colors text-sm">
+                                  <td className="py-4 px-6 font-bold text-gray-800">{item.relKeyword}</td>
+                                  <td className="py-4 px-6 text-right font-bold text-gray-900">
+                                      {formatNumber(safeParseInt(item.monthlyPcQc) + safeParseInt(item.monthlyMobileQc))}
+                                  </td>
+                                  <td className="py-4 px-6 text-right text-gray-600">{formatNumber(item.monthlyPcQc)}</td>
+                                  <td className="py-4 px-6 text-right text-gray-600">{formatNumber(item.monthlyMobileQc)}</td>
+                                  <td className="py-4 px-6 text-center">
+                                      <span className={`px-2 py-1 rounded text-xs font-bold ${item.compIdx === '높음' ? 'text-red-600 bg-red-50' : item.compIdx === '중간' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>
+                                          {item.compIdx}
+                                      </span>
+                                  </td>
+                               </tr>
+                            ))}
+                        </tbody>
+                    </table>
                  </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
         
-        {!result && !loading && !error && (
-            <div className="text-center py-20 text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-               <Search className="w-12 h-12 mx-auto mb-4 opacity-20" />
-               <p>키워드를 입력하여 검색량을 조회해보세요.</p>
+        {!data && !loading && !error && (
+            <div className="text-center py-32 text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+               <Search className="w-16 h-16 mx-auto mb-6 opacity-20" />
+               <h3 className="text-xl font-bold text-gray-500 mb-2">키워드를 입력해보세요</h3>
+               <p>네이버 빅데이터를 실시간으로 분석해드립니다.</p>
             </div>
         )}
-      </div>
-
-      <div className="bg-gray-50 py-16 px-6">
-         <div className="max-w-4xl mx-auto text-center">
-            <h3 className="text-2xl font-bold mb-4">검색량 데이터, 어떻게 활용할까요?</h3>
-            <p className="text-gray-600 mb-8">
-               조회수가 높다고 무조건 좋은 키워드는 아닙니다.<br/>
-               내 브랜드의 규모와 예산에 맞는 '황금 키워드'를 찾아내는 것이 핵심입니다.
-            </p>
-            <a href="/contact" className="inline-flex items-center gap-2 px-8 py-3 bg-white border border-gray-200 rounded-full font-bold hover:border-brand-accent hover:text-brand-accent transition-all shadow-sm">
-               전문가에게 키워드 컨설팅 받기 <ArrowRight className="w-4 h-4" />
-            </a>
-         </div>
       </div>
     </div>
   );
 };
+
+// Simple icon wrapper
+const MousePointer = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+);
 
 export default SearchAnalysis;
