@@ -7,11 +7,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// Cloudtype injects the PORT environment variable. Fallback to 8001 if local.
 const PORT = process.env.PORT || 8001; 
 
 const distPath = path.join(__dirname, 'dist');
 app.use(express.json());
 
+// Health check endpoint for Cloudtype
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
 if (fs.existsSync(distPath)) {
@@ -25,6 +27,8 @@ if (fs.existsSync(distPath)) {
       }
     }
   }));
+} else {
+  console.warn(`WARNING: Directory ${distPath} does not exist. Did the build finish successfully?`);
 }
 
 app.get('*', (req, res) => {
@@ -32,10 +36,10 @@ app.get('*', (req, res) => {
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(500).send('Server Error: index.html not found. Please run "npm run build" first.');
+    res.status(500).send('Server Error: index.html not found. Please check build output.');
   }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running and listening on port ${PORT}`);
 });
