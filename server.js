@@ -26,13 +26,27 @@ const AD_SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 // ----------------------------------------------------------------------
 const OPEN_CLIENT_ID = "vQAN_RNU8A7kvy4N_aZI";
 const OPEN_CLIENT_SECRET = "0efwCNoAP7";
-// 네이버 개발자 센터에 등록한 "Web 서비스 URL"과 일치해야 함
+// 네이버 개발자 센터에 등록한 "Web 서비스 URL" (Trailing slash 제거)
 const SERVICE_URL = "https://port-0-smt-9144-mkkldwi351bd93e1.sel3.cloudtype.app";
 
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
+}
+
+// 안전한 에러 메시지 추출 함수
+function getErrorDetails(error) {
+    if (error.response) {
+        // 서버가 응답을 줬으나 에러 코드인 경우 (4xx, 5xx)
+        return `Status: ${error.response.status}, Msg: ${JSON.stringify(error.response.data)}`;
+    } else if (error.request) {
+        // 요청은 갔으나 응답이 없는 경우 (타임아웃, 네트워크)
+        return `No response. Code: ${error.code || 'UNKNOWN'}`;
+    } else {
+        // 요청 설정 중 에러
+        return `Setup Error: ${error.message}`;
+    }
 }
 
 // 통합 API 핸들러
@@ -52,11 +66,8 @@ app.get('/api/naver-keywords', async (req, res) => {
     const adData = await fetchFromAdApi(cleanKeyword);
     return res.json({ ...adData, _source: 'ad_api' });
   } catch (adError) {
-    // 에러 로그 구체화
-    const status = adError.response?.status || 'Unknown';
-    const msg = JSON.stringify(adError.response?.data || adError.message);
-    adApiFailReason = `Ad API(${status}): ${msg}`;
-    console.warn(`[Fail 1] ${adApiFailReason}. Switching to Open API.`);
+    adApiFailReason = getErrorDetails(adError);
+    console.warn(`[Fail 1] Ad API Failed. Reason: ${adApiFailReason}`);
     
     // 2순위: 오픈 API (블로그 + 데이터랩) 시도
     try {
@@ -73,18 +84,16 @@ app.get('/api/naver-keywords', async (req, res) => {
         return res.json({ ...combinedData, _source: 'open_api' });
 
     } catch (openError) {
-        const status = openError.response?.status || 'Unknown';
-        const msg = JSON.stringify(openError.response?.data || openError.message);
-        const openApiFailReason = `Open API(${status}): ${msg}`;
+        const openApiFailReason = getErrorDetails(openError);
 
         console.error(`[Fail 2] Final Failure.`);
-        console.error(`Reason 1: ${adApiFailReason}`);
-        console.error(`Reason 2: ${openApiFailReason}`);
+        console.error(`Reason 1 (Ad): ${adApiFailReason}`);
+        console.error(`Reason 2 (Open): ${openApiFailReason}`);
 
         // 프론트엔드에 구체적인 에러 메시지 전달
         return res.status(500).json({ 
             error: 'API 호출 실패',
-            details: `검색광고 API와 오픈 API 모두 실패했습니다.\n[광고API 오류]: ${adApiFailReason}\n[오픈API 오류]: ${openApiFailReason}`
+            details: `[광고API]: ${adApiFailReason}\n[오픈API]: ${openApiFailReason}`
         });
     }
   }
@@ -109,7 +118,7 @@ async function fetchFromAdApi(keyword) {
             'X-Customer': AD_CUSTOMER_ID,
             'X-Signature': signature
         },
-        timeout: 3000 // 3초 안에 응답 없으면 포기 (빠른 전환 위해)
+        timeout: 3000 // 3초 타임아웃
     });
     return response.data;
 }
@@ -125,9 +134,8 @@ async function fetchFromBlogApi(keyword) {
         },
         headers: {
             'X-Naver-Client-Id': OPEN_CLIENT_ID,
-            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET,
-            // 중요: 네이버 개발자 센터에 등록된 URL을 Referer로 보냄
-            'Referer': SERVICE_URL 
+            'X-Naver-Client-Secret': OPEN_CLIENT_SECRET
+            // 오픈 API 검색은 Referer 헤더가 필수는 아니지만, 웹 설정 시 필요할 수 있음
         },
         timeout: 5000
     });
@@ -141,20 +149,21 @@ async function fetchFromDataLabApi(keyword) {
     oneYearAgo.setFullYear(today.getFullYear() - 1);
     const formatDate = (date) => date.toISOString().split('T')[0];
 
-    const response = await axios.post('https://openapi.naver.com/v1/datalab/search', {
+    // 요청 바디 구성 (빈 값은 API 에러 유발하므로 제외)
+    const requestBody = {
         startDate: formatDate(oneYearAgo),
         endDate: formatDate(today),
         timeUnit: 'month',
-        keywordGroups: [{ groupName: keyword, keywords: [keyword] }],
-        device: "", // pc, mo, or empty(all)
-        ages: [], 
-        gender: ""
-    }, {
+        keywordGroups: [{ groupName: keyword, keywords: [keyword] }]
+        // device, gender, ages는 값이 없으면 아예 보내지 않아야 함 (빈 문자열 전송 시 400 에러)
+    };
+
+    const response = await axios.post('https://openapi.naver.com/v1/datalab/search', requestBody, {
         headers: {
             'X-Naver-Client-Id': OPEN_CLIENT_ID,
             'X-Naver-Client-Secret': OPEN_CLIENT_SECRET,
             'Content-Type': 'application/json',
-            // 중요: 네이버 개발자 센터에 등록된 URL을 Referer로 보냄
+            // 데이터랩은 Referer 검사가 까다로울 수 있음
             'Referer': SERVICE_URL
         },
         timeout: 5000
