@@ -39,24 +39,25 @@ function doRequest(url, options, postData) {
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
             if (res.statusCode >= 200 && res.statusCode < 300) {
-                try { resolve(JSON.parse(data)); } catch(e) { reject(e); }
+                try { resolve(JSON.parse(data)); } catch(e) { 
+                    console.error("JSON Parse Error:", e);
+                    resolve(null); 
+                }
             } else {
-                // API 에러 응답도 파싱 시도
+                // API 에러 발생 시 로그를 남기고 null 반환 (전체 로직 중단 방지)
                 try {
                     const parsed = JSON.parse(data);
-                    // 데이터랩 같은 경우 에러 메시지가 body에 있음
-                    console.warn(`API Error (${url}):`, parsed);
-                    // 실패하더라도 치명적이지 않으면 null 반환 처리 (Promise reject 대신)
-                    resolve(null); 
+                    console.warn(`[API Fail] ${url} (${res.statusCode}):`, parsed.message || parsed);
                 } catch(e) {
-                    resolve(null);
+                    console.warn(`[API Fail] ${url} (${res.statusCode}):`, data);
                 }
+                resolve(null);
             }
         });
     });
     req.on('error', (e) => {
-        console.error(`Network Error (${url}):`, e);
-        resolve(null); // 네트워크 에러 시 null 반환하여 전체 로직이 죽지 않게 함
+        console.error(`[Network Error] ${url}:`, e.message);
+        resolve(null);
     });
     if (postData) req.write(postData);
     req.end();
@@ -148,29 +149,56 @@ app.get('/api/keywords', async (req, res) => {
     // Wait for all requests
     const [adData, blogData, cafeData, datalabData] = await Promise.all([adPromise, blogPromise, cafePromise, datalabPromise]);
 
-    // Process Results
-    if (!adData || !adData.keywordList) {
-        throw new Error("검색광고 API 호출 실패");
+    // -----------------------------------------------------------
+    // 결과 조합 (Robust Fallback Logic)
+    // -----------------------------------------------------------
+    let mainKeyword = null;
+    let relatedKeywords = [];
+    let dataSource = 'combined_api';
+
+    // 1순위: 광고 API 데이터 사용
+    if (adData && adData.keywordList && adData.keywordList.length > 0) {
+        mainKeyword = adData.keywordList[0];
+        relatedKeywords = adData.keywordList.slice(1, 21);
+    } 
+    // 2순위: 광고 API 실패 시, 오픈 API(블로그) 데이터로 추정
+    else if (blogData && (blogData.total !== undefined)) {
+        console.warn("[API Warning] Ad API failed or returned empty. Using Open API fallback.");
+        const total = blogData.total;
+        dataSource = 'open_api_fallback';
+        
+        // 블로그 발행량을 기반으로 검색량 추정 (Heuristic)
+        mainKeyword = {
+            relKeyword: cleanKeyword,
+            monthlyPcQc: Math.floor(total * 0.5),      // 추정치
+            monthlyMobileQc: Math.floor(total * 1.5),  // 추정치
+            monthlyAvePcClkCnt: Math.floor(total * 0.05),
+            monthlyAveMobileClkCnt: Math.floor(total * 0.1),
+            compIdx: total > 50000 ? "높음" : "중간"
+        };
+    } else {
+        // 모든 API 실패
+        console.error("[API Error] All APIs failed.");
+        return res.status(500).json({ error: "데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요." });
     }
 
     const result = {
-        mainKeyword: adData.keywordList[0],
-        relatedKeywords: adData.keywordList.slice(1, 21), // Top 20 related
+        mainKeyword,
+        relatedKeywords,
         content: {
-            blogTotal: blogData ? blogData.total : 0,
-            cafeTotal: cafeData ? cafeData.total : 0,
+            blogTotal: blogData?.total || 0,
+            cafeTotal: cafeData?.total || 0,
         },
-        trend: datalabData && datalabData.results && datalabData.results[0] ? datalabData.results[0].data : [],
-        _source: 'combined_api'
+        trend: datalabData?.results?.[0]?.data || [],
+        _source: dataSource
     };
 
-    console.log('[API] All Data Fetched Successfully');
+    console.log('[API] Response sent successfully.');
     res.json(result);
 
   } catch (error) {
-    console.error("[API] Error:", error.message);
-    // Fallback: If Ad API fails, return error. Others are optional.
-    res.status(500).json({ error: "데이터 조회 중 오류가 발생했습니다.", details: error.message });
+    console.error("[API Critical Error]:", error.message);
+    res.status(500).json({ error: "서버 내부 오류가 발생했습니다.", details: error.message });
   }
 });
 
