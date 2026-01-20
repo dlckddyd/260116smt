@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { faqData as initialFaqs, reviewsData as initialReviews, FAQItem, ReviewItem } from '../data/content';
 import { db, auth } from '../firebase'; // Import auth
 import { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, query, orderBy, setDoc } from 'firebase/firestore';
-import { signInAnonymously } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // Inquiry Type Definition
 export interface InquiryItem {
@@ -29,7 +29,7 @@ interface DataContextType {
   updateInquiryStatus: (id: string, status: InquiryItem['status']) => Promise<void>;
   updateServiceImage: (id: string, url: string) => Promise<void>;
   isAdmin: boolean;
-  login: (password: string) => Promise<boolean>; // Changed to Promise
+  login: (password: string) => Promise<boolean>; 
   logout: () => void;
 }
 
@@ -44,6 +44,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('growth_lab_is_admin') === 'true';
   });
+
+  // Auth Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (!user && isAdmin) {
+            // If supposed to be admin but not logged in, try login
+            signInAnonymously(auth).catch(console.error);
+        }
+    });
+    return () => unsubscribe();
+  }, [isAdmin]);
 
   // --- Firebase Realtime Listeners ---
 
@@ -126,10 +137,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Admin Auth Persistence
   useEffect(() => {
     localStorage.setItem('growth_lab_is_admin', String(isAdmin));
-    // If admin matches, try to ensure auth session exists
-    if (isAdmin) {
-      signInAnonymously(auth).catch(e => console.log("Auto-login auth error:", e));
-    }
   }, [isAdmin]);
 
   // --- Actions ---
@@ -139,7 +146,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await addDoc(collection(db, 'faqs'), faq);
     } catch (e) {
       console.error("Error adding FAQ:", e);
-      alert("데이터베이스 권한 문제로 저장에 실패했습니다.");
+      throw e; // Throw to let component handle
     }
   };
 
@@ -159,7 +166,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
     } catch (e) {
       console.error("Error adding Review:", e);
-      alert("데이터베이스 권한 문제로 저장에 실패했습니다.");
+      throw e;
     }
   };
 
@@ -197,18 +204,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await setDoc(doc(db, 'service_images', id), { url }, { merge: true });
     } catch (e) {
       console.error("Error updating Service Image:", e);
-      alert("이미지 저장에 실패했습니다.");
+      throw e;
     }
   };
 
   const login = async (password: string) => {
     if (password === 'admin1234') {
       try {
-        // Sign in anonymously to pass Firebase Storage Rules (request.auth != null)
         await signInAnonymously(auth);
       } catch (error) {
         console.error("Firebase Login Error:", error);
-        // Continue anyway, rules might be public
       }
       setIsAdmin(true);
       return true;

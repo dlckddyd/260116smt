@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, FileText, Image as ImageIcon, ArrowDown, ArrowUp, Upload, Loader2, Layout } from 'lucide-react';
 import { faqCategories, ContentBlock } from '../data/content';
-import { storage } from '../firebase';
+import { storage, auth } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { signInAnonymously } from 'firebase/auth';
 
 const Admin: React.FC = () => {
   const { 
@@ -18,10 +19,10 @@ const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'inquiries' | 'faq' | 'reviews' | 'main'>('inquiries');
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [isUploading, setIsUploading] = useState(false); // Upload loading state
+  const [isUploading, setIsUploading] = useState(false); 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // FAQ Form State (New Block System)
+  // FAQ Form State
   const [newFaqCategory, setNewFaqCategory] = useState(faqCategories[0]);
   const [newFaqQuestion, setNewFaqQuestion] = useState('');
   const [newFaqBlocks, setNewFaqBlocks] = useState<ContentBlock[]>([]);
@@ -29,14 +30,14 @@ const Admin: React.FC = () => {
   // Review Form State
   const [newReview, setNewReview] = useState({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
 
-  // Service Image Management State
+  // Upload State
   const [activeServiceIdForUpload, setActiveServiceIdForUpload] = useState<string | null>(null);
+  const [activeBlockIdForUpload, setActiveBlockIdForUpload] = useState<string | null>(null);
 
-  // Refs for file inputs
+  // Refs
   const faqFileInputRef = useRef<HTMLInputElement>(null);
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
-  const [activeBlockIdForUpload, setActiveBlockIdForUpload] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,92 +50,129 @@ const Admin: React.FC = () => {
     }
   };
 
-  // --- Image Optimization & Upload Logic ---
-  const resizeImage = (file: File, maxWidth: number = 800): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const scaleSize = maxWidth / img.width;
-        const width = (img.width > maxWidth) ? maxWidth : img.width;
-        const height = (img.width > maxWidth) ? img.height * scaleSize : img.height;
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            canvas.toBlob((blob) => {
-                if (blob) resolve(blob);
-                else reject(new Error('Image resize failed'));
-            }, 'image/jpeg', 0.85); // Compress to 85% quality JPEG
-        } else {
-            reject(new Error('Canvas context failed'));
-        }
-      };
-      img.onerror = reject;
-    });
+  // Ensure auth before any operation
+  const ensureAuth = async () => {
+    if (!auth.currentUser) {
+      try {
+        await signInAnonymously(auth);
+      } catch (e) {
+        console.error("Auth Error", e);
+        alert("서버 연결에 실패했습니다. 새로고침 후 다시 시도해주세요.");
+        return false;
+      }
+    }
+    return true;
   };
 
+  // --- Robust File Upload ---
   const handleFileUpload = async (file: File): Promise<string> => {
+    if (!file) return "";
+    if (!(await ensureAuth())) return "";
+
     try {
       setIsUploading(true);
       
-      // Try to resize, if fails use original file
-      let uploadBlob: Blob = file;
-      try {
-          uploadBlob = await resizeImage(file);
-      } catch (resizeErr) {
-          console.warn("Image resize failed, uploading original file.", resizeErr);
-          uploadBlob = file;
-      }
-      
-      // Sanitize Filename & Path
+      // Upload raw file without resizing to prevent hanging
       const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
       const fileName = `uploads/${Date.now()}_${safeName}`;
       const storageRef = ref(storage, fileName);
       
-      // Add Metadata
-      const metadata = {
-        contentType: 'image/jpeg',
-      };
-      
-      await uploadBytes(storageRef, uploadBlob, metadata);
+      await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(storageRef);
-      setIsUploading(false);
       return downloadURL;
+
     } catch (error: any) {
       console.error("Upload failed", error);
-      setIsUploading(false);
-      
       let msg = "이미지 업로드에 실패했습니다.";
-      if (error.code === 'storage/unauthorized') {
-          msg = "업로드 권한이 없습니다. (파이어베이스 규칙 오류)";
-      } else if (error.code === 'storage/canceled') {
-          msg = "업로드가 취소되었습니다.";
-      }
+      if (error.code === 'storage/unauthorized') msg = "업로드 권한이 없습니다.";
       alert(msg);
       return "";
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  // --- FAQ Block Management ---
+  // --- Main Image Management ---
+  const triggerMainImageUpload = (serviceId: string) => {
+    setActiveServiceIdForUpload(serviceId);
+    // Slight delay to ensure state update before click (safer)
+    setTimeout(() => {
+        mainImageInputRef.current?.click();
+    }, 50);
+  };
+
+  const onMainImageFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeServiceIdForUpload) return;
+
+    const url = await handleFileUpload(file);
+    if (url) {
+        await updateServiceImage(activeServiceIdForUpload, url);
+        alert("이미지가 변경되었습니다.");
+    }
+    
+    // Cleanup
+    if (mainImageInputRef.current) mainImageInputRef.current.value = '';
+    setActiveServiceIdForUpload(null);
+  };
+
+  // --- FAQ Management ---
+  const triggerFaqImageUpload = (blockId: string) => {
+    setActiveBlockIdForUpload(blockId);
+    setTimeout(() => {
+        faqFileInputRef.current?.click();
+    }, 50);
+  };
+
+  const onFaqFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeBlockIdForUpload) return;
+
+    const url = await handleFileUpload(file);
+    if (url) {
+        setNewFaqBlocks(prev => prev.map(b => b.id === activeBlockIdForUpload ? { ...b, content: url } : b));
+    }
+
+    if (faqFileInputRef.current) faqFileInputRef.current.value = '';
+    setActiveBlockIdForUpload(null);
+  };
+
+  const handleAddFaq = async () => {
+    if (!newFaqQuestion.trim()) return alert("질문을 입력해주세요.");
+    if (newFaqBlocks.length === 0) return alert("내용을 입력해주세요.");
+    if (!(await ensureAuth())) return;
+
+    setIsUploading(true); // Reuse uploading state for submission
+    try {
+        await addFaq({
+            category: newFaqCategory,
+            question: newFaqQuestion,
+            blocks: newFaqBlocks
+        });
+        setShowFaqModal(false);
+        setNewFaqQuestion('');
+        setNewFaqBlocks([]);
+        alert("FAQ가 등록되었습니다.");
+    } catch (e) {
+        console.error(e);
+        alert("등록 중 오류가 발생했습니다.");
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
   const addBlock = (type: 'text' | 'image') => {
-    setNewFaqBlocks([
-        ...newFaqBlocks, 
-        { id: Date.now().toString(), type, content: '' }
-    ]);
+    setNewFaqBlocks([...newFaqBlocks, { id: Date.now().toString(), type, content: '' }]);
+  };
+  
+  const removeBlock = (id: string) => {
+    setNewFaqBlocks(newFaqBlocks.filter(b => b.id !== id));
   };
 
   const updateBlock = (id: string, content: string) => {
     setNewFaqBlocks(newFaqBlocks.map(b => b.id === id ? { ...b, content } : b));
   };
-
-  const removeBlock = (id: string) => {
-    setNewFaqBlocks(newFaqBlocks.filter(b => b.id !== id));
-  };
-
+  
   const moveBlock = (index: number, direction: 'up' | 'down') => {
     const newBlocks = [...newFaqBlocks];
     if (direction === 'up' && index > 0) {
@@ -145,102 +183,44 @@ const Admin: React.FC = () => {
     setNewFaqBlocks(newBlocks);
   };
 
-  const triggerFaqImageUpload = (blockId: string) => {
-    setActiveBlockIdForUpload(blockId);
-    faqFileInputRef.current?.click();
-  };
-
-  const onFaqFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] && activeBlockIdForUpload) {
-        const url = await handleFileUpload(e.target.files[0]);
-        if (url) {
-            updateBlock(activeBlockIdForUpload, url);
-        }
-    }
-    // Reset
-    if (faqFileInputRef.current) faqFileInputRef.current.value = '';
-    setActiveBlockIdForUpload(null);
-  };
-
-  const handleAddFaq = async () => {
-    if (!newFaqQuestion) {
-        alert("질문을 입력해주세요.");
-        return;
-    }
-    const validBlocks = newFaqBlocks.filter(b => b.content.trim() !== "");
-    if (validBlocks.length === 0) {
-        alert("최소 하나의 내용을 입력해주세요.");
-        return;
-    }
-
-    await addFaq({
-        category: newFaqCategory,
-        question: newFaqQuestion,
-        blocks: validBlocks
-    });
-    
-    setShowFaqModal(false);
-    setNewFaqQuestion('');
-    setNewFaqBlocks([]);
-  };
-
-  // --- Review Image Upload ---
+  // --- Review Management ---
   const triggerReviewImageUpload = () => {
     reviewFileInputRef.current?.click();
   };
 
   const onReviewFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-        const url = await handleFileUpload(e.target.files[0]);
-        if (url) {
-            setNewReview({...newReview, imageUrl: url, type: 'image'});
-        }
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = await handleFileUpload(file);
+    if (url) {
+        setNewReview(prev => ({ ...prev, imageUrl: url, type: 'image' }));
     }
     if (reviewFileInputRef.current) reviewFileInputRef.current.value = '';
   };
 
   const handleAddReview = async () => {
-    await addReview({
-        ...newReview,
-        type: newReview.type as 'text' | 'image'
-    });
-    setShowReviewModal(false);
-    setNewReview({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
-  };
+    if (!newReview.name || !newReview.company) return alert("이름과 업체명을 입력해주세요.");
+    if (!(await ensureAuth())) return;
 
-  // --- Main Image Upload ---
-  const triggerMainImageUpload = (serviceId: string) => {
-    console.log("Setting active upload service ID to:", serviceId);
-    setActiveServiceIdForUpload(serviceId);
-    // Use timeout to allow state to settle, although click is synchronous
-    setTimeout(() => {
-        mainImageInputRef.current?.click();
-    }, 0);
-  };
-
-  const onMainImageFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Check local closure activeServiceId first, but state is better.
-    // If e.target.files is present, we process.
-    if (!activeServiceIdForUpload) {
-        console.error("Active Service ID is missing during upload event.");
-        return;
+    setIsUploading(true);
+    try {
+        await addReview({
+            ...newReview,
+            type: newReview.type as 'text' | 'image'
+        });
+        setShowReviewModal(false);
+        setNewReview({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
+        alert("후기가 등록되었습니다.");
+    } catch (e) {
+        console.error(e);
+        alert("등록 중 오류가 발생했습니다.");
+    } finally {
+        setIsUploading(false);
     }
-
-    if (e.target.files && e.target.files[0]) {
-        const url = await handleFileUpload(e.target.files[0]);
-        if (url) {
-            await updateServiceImage(activeServiceIdForUpload, url);
-            alert("이미지가 변경되었습니다.");
-        }
-    }
-    if (mainImageInputRef.current) mainImageInputRef.current.value = '';
-    // Do NOT clear activeServiceIdForUpload immediately here if using async logic above 
-    // or ensure it's cleared only after everything is done.
-    // However, for safety, we can leave it or clear it. 
-    // Clearing it might race with the async upload if we rely on it inside upload (we don't anymore, passed to updateServiceImage)
-    setActiveServiceIdForUpload(null);
   };
 
+  // --- Services List ---
   const servicesList = [
       { id: 'place', name: '플레이스 마케팅', defaultImg: "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop" },
       { id: 'clip', name: '네이버 클립', defaultImg: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop" },
@@ -282,6 +262,14 @@ const Admin: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
+      {/* Loading Overlay */}
+      {isUploading && (
+          <div className="fixed inset-0 bg-black/50 z-[60] flex flex-col items-center justify-center text-white">
+              <Loader2 className="w-12 h-12 animate-spin mb-4" />
+              <p className="text-lg font-bold">처리 중입니다...</p>
+          </div>
+      )}
+
       <div className="bg-brand-black text-white px-6 py-4 shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
            <div className="font-bold text-xl flex items-center gap-2">
@@ -297,28 +285,16 @@ const Admin: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
          {/* Tabs */}
          <div className="flex gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
-            <button 
-               onClick={() => setActiveTab('inquiries')}
-               className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'inquiries' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
-            >
+            <button onClick={() => setActiveTab('inquiries')} className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'inquiries' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}>
                <MessageSquare className="w-5 h-5" /> 문의 내역
             </button>
-            <button 
-               onClick={() => setActiveTab('main')}
-               className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'main' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
-            >
+            <button onClick={() => setActiveTab('main')} className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'main' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}>
                <Layout className="w-5 h-5" /> 메인 관리
             </button>
-            <button 
-               onClick={() => setActiveTab('faq')}
-               className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'faq' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
-            >
+            <button onClick={() => setActiveTab('faq')} className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'faq' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}>
                <HelpCircle className="w-5 h-5" /> 자주 묻는 질문
             </button>
-            <button 
-               onClick={() => setActiveTab('reviews')}
-               className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'reviews' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}
-            >
+            <button onClick={() => setActiveTab('reviews')} className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap ${activeTab === 'reviews' ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400 hover:text-gray-600'}`}>
                <Star className="w-5 h-5" /> 고객 후기
             </button>
          </div>
@@ -344,10 +320,10 @@ const Admin: React.FC = () => {
                            <p className="bg-gray-50 p-4 rounded-lg text-gray-700 whitespace-pre-line">{item.message}</p>
                         </div>
                         <div className="flex md:flex-col gap-2 justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
-                           <button onClick={() => updateInquiryStatus(item.id, 'contacted')} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm font-bold flex items-center gap-2">
+                           <button onClick={() => updateInquiryStatus(item.id, 'contacted')} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm font-bold flex items-center gap-2 whitespace-nowrap">
                               <CheckCircle className="w-4 h-4" /> 완료 처리
                            </button>
-                           <button onClick={() => updateInquiryStatus(item.id, 'read')} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm font-bold flex items-center gap-2">
+                           <button onClick={() => updateInquiryStatus(item.id, 'read')} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm font-bold flex items-center gap-2 whitespace-nowrap">
                               <Clock className="w-4 h-4" /> 보류
                            </button>
                         </div>
@@ -363,20 +339,21 @@ const Admin: React.FC = () => {
                  {servicesList.map(service => (
                      <div key={service.id} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-4">
                          <h4 className="font-bold text-lg">{service.name}</h4>
-                         <div className="aspect-[4/5] rounded-lg overflow-hidden border border-gray-100 bg-gray-50 relative">
+                         <div className="aspect-[4/5] rounded-lg overflow-hidden border border-gray-100 bg-gray-50 relative group">
                              <img 
                                 src={serviceImages[service.id] || service.defaultImg} 
                                 alt={service.name} 
                                 className="w-full h-full object-cover"
                              />
+                             {/* Overlay for indication */}
+                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none"></div>
                          </div>
                          <button 
                             onClick={() => triggerMainImageUpload(service.id)}
-                            className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
                             disabled={isUploading}
                          >
-                            {isUploading && activeServiceIdForUpload === service.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Upload className="w-4 h-4"/>}
-                            이미지 교체
+                            <Upload className="w-4 h-4"/> 이미지 교체
                          </button>
                      </div>
                  ))}
@@ -480,12 +457,12 @@ const Admin: React.FC = () => {
         accept="image/*"
       />
 
-      {/* FAQ Modal (Block Builder) */}
+      {/* FAQ Modal */}
       {showFaqModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
            <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
               <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold">질문 등록 (블록 방식)</h3>
+                 <h3 className="text-xl font-bold">질문 등록</h3>
                  <button onClick={() => setShowFaqModal(false)}><X className="w-6 h-6" /></button>
               </div>
               <div className="space-y-4">
@@ -511,11 +488,11 @@ const Admin: React.FC = () => {
 
                  {/* Block Builder Area */}
                  <div className="border-t border-b border-gray-100 py-4 my-4">
-                    <label className="block text-sm font-bold mb-3">답변 구성 (순서대로 출력됩니다)</label>
+                    <label className="block text-sm font-bold mb-3">답변 구성</label>
                     
                     {newFaqBlocks.length === 0 && (
                         <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                            아래 버튼을 눌러 텍스트나 이미지를 추가하세요.
+                            텍스트 또는 이미지를 추가하세요.
                         </div>
                     )}
 
@@ -545,17 +522,15 @@ const Admin: React.FC = () => {
                                         <div className="flex gap-2">
                                             <input 
                                                 className="w-full p-2 border rounded text-sm bg-gray-100" 
-                                                placeholder="이미지 파일 첨부 또는 URL 입력"
+                                                placeholder="이미지 파일"
                                                 value={block.content}
                                                 readOnly
                                             />
                                             <button 
                                                 onClick={() => triggerFaqImageUpload(block.id)}
                                                 className="px-3 py-1 bg-gray-800 text-white text-xs rounded hover:bg-black whitespace-nowrap flex items-center gap-1"
-                                                disabled={isUploading}
                                             >
-                                                {isUploading && activeBlockIdForUpload === block.id ? <Loader2 className="w-3 h-3 animate-spin"/> : <Upload className="w-3 h-3"/>}
-                                                {block.content ? '변경' : '업로드'}
+                                                <Upload className="w-3 h-3"/> {block.content ? '변경' : '업로드'}
                                             </button>
                                         </div>
                                     )}
@@ -578,8 +553,8 @@ const Admin: React.FC = () => {
                     </div>
                  </div>
 
-                 <button onClick={handleAddFaq} disabled={isUploading} className="w-full py-4 bg-brand-accent text-white font-bold rounded-xl hover:bg-blue-600 disabled:opacity-50">
-                    {isUploading ? '업로드 중...' : '등록완료'}
+                 <button onClick={handleAddFaq} className="w-full py-4 bg-brand-accent text-white font-bold rounded-xl hover:bg-blue-600">
+                    등록 완료
                  </button>
               </div>
            </div>
@@ -646,10 +621,8 @@ const Admin: React.FC = () => {
                            <button 
                                 onClick={triggerReviewImageUpload}
                                 className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-black whitespace-nowrap flex items-center gap-1"
-                                disabled={isUploading}
                            >
-                                {isUploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Upload className="w-4 h-4"/>}
-                                업로드
+                                <Upload className="w-4 h-4"/> 업로드
                            </button>
                        </div>
                        {newReview.imageUrl && (
@@ -666,8 +639,8 @@ const Admin: React.FC = () => {
                        onChange={e => setNewReview({...newReview, rating: parseInt(e.target.value)})}
                     />
                  </div>
-                 <button onClick={handleAddReview} disabled={isUploading} className="w-full py-4 bg-brand-accent text-white font-bold rounded-xl hover:bg-blue-600 disabled:opacity-50">
-                    {isUploading ? '업로드 중...' : '등록완료'}
+                 <button onClick={handleAddReview} className="w-full py-4 bg-brand-accent text-white font-bold rounded-xl hover:bg-blue-600">
+                    등록 완료
                  </button>
               </div>
            </div>
