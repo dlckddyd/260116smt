@@ -90,6 +90,13 @@ const Navbar: React.FC = () => {
           </div>
 
           <Link 
+            to="/search-analysis" 
+            className={`text-[15px] font-semibold hover:text-brand-accent transition-colors ${location.pathname === '/search-analysis' ? 'text-brand-accent' : ''}`}
+          >
+            키워드 분석
+          </Link>
+
+          <Link 
             to="/reward" 
             className={`text-[15px] font-semibold hover:text-brand-accent transition-colors ${location.pathname === '/reward' ? 'text-brand-accent' : ''}`}
           >
@@ -136,6 +143,7 @@ const Navbar: React.FC = () => {
               </Link>
             ))}
           </div>
+          <Link to="/search-analysis" className="text-lg font-bold text-gray-800" onClick={closeMenu}>키워드 분석</Link>
           <Link to="/reward" className="text-lg font-bold text-gray-800" onClick={closeMenu}>리워드</Link>
           <Link to="/reviews" className="text-lg font-bold text-gray-800" onClick={closeMenu}>고객후기</Link>
           <Link to="/faq" className="text-lg font-bold text-gray-800" onClick={closeMenu}>자주묻는질문</Link>

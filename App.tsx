@@ -14,6 +14,7 @@ const FAQ = lazy(() => import('./pages/FAQ'));
 const Reward = lazy(() => import('./pages/Reward'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Admin = lazy(() => import('./pages/Admin'));
+const SearchAnalysis = lazy(() => import('./pages/SearchAnalysis'));
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -44,6 +45,7 @@ const App: React.FC = () => {
                 <Route path="/about" element={<About />} />
                 <Route path="/services/:type" element={<ServiceDetail />} />
                 <Route path="/reward" element={<Reward />} />
+                <Route path="/search-analysis" element={<SearchAnalysis />} />
                 <Route path="/reviews" element={<Reviews />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
