@@ -4,7 +4,7 @@ import { ContentBlock } from '../data/content';
 
 interface AccordionItemProps {
   question: string;
-  blocks?: ContentBlock[]; // Changed from answer/images to blocks
+  blocks?: ContentBlock[]; 
 }
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ question, blocks }) => {
@@ -34,9 +34,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ question, blocks }) => {
            {blocks && blocks.map((block, index) => {
               if (block.type === 'text') {
                  return (
-                    <div key={block.id || index} className="text-gray-600 leading-relaxed font-medium whitespace-pre-line">
-                       {block.content}
-                    </div>
+                    <div 
+                        key={block.id || index} 
+                        className="text-gray-600 leading-relaxed font-medium prose prose-sm max-w-none prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800"
+                        // Render HTML content safely
+                        dangerouslySetInnerHTML={{ __html: block.content }}
+                    />
                  );
               } else if (block.type === 'image') {
                  return (

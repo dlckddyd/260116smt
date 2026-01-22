@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download, Scissors, Wand2, ArrowRight } from 'lucide-react';
 import { ContentBlock, FAQItem } from '../data/content';
 import { naverFaqData } from '../data/naverFaqs';
 
@@ -19,7 +19,11 @@ const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'inquiries' | 'faq' | 'reviews' | 'main'>('inquiries');
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false); // Text Import Modal
+  
+  // Smart Clipper Modal State
+  const [showSmartClipper, setShowSmartClipper] = useState(false);
+  const [clipperData, setClipperData] = useState<{ question: string; blocks: ContentBlock[] } | null>(null);
+  
   const [isUploading, setIsUploading] = useState(false); 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
@@ -34,9 +38,6 @@ const Admin: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   
-  // Bulk Import State
-  const [bulkText, setBulkText] = useState('');
-
   // Review Form State
   const [newReview, setNewReview] = useState({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
 
@@ -48,6 +49,7 @@ const Admin: React.FC = () => {
   const faqFileInputRef = useRef<HTMLInputElement>(null);
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
+  const clipperInputRef = useRef<HTMLDivElement>(null);
 
   // Check Server Health on Mount
   useEffect(() => {
@@ -287,52 +289,141 @@ const Admin: React.FC = () => {
       }
   };
 
-  const handleBulkTextImport = async () => {
-      if (!bulkText.trim()) return alert("내용을 입력해주세요.");
+  // --- Smart Clipper Logic (Enhanced for Rich HTML) ---
+  const handleSmartClipperPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+      e.preventDefault();
       
-      // Simple Parser: Split by Q. or Q: patterns
-      // Assuming pattern: Q. Question \n A. Answer
-      const chunks = bulkText.split(/(?=Q\.|Q:|질문:)/gi);
-      const parsedFaqs: any[] = [];
-
-      chunks.forEach(chunk => {
-          if (!chunk.trim()) return;
+      const html = e.clipboardData.getData('text/html');
+      const text = e.clipboardData.getData('text/plain');
+      
+      // Fallback if no HTML (just plain text)
+      if (!html) {
+          if (!text) return;
+          const lines = text.split('\n').filter(l => l.trim());
+          if (lines.length === 0) return;
           
-          // Split into lines
-          const lines = chunk.split('\n').map(l => l.trim()).filter(l => l);
-          if (lines.length < 2) return;
+          setClipperData({
+              question: lines[0],
+              blocks: lines.slice(1).map(line => ({ id: Math.random().toString(), type: 'text', content: line }))
+          });
+          return;
+      }
 
-          const question = lines[0].replace(/^(Q\.|Q:|질문:)\s*/i, '');
-          // Join the rest as answer, removing A. prefix from the first answer line if present
-          const answerLines = lines.slice(1);
-          if (answerLines[0]) answerLines[0] = answerLines[0].replace(/^(A\.|A:|답변:)\s*/i, '');
-          
-          const answer = answerLines.join('\n');
+      // HTML Parsing
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const blocks: ContentBlock[] = [];
+      let question = "";
 
-          if (question && answer) {
-              parsedFaqs.push({
-                  categories: ["자주 찾는 도움말"], // Default category
-                  question: question,
-                  blocks: [{ id: Date.now() + Math.random().toString(), type: 'text', content: answer }]
+      // 1. Detect Question (Title)
+      // Look for the largest header or bold text at the top
+      const headers = doc.querySelectorAll('h1, h2, h3, strong, b');
+      if (headers.length > 0 && headers[0].textContent?.trim()) {
+          question = headers[0].textContent?.trim() || "";
+      } else {
+          // Fallback: First paragraph
+          const firstP = doc.querySelector('p, div');
+          if (firstP?.textContent?.trim()) {
+              question = firstP.textContent.trim().split('\n')[0];
+          } else {
+              question = text.split('\n')[0] || "제목 없음";
+          }
+      }
+
+      // 2. Process Content
+      // We will accumulate HTML content in a "buffer" string.
+      // When we hit an image, we push the buffer as a Text Block, then push the Image Block.
+      let htmlBuffer = "";
+
+      // Clean HTML Helper: remove dangerous tags, keep formatting
+      const cleanNode = (node: Node): string | null => {
+          if (node.nodeType === Node.TEXT_NODE) {
+              return node.textContent;
+          }
+          if (node.nodeType === Node.ELEMENT_NODE) {
+              const el = node as HTMLElement;
+              const tagName = el.tagName.toLowerCase();
+
+              // Skip Title if found
+              if (el.textContent?.trim() === question && htmlBuffer.length === 0 && blocks.length === 0) return null;
+
+              // Handle Images separately (Break Buffer)
+              if (tagName === 'img') {
+                  const src = (el as HTMLImageElement).src;
+                  if (src) return `__IMG__${src}__IMG__`; // Marker
+                  return null;
+              }
+
+              // Discard specific containers but keep content
+              if (['script', 'style', 'iframe', 'object'].includes(tagName)) return null;
+
+              // Allow styling attributes
+              let attrs = "";
+              if (el.getAttribute('href')) attrs += ` href="${el.getAttribute('href')}" target="_blank"`;
+              if (el.getAttribute('style')) attrs += ` style="${el.getAttribute('style')}"`;
+              if (el.getAttribute('class')) attrs += ` class="${el.getAttribute('class')}"`; // Optional
+
+              // Recursive process for children
+              let childrenHtml = "";
+              el.childNodes.forEach(child => {
+                  const cleaned = cleanNode(child);
+                  if (cleaned) childrenHtml += cleaned;
+              });
+
+              // Return reconstructed HTML
+              // Block elements that should break lines
+              if (['div', 'p', 'br', 'li', 'h1','h2','h3','h4','h5','h6'].includes(tagName)) {
+                  if (tagName === 'br') return '<br/>';
+                  return `<${tagName}${attrs}>${childrenHtml}</${tagName}>`;
+              }
+              // Inline elements
+              if (['b', 'strong', 'i', 'u', 'span', 'a', 'ul', 'ol'].includes(tagName)) {
+                  return `<${tagName}${attrs}>${childrenHtml}</${tagName}>`;
+              }
+              
+              // Default to just returning children for unknown tags to strip the tag but keep text
+              return childrenHtml;
+          }
+          return null;
+      };
+
+      // Traverse Body
+      doc.body.childNodes.forEach(node => {
+          const processed = cleanNode(node);
+          if (processed) {
+              // Check for Image Marker
+              const parts = processed.split(/(__IMG__.*?__IMG__)/);
+              parts.forEach(part => {
+                  if (part.startsWith('__IMG__')) {
+                      // Flush buffer if exists
+                      if (htmlBuffer.trim()) {
+                          blocks.push({ id: Math.random().toString(), type: 'text', content: htmlBuffer });
+                          htmlBuffer = "";
+                      }
+                      // Add Image Block
+                      const src = part.replace(/__IMG__/g, '');
+                      blocks.push({ id: Math.random().toString(), type: 'image', content: src });
+                  } else {
+                      htmlBuffer += part;
+                  }
               });
           }
       });
 
-      if (parsedFaqs.length === 0) return alert("질문/답변 형식을 인식하지 못했습니다. (예: Q. 질문 A. 답변)");
-
-      if (confirm(`${parsedFaqs.length}개의 질문을 인식했습니다. 등록하시겠습니까?`)) {
-          setIsUploading(true);
-          try {
-              await addMultipleFaqs(parsedFaqs);
-              setShowBulkModal(false);
-              setBulkText('');
-              alert("등록되었습니다.");
-          } catch(e: any) {
-              alert(`실패: ${e.message}`);
-          } finally {
-              setIsUploading(false);
-          }
+      // Flush remaining buffer
+      if (htmlBuffer.trim()) {
+          blocks.push({ id: Math.random().toString(), type: 'text', content: htmlBuffer });
       }
+
+      setClipperData({ question, blocks });
+  };
+
+  const applyClipperData = () => {
+      if (!clipperData) return;
+      setNewFaqQuestion(clipperData.question);
+      setNewFaqBlocks(clipperData.blocks);
+      setShowSmartClipper(false);
+      setShowFaqModal(true); // Open the main editor with data filled
   };
 
   const addBlock = (type: 'text' | 'image') => {
@@ -551,13 +642,13 @@ const Admin: React.FC = () => {
                     </button>
                     
                     <div className="flex gap-2">
-                        <button onClick={() => setShowBulkModal(true)} disabled={!isServerConnected} className="px-4 py-3 bg-gray-100 text-gray-600 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-200 disabled:opacity-50">
-                            <FileText className="w-5 h-5" /> 텍스트로 일괄 등록
+                        <button onClick={() => setShowSmartClipper(true)} disabled={!isServerConnected} className="px-4 py-3 bg-indigo-500 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-600 disabled:opacity-50 shadow-md">
+                            <Scissors className="w-5 h-5" /> 스마트 웹 클리퍼
                         </button>
-                        <button onClick={handleImportNaverFaqs} disabled={!isServerConnected} className="px-4 py-3 bg-green-500 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-green-600 disabled:opacity-50">
-                            <Download className="w-5 h-5" /> 네이버 FAQ 가져오기
+                        <button onClick={handleImportNaverFaqs} disabled={!isServerConnected} className="px-4 py-3 bg-green-500 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-green-600 disabled:opacity-50 shadow-md">
+                            <Download className="w-5 h-5" /> 추천 질문 가져오기
                         </button>
-                        <button onClick={() => { resetFaqForm(); setShowFaqModal(true); }} disabled={!isServerConnected} className="px-6 py-3 bg-brand-black text-white rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 disabled:opacity-50">
+                        <button onClick={() => { resetFaqForm(); setShowFaqModal(true); }} disabled={!isServerConnected} className="px-6 py-3 bg-brand-black text-white rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 disabled:opacity-50 shadow-md">
                             <Plus className="w-5 h-5" /> 새 글 작성
                         </button>
                     </div>
@@ -600,7 +691,7 @@ const Admin: React.FC = () => {
                            </div>
                            <h4 className="font-bold text-lg mb-2 text-gray-800">{faq.question}</h4>
                            <p className="text-sm text-gray-400 truncate max-w-md">
-                                {faq.blocks && faq.blocks.length > 0 ? (faq.blocks.find(b => b.type === 'text')?.content || '이미지 콘텐츠') : '내용 없음'}
+                                {faq.blocks && faq.blocks.length > 0 ? (faq.blocks.find(b => b.type === 'text')?.content?.replace(/<[^>]+>/g, '') || '이미지 콘텐츠') : '내용 없음'}
                            </p>
                         </div>
                         <div className="flex gap-2">
@@ -641,35 +732,91 @@ const Admin: React.FC = () => {
       <input type="file" ref={reviewFileInputRef} onChange={onReviewFileSelected} className="hidden" accept="image/*" />
       <input type="file" ref={mainImageInputRef} onChange={onMainImageFileSelected} className="hidden" accept="image/*" />
 
-      {/* Bulk Import Modal */}
-      {showBulkModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-              <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl flex flex-col max-h-[90vh]">
+      {/* Smart Web Clipper Modal (Replaces Bulk Text Modal) */}
+      {showSmartClipper && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl w-full max-w-3xl p-8 shadow-2xl flex flex-col max-h-[90vh]">
                   <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-2xl font-bold">텍스트로 일괄 등록</h3>
-                      <button onClick={() => setShowBulkModal(false)}><X className="w-6 h-6" /></button>
+                      <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
+                              <Wand2 className="w-6 h-6" />
+                          </div>
+                          <div>
+                              <h3 className="text-2xl font-bold text-gray-900">스마트 웹 클리퍼</h3>
+                              <p className="text-sm text-gray-500">웹사이트 내용을 복사(Ctrl+C) 후 아래 상자에 붙여넣기(Ctrl+V) 하세요.</p>
+                          </div>
+                      </div>
+                      <button onClick={() => setShowSmartClipper(false)} className="p-2 hover:bg-gray-100 rounded-full"><X className="w-6 h-6" /></button>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 text-sm text-gray-600">
-                      <p className="font-bold mb-2 text-gray-800">입력 예시:</p>
-                      <pre className="bg-white p-3 rounded-lg border border-gray-100 font-mono text-xs">
-{`Q. 플레이스 등록은 무료인가요?
-A. 네, 무료입니다.
 
-Q. 예약은 어떻게 하나요?
-A. 예약 버튼을 눌러주세요.`}
-                      </pre>
-                      <p className="mt-2 text-xs text-gray-400">* 질문은 Q. 또는 Q: 로 시작해야 인식됩니다.</p>
-                  </div>
-                  <textarea 
-                      className="flex-1 w-full border border-gray-200 p-4 rounded-xl outline-none focus:border-brand-accent transition-colors resize-none mb-6 font-medium text-gray-700" 
-                      placeholder="여기에 내용을 붙여넣으세요..."
-                      rows={10}
-                      value={bulkText}
-                      onChange={(e) => setBulkText(e.target.value)}
-                  />
-                  <div className="flex justify-end gap-3">
-                      <button onClick={() => setShowBulkModal(false)} className="px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors">취소</button>
-                      <button onClick={handleBulkTextImport} className="px-8 py-3 bg-brand-black text-white rounded-xl font-bold hover:bg-gray-800 transition-colors">분석 및 등록</button>
+                  {!clipperData ? (
+                      <div 
+                          className="flex-1 border-2 border-dashed border-indigo-200 rounded-2xl bg-indigo-50/50 flex flex-col items-center justify-center p-12 text-center transition-all hover:border-indigo-400 hover:bg-indigo-50 group cursor-text min-h-[300px]"
+                          onPaste={handleSmartClipperPaste}
+                          onClick={() => clipperInputRef.current?.focus()}
+                          tabIndex={0}
+                          ref={clipperInputRef}
+                      >
+                          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
+                              <Scissors className="w-8 h-8 text-indigo-400" />
+                          </div>
+                          <h4 className="text-xl font-bold text-indigo-900 mb-2">이곳을 클릭하고 붙여넣으세요 (Ctrl+V)</h4>
+                          <p className="text-indigo-600/70 max-w-md">
+                              네이버 도움말, 블로그 등 웹페이지의 텍스트와 이미지를<br/>자동으로 분리하여 가져옵니다.
+                          </p>
+                          <p className="text-indigo-600/50 text-xs mt-2">
+                              * 숨겨진 내용은 '펼치기'를 누른 뒤 복사해야 가져올 수 있습니다.
+                          </p>
+                      </div>
+                  ) : (
+                      <div className="flex-1 overflow-y-auto pr-2 min-h-[300px]">
+                          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                              <div className="text-green-800 text-sm font-medium">
+                                  성공적으로 분석했습니다! 내용을 확인하고 등록 버튼을 눌러주세요.
+                              </div>
+                              <button onClick={() => setClipperData(null)} className="ml-auto text-xs underline text-green-700 hover:text-green-900">다시 붙여넣기</button>
+                          </div>
+
+                          <div className="space-y-6">
+                              <div>
+                                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">자동 감지된 제목 (질문)</label>
+                                  <div className="text-xl font-bold text-gray-900 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                      {clipperData.question}
+                                  </div>
+                              </div>
+                              
+                              <div>
+                                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">자동 감지된 내용 ({clipperData.blocks.length}개 블록)</label>
+                                  <div className="space-y-4">
+                                      {clipperData.blocks.map((block, idx) => (
+                                          <div key={idx} className="relative group">
+                                              {block.type === 'text' ? (
+                                                  <div className="p-4 bg-white border border-gray-200 rounded-xl text-gray-700 text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: block.content }}>
+                                                  </div>
+                                              ) : (
+                                                  <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                                                      <img src={block.content} alt={`Block ${idx}`} className="w-full h-48 object-cover" />
+                                                      <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">이미지 자동추출</div>
+                                                  </div>
+                                              )}
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
+                      <button onClick={() => setShowSmartClipper(false)} className="px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors text-gray-600">취소</button>
+                      <button 
+                          onClick={applyClipperData} 
+                          disabled={!clipperData}
+                          className="px-8 py-3 bg-brand-black text-white rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                          편집기로 가져오기 <ArrowRight className="w-4 h-4" />
+                      </button>
                   </div>
               </div>
           </div>
