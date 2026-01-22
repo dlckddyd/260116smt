@@ -91,6 +91,34 @@ app.post('/api/admin/upload-image', requireAdmin, async (req, res) => {
 
 // --- Database API Endpoints ---
 
+// Categories
+app.get('/api/categories', async (req, res) => {
+    try {
+        if (!db) throw new Error("Database not connected");
+        const snapshot = await db.collection('categories').orderBy('order', 'asc').get();
+        // If no categories exist, we might return empty array. Client handles defaults.
+        res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/categories', requireAdmin, async (req, res) => {
+    try {
+        if (!db) throw new Error("Database not connected");
+        const { name } = req.body;
+        // Simple order handling: put at the end
+        const docRef = await db.collection('categories').add({ name, order: Date.now() });
+        res.json({ id: docRef.id, name });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/categories/:id', requireAdmin, async (req, res) => {
+    try {
+        if (!db) throw new Error("Database not connected");
+        await db.collection('categories').doc(req.params.id).delete();
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // FAQs
 app.get('/api/faqs', async (req, res) => {
     try {
@@ -105,6 +133,14 @@ app.post('/api/admin/faqs', requireAdmin, async (req, res) => {
         if (!db) throw new Error("Database not connected");
         const docRef = await db.collection('faqs').add(req.body);
         res.json({ id: docRef.id, ...req.body });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/admin/faqs/:id', requireAdmin, async (req, res) => {
+    try {
+        if (!db) throw new Error("Database not connected");
+        await db.collection('faqs').doc(req.params.id).update(req.body);
+        res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

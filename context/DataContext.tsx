@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { faqData as initialFaqs, reviewsData as initialReviews, FAQItem, ReviewItem } from '../data/content';
+import { defaultFaqCategories, FAQItem, ReviewItem } from '../data/content';
 
 // Inquiry Type Definition
 export interface InquiryItem {
@@ -13,18 +13,27 @@ export interface InquiryItem {
   status: 'new' | 'read' | 'contacted';
 }
 
+export interface CategoryItem {
+    id: string;
+    name: string;
+}
+
 interface DataContextType {
   faqs: FAQItem[];
   reviews: ReviewItem[];
   inquiries: InquiryItem[];
   serviceImages: Record<string, string>;
+  categories: string[];
   addFaq: (faq: Omit<FAQItem, 'id'>) => Promise<void>;
+  updateFaq: (id: string, faq: Partial<FAQItem>) => Promise<void>;
   deleteFaq: (id: string) => Promise<void>;
   addReview: (review: Omit<ReviewItem, 'id' | 'date'>) => Promise<void>;
   deleteReview: (id: string) => Promise<void>;
   addInquiry: (inquiry: Omit<InquiryItem, 'id' | 'date' | 'status'>) => Promise<void>;
   updateInquiryStatus: (id: string, status: InquiryItem['status']) => Promise<void>;
   updateServiceImage: (id: string, url: string) => Promise<void>;
+  addCategory: (name: string) => Promise<void>;
+  deleteCategory: (name: string) => Promise<void>;
   isAdmin: boolean;
   login: (password: string) => Promise<boolean>; 
   logout: () => void;
@@ -38,6 +47,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({});
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryDocs, setCategoryDocs] = useState<CategoryItem[]>([]);
 
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('growth_lab_is_admin') === 'true';
@@ -48,15 +59,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // --- API Helpers ---
   const fetchPublicData = async () => {
       try {
-          const [resFaqs, resReviews, resImgs] = await Promise.all([
+          const [resFaqs, resReviews, resImgs, resCats] = await Promise.all([
               fetch('/api/faqs'),
               fetch('/api/reviews'),
-              fetch('/api/service-images')
+              fetch('/api/service-images'),
+              fetch('/api/categories')
           ]);
           
-          if(resFaqs.ok) setFaqs(await resFaqs.json());
+          if(resFaqs.ok) {
+              const rawFaqs = await resFaqs.json();
+              // Migration: Map old 'category' to 'categories' array
+              const mappedFaqs = rawFaqs.map((f: any) => ({
+                  ...f,
+                  categories: f.categories || (f.category ? [f.category] : [])
+              }));
+              setFaqs(mappedFaqs);
+          }
           if(resReviews.ok) setReviews(await resReviews.json());
           if(resImgs.ok) setServiceImages(await resImgs.json());
+          if(resCats.ok) {
+              const cats = await resCats.json();
+              if (cats.length > 0) {
+                  setCategoryDocs(cats);
+                  setCategories(cats.map((c: any) => c.name));
+              } else {
+                  // Fallback to defaults if DB is empty
+                  setCategories(defaultFaqCategories);
+              }
+          }
       } catch (e) {
           console.error("Failed to fetch public data:", e);
       }
@@ -115,12 +145,44 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     else throw new Error("Server communication failed");
   };
 
+  const updateFaq = async (id: string, faq: Partial<FAQItem>) => {
+    const res = await fetch(`/api/admin/faqs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PASSWORD },
+        body: JSON.stringify(faq)
+    });
+    if (res.ok) fetchPublicData();
+    else throw new Error("Server communication failed");
+  };
+
   const deleteFaq = async (id: string) => {
     await fetch(`/api/admin/faqs/${id}`, {
         method: 'DELETE',
         headers: { 'x-admin-password': ADMIN_PASSWORD }
     });
     fetchPublicData();
+  };
+
+  const addCategory = async (name: string) => {
+      // Check duplicate locally first
+      if (categories.includes(name)) return;
+      const res = await fetch('/api/admin/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PASSWORD },
+          body: JSON.stringify({ name })
+      });
+      if (res.ok) fetchPublicData();
+  };
+
+  const deleteCategory = async (name: string) => {
+      const docToDelete = categoryDocs.find(c => c.name === name);
+      if (!docToDelete) return; // Can't delete default non-db categories or if not found
+
+      await fetch(`/api/admin/categories/${docToDelete.id}`, {
+          method: 'DELETE',
+          headers: { 'x-admin-password': ADMIN_PASSWORD }
+      });
+      fetchPublicData();
   };
 
   const addReview = async (review: Omit<ReviewItem, 'id' | 'date'>) => {
@@ -184,8 +246,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <DataContext.Provider value={{
-      faqs, reviews, inquiries, serviceImages,
-      addFaq, deleteFaq, 
+      faqs, reviews, inquiries, serviceImages, categories,
+      addFaq, updateFaq, deleteFaq, 
+      addCategory, deleteCategory,
       addReview, deleteReview, 
       addInquiry, updateInquiryStatus,
       updateServiceImage,

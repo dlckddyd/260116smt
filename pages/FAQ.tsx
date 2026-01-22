@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AccordionItem from '../components/Accordion';
 import RevealOnScroll from '../components/RevealOnScroll';
-import { faqCategories } from '../data/content';
 import { useData } from '../context/DataContext';
 import { Search } from 'lucide-react';
 
 const FAQ: React.FC = () => {
-  const { faqs } = useData();
-  const [activeCategory, setActiveCategory] = useState("자주 찾는 도움말");
+  const { faqs, categories } = useData();
+  const [activeCategory, setActiveCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Set initial category when data loads
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+        setActiveCategory(categories[0]);
+    }
+  }, [categories, activeCategory]);
 
   const filteredData = faqs.filter(item => {
     // Search Implementation: If query exists, ignore category and search everything
@@ -20,11 +26,14 @@ const FAQ: React.FC = () => {
     const searchMatch = item.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         textContent.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Logic: If searching, return all matches regardless of category. If not searching, return active category.
     if (searchQuery.trim().length > 0) {
         return searchMatch;
     }
-    return item.category === activeCategory;
+    
+    // Check if category matches (handling both single category string and array of categories)
+    const itemCats = item.categories || []; 
+    // Fallback for old data structure if needed, though DataContext handles migration
+    return itemCats.includes(activeCategory);
   });
 
   return (
@@ -54,7 +63,7 @@ const FAQ: React.FC = () => {
           <div className="sticky top-[72px] z-30 bg-white border-b border-gray-100 shadow-sm py-4">
             <div className="max-w-7xl mx-auto px-4">
               <div className="flex flex-wrap gap-2 justify-center">
-                {faqCategories.map((category) => (
+                {categories.map((category) => (
                   <button
                     key={category}
                     onClick={() => {

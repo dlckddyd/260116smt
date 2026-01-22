@@ -42,15 +42,16 @@ export interface ContentBlock {
 
 export interface FAQItem {
   id: string;
-  category: string;
+  categories: string[]; // 다중 카테고리 지원을 위해 문자열 배열로 변경
   question: string;
-  blocks: ContentBlock[]; // 기존 answer/images 대신 blocks 사용
+  blocks: ContentBlock[]; 
 }
 
 // 초기 데이터 (DB 연동 전 테스트용)
 export const faqData: FAQItem[] = [];
 
-export const faqCategories = [
+// 기본 카테고리 목록 (DB가 비어있을 때 사용)
+export const defaultFaqCategories = [
   "자주 찾는 도움말", "문제해결", "업체 등록", "업체 수정", 
   "업체 삭제/일시정지", "예약/주문", "리뷰 관리", "지도앱 예약", 
   "프로그램 노출", "솔루션/마케팅", "주인/운영자변경", "업체검색노출",
