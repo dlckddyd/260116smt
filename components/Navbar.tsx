@@ -30,12 +30,16 @@ const Navbar: React.FC = () => {
   };
 
   const isScrolled = scrolled;
+  const isRewardPage = location.pathname === '/reward';
   
-  const navClass = isScrolled 
+  // 리워드 페이지이거나 스크롤이 된 경우 네비게이션 스타일 변경 (흰 배경, 검은 글씨)
+  const useDarkNav = isScrolled || isRewardPage;
+  
+  const navClass = useDarkNav 
     ? 'glass-nav py-4 border-gray-200 text-slate-900 shadow-sm' 
     : 'bg-transparent py-6 border-transparent text-white';
 
-  const logoBgClass = isScrolled 
+  const logoBgClass = useDarkNav 
     ? 'bg-brand-accent text-white' 
     : 'bg-white text-brand-accent';
 

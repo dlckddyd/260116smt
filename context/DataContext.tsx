@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { faqData as initialFaqs, reviewsData as initialReviews, FAQItem, ReviewItem } from '../data/content';
-import { db, auth } from '../firebase'; // Import auth
-import { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, query, orderBy, setDoc } from 'firebase/firestore';
+import { auth } from '../firebase'; 
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // Inquiry Type Definition
@@ -45,172 +44,138 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return localStorage.getItem('growth_lab_is_admin') === 'true';
   });
 
+  const ADMIN_PASSWORD = 'admin1234'; // Simple check
+
   // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-        // Just listening, no action needed here as we handle login via 'login' function or Auto-Login in Admin.tsx
+        // Just listening
     });
     return () => unsubscribe();
   }, []);
 
-  // --- Firebase Realtime Listeners ---
+  // --- API Helpers ---
+  const fetchPublicData = async () => {
+      try {
+          const [resFaqs, resReviews, resImgs] = await Promise.all([
+              fetch('/api/faqs'),
+              fetch('/api/reviews'),
+              fetch('/api/service-images')
+          ]);
+          
+          if(resFaqs.ok) setFaqs(await resFaqs.json());
+          if(resReviews.ok) setReviews(await resReviews.json());
+          if(resImgs.ok) setServiceImages(await resImgs.json());
+      } catch (e) {
+          console.error("Failed to fetch public data:", e);
+      }
+  };
 
-  // 1. FAQs Listener
+  const fetchAdminData = async () => {
+      if (!isAdmin) return;
+      try {
+          const res = await fetch('/api/admin/inquiries', {
+              headers: { 'x-admin-password': ADMIN_PASSWORD }
+          });
+          if(res.ok) setInquiries(await res.json());
+      } catch (e) {
+          console.error("Failed to fetch inquiries:", e);
+      }
+  };
+
+  // Initial Fetch
   useEffect(() => {
-    try {
-      const q = query(collection(db, 'faqs')); 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as FAQItem[];
-        setFaqs(data);
-      }, (error) => {
-        console.warn("Firestore access restricted (FAQs). Using default data if needed.", error);
-      });
-      return () => unsubscribe();
-    } catch (e) {
-      console.error("Error setting up FAQ listener:", e);
-    }
+      fetchPublicData();
   }, []);
 
-  // 2. Reviews Listener
+  // Admin Data Fetch
   useEffect(() => {
-    try {
-      const q = query(collection(db, 'reviews'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as ReviewItem[];
-        setReviews(data);
-      }, (error) => {
-        console.warn("Firestore access restricted (Reviews).", error);
-      });
-      return () => unsubscribe();
-    } catch (e) {
-       console.error("Error setting up Reviews listener:", e);
-    }
-  }, []);
+      if (isAdmin) {
+          fetchAdminData();
+          // Optional: Poll every 30s
+          const interval = setInterval(fetchAdminData, 30000);
+          return () => clearInterval(interval);
+      }
+  }, [isAdmin]);
 
-  // 3. Inquiries Listener
-  useEffect(() => {
-    try {
-      const q = query(collection(db, 'inquiries'), orderBy('date', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as InquiryItem[];
-        setInquiries(data);
-      }, (error) => {
-         console.warn("Firestore access restricted (Inquiries).", error);
-      });
-      return () => unsubscribe();
-    } catch (e) {
-      console.error("Error setting up Inquiries listener:", e);
-    }
-  }, []);
-
-  // 4. Service Images Listener
-  useEffect(() => {
-    try {
-      const q = collection(db, 'service_images');
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const imgs: Record<string, string> = {};
-        snapshot.forEach(doc => {
-           imgs[doc.id] = doc.data().url;
-        });
-        setServiceImages(imgs);
-      }, (error) => {
-         console.warn("Firestore access restricted (Service Images).", error);
-      });
-      return () => unsubscribe();
-    } catch (e) {
-      console.error("Error setting up Service Images listener:", e);
-    }
-  }, []);
 
   // Admin Auth Persistence
   useEffect(() => {
     localStorage.setItem('growth_lab_is_admin', String(isAdmin));
   }, [isAdmin]);
 
-  // --- Actions ---
+
+  // --- Actions (Using Server API) ---
 
   const addFaq = async (faq: Omit<FAQItem, 'id'>) => {
-    try {
-      await addDoc(collection(db, 'faqs'), faq);
-    } catch (e) {
-      console.error("Error adding FAQ:", e);
-      throw e; // Throw to let component handle
-    }
+    const res = await fetch('/api/admin/faqs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PASSWORD },
+        body: JSON.stringify(faq)
+    });
+    if (res.ok) fetchPublicData();
+    else throw new Error("Server Error");
   };
 
   const deleteFaq = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'faqs', id));
-    } catch (e) {
-      console.error("Error deleting FAQ:", e);
-    }
+    await fetch(`/api/admin/faqs/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-password': ADMIN_PASSWORD }
+    });
+    fetchPublicData();
   };
 
   const addReview = async (review: Omit<ReviewItem, 'id' | 'date'>) => {
-    try {
-      await addDoc(collection(db, 'reviews'), {
-        ...review,
-        date: new Date().toISOString().split('T')[0]
-      });
-    } catch (e) {
-      console.error("Error adding Review:", e);
-      throw e;
-    }
+    const res = await fetch('/api/admin/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PASSWORD },
+        body: JSON.stringify(review)
+    });
+    if (res.ok) fetchPublicData();
+    else throw new Error("Server Error");
   };
 
   const deleteReview = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'reviews', id));
-    } catch (e) {
-       console.error("Error deleting Review:", e);
-    }
+    await fetch(`/api/admin/reviews/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-password': ADMIN_PASSWORD }
+    });
+    fetchPublicData();
   };
 
   const addInquiry = async (inquiry: Omit<InquiryItem, 'id' | 'date' | 'status'>) => {
-    try {
-      await addDoc(collection(db, 'inquiries'), {
-        ...inquiry,
-        date: new Date().toLocaleString(),
-        status: 'new'
-      });
-    } catch (e) {
-      console.error("Error adding Inquiry:", e);
-      console.log("Fallback: Inquiry would be saved:", inquiry);
-    }
+    // Public Endpoint
+    await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inquiry)
+    });
   };
 
   const updateInquiryStatus = async (id: string, status: InquiryItem['status']) => {
-    try {
-      await updateDoc(doc(db, 'inquiries', id), { status });
-    } catch (e) {
-      console.error("Error updating Inquiry:", e);
-    }
+    await fetch(`/api/admin/inquiries/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PASSWORD },
+        body: JSON.stringify({ status })
+    });
+    fetchAdminData();
   };
 
   const updateServiceImage = async (id: string, url: string) => {
-    try {
-      await setDoc(doc(db, 'service_images', id), { url }, { merge: true });
-    } catch (e) {
-      console.error("Error updating Service Image:", e);
-      throw e;
-    }
+    await fetch('/api/admin/service-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PASSWORD },
+        body: JSON.stringify({ id, url })
+    });
+    fetchPublicData();
   };
 
   const login = async (password: string) => {
-    if (password === 'admin1234') {
+    if (password === ADMIN_PASSWORD) {
       try {
         await signInAnonymously(auth);
       } catch (error) {
-        console.warn("Firebase Auth Warning: Anonymous login failed. If your database rules are public (Test Mode), this is fine.", error);
+        console.warn("Client Auth Warning", error);
       }
       setIsAdmin(true);
       return true;
@@ -221,6 +186,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setIsAdmin(false);
     auth.signOut().catch(console.error);
+    setInquiries([]);
   };
 
   return (

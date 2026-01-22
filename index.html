@@ -19,16 +19,6 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>" />
 
-    <!-- Naver Maps API -->
-    <!-- 
-      [네이버 지도 API 연동 핵심 체크리스트]
-      1. Client ID: m0m02qwsm2 (코드에 적용됨 - OK)
-      2. Web 서비스 URL 설정 (네이버 클라우드 콘솔):
-         - 배포 주소: https://port-0-smt-9144-mkkldwi351bd93e1.sel3.cloudtype.app/ (등록됨 - OK)
-         - 로컬 개발 주소: http://localhost:5173 (개발 중 인증 실패 시 이 주소를 콘솔에 꼭 추가해주세요!)
-    -->
-    <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=m0m02qwsm2"></script>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.36/build/spline-viewer.js"></script>
     <script>
@@ -113,7 +103,8 @@
     "express": "https://esm.sh/express@^5.2.1",
     "path": "https://esm.sh/path@^0.12.7",
     "url": "https://esm.sh/url@^0.11.4",
-    "fs": "https://esm.sh/fs@^0.0.1-security"
+    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "firebase-admin": "https://esm.sh/firebase-admin@^13.6.0"
   }
 }
 </script>

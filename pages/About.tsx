@@ -1,77 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import ServiceVisual from '../components/ServiceVisual';
-import { Target, Lightbulb, MapPin, Flag, TrendingUp, Users, Award, ExternalLink, Phone, Copy, AlertCircle } from 'lucide-react';
+import { Target, Lightbulb, MapPin, Flag, TrendingUp, Users, Award, ExternalLink, Phone, Copy } from 'lucide-react';
 
 const About: React.FC = () => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const [mapError, setMapError] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (mapInstance.current) {
-        mapInstance.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 20; // 10 seconds (500ms * 20)
-
-    const initMap = () => {
-      if (!mapRef.current) return;
-      
-      // Check if Naver Maps API is loaded
-      if (!(window as any).naver || !(window as any).naver.maps) {
-         if (retryCount < maxRetries) {
-             retryCount++;
-             setTimeout(initMap, 500);
-         } else {
-             setMapError(true);
-         }
-         return;
-      }
-
-      // Prevent duplicate map initialization
-      if (mapRef.current.children.length > 0) {
-          mapRef.current.innerHTML = '';
-      }
-
-      try {
-          const location = new (window as any).naver.maps.LatLng(37.558385, 126.860875);
-          const map = new (window as any).naver.maps.Map(mapRef.current, {
-            center: location,
-            zoom: 16,
-            minZoom: 10,
-            scaleControl: false,
-            logoControl: false,
-            mapDataControl: false,
-            zoomControl: true,
-            zoomControlOptions: {
-              position: (window as any).naver.maps.Position.TOP_RIGHT
-            }
-          });
-
-          new (window as any).naver.maps.Marker({
-            position: location,
-            map: map,
-            title: "스마트마케팅 플레이스",
-            animation: (window as any).naver.maps.Animation.DROP
-          });
-          
-          mapInstance.current = map;
-      } catch (e) {
-          console.error("Map initialization failed", e);
-          setMapError(true);
-      }
-    };
-
-    // Start initialization
-    initMap();
-
-  }, []);
 
   const copyAddress = () => {
       navigator.clipboard.writeText("서울특별시 강서구 양천로 547 마스터밸류");
@@ -199,52 +131,57 @@ const About: React.FC = () => {
          </div>
       </section>
 
-      {/* 4. Location Section with Naver Map */}
-      <section className="py-24 px-6 bg-gray-900 text-white">
-         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-16">
-            <div className="w-full md:w-1/3">
-               <div className="inline-block p-3 bg-white/10 rounded-xl mb-6">
-                  <MapPin className="w-8 h-8 text-white" />
-               </div>
-               <h2 className="text-4xl font-bold mb-8">오시는 길</h2>
-               <div className="space-y-8">
-                  <div>
-                     <h4 className="text-lg font-bold text-gray-300 mb-2">주소</h4>
-                     <p className="text-lg leading-relaxed mb-2">서울특별시 강서구 양천로 547<br/>마스터밸류</p>
-                     <button onClick={copyAddress} className="text-sm bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors">
-                        <Copy className="w-3 h-3" /> 주소 복사
-                     </button>
-                  </div>
-                  <div>
-                     <h4 className="text-lg font-bold text-gray-300 mb-2">대중교통</h4>
-                     <p className="text-gray-400">증미역 2번 출구 도보 1분</p>
-                  </div>
-                  <div>
-                     <h4 className="text-lg font-bold text-gray-300 mb-2">연락처</h4>
-                     <p className="text-xl font-bold text-white flex items-center gap-2">
-                        <Phone className="w-5 h-5" /> 02-6958-9144
-                     </p>
-                  </div>
-               </div>
-            </div>
-            <div className="w-full md:w-2/3 h-96 bg-gray-800 rounded-3xl overflow-hidden relative shadow-2xl border border-gray-700">
-               <div ref={mapRef} className="w-full h-full" id="naver-map" style={{ minHeight: '400px', backgroundColor: '#1a1f2c' }}></div>
-               
-               {/* Map Loading/Error State */}
-               {(!mapRef.current || mapError) && (
-                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-800 text-gray-400 z-10">
-                       {mapError ? (
-                           <>
-                             <AlertCircle className="w-10 h-10 mb-4 text-red-400" />
-                             <p>지도를 불러올 수 없습니다.</p>
-                             <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 text-sm">새로고침</button>
-                           </>
-                       ) : (
-                           <p>지도를 불러오는 중입니다...</p>
-                       )}
-                   </div>
-               )}
-            </div>
+      {/* 4. Location Section with Full Map & Floating Box */}
+      <section className="py-24 px-6 bg-gray-900">
+         <div className="max-w-7xl mx-auto relative h-[600px] rounded-3xl overflow-hidden shadow-2xl border border-gray-700 group">
+             
+             {/* Google Maps Embed */}
+             <iframe 
+                src="https://maps.google.com/maps?q=서울특별시+강서구+양천로+547+마스터밸류&hl=ko&z=17&output=embed"
+                width="100%" 
+                height="100%" 
+                style={{ border: 0 }} 
+                allowFullScreen={true} 
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Google Map"
+                className="grayscale-[20%] group-hover:grayscale-0 transition-all duration-700"
+             ></iframe>
+
+             {/* Floating Animated Box */}
+             <div className="absolute top-8 left-8 md:top-12 md:left-12 bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] max-w-sm w-full animate-float-slow border border-white/50">
+                 <div className="flex items-center gap-3 mb-6">
+                     <div className="w-12 h-12 bg-brand-black rounded-full flex items-center justify-center text-white shadow-lg">
+                         <MapPin className="w-5 h-5" />
+                     </div>
+                     <div>
+                        <span className="text-xs font-bold text-brand-accent uppercase tracking-wider block mb-0.5">Location</span>
+                        <h3 className="text-xl font-bold text-gray-900">스마트마케팅 플레이스</h3>
+                     </div>
+                 </div>
+                 
+                 <div className="space-y-4">
+                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <p className="text-gray-600 leading-relaxed font-medium">
+                            서울특별시 강서구 양천로 547<br/>
+                            마스터밸류
+                        </p>
+                     </div>
+
+                     <div className="flex items-center gap-4 pl-2">
+                        <a href="tel:02-6958-9144" className="flex items-center gap-2 text-gray-600 hover:text-brand-accent transition-colors font-bold">
+                            <Phone className="w-4 h-4 text-brand-accent" />
+                            02-6958-9144
+                        </a>
+                        <button onClick={copyAddress} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors border-b border-gray-300 pb-0.5">
+                            <Copy className="w-3 h-3" /> 주소 복사
+                        </button>
+                     </div>
+                 </div>
+
+                 {/* Decorative Elements */}
+                 <div className="absolute -top-2 -right-2 w-20 h-20 bg-brand-accent/10 rounded-full blur-2xl pointer-events-none"></div>
+             </div>
          </div>
       </section>
     </div>

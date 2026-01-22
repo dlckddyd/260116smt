@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import RevealOnScroll from '../components/RevealOnScroll';
-import { Mail, Phone, MapPin, Clock, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, ArrowRight } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 const Contact: React.FC = () => {
@@ -13,70 +13,6 @@ const Contact: React.FC = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const [mapError, setMapError] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (mapInstance.current) {
-        mapInstance.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 20; 
-
-    const initMap = () => {
-      if (!mapRef.current) return;
-      
-      if (!(window as any).naver || !(window as any).naver.maps) {
-         if (retryCount < maxRetries) {
-             retryCount++;
-             setTimeout(initMap, 500);
-         } else {
-             setMapError(true);
-         }
-         return;
-      }
-
-      if (mapRef.current.children.length > 0) {
-          mapRef.current.innerHTML = '';
-      }
-      
-      try {
-          const location = new (window as any).naver.maps.LatLng(37.558385, 126.860875);
-          const map = new (window as any).naver.maps.Map(mapRef.current, {
-            center: location,
-            zoom: 16,
-            minZoom: 10,
-            scaleControl: false,
-            logoControl: false,
-            mapDataControl: false,
-            zoomControl: true,
-            zoomControlOptions: {
-              position: (window as any).naver.maps.Position.TOP_RIGHT
-            }
-          });
-
-          new (window as any).naver.maps.Marker({
-            position: location,
-            map: map,
-            title: "스마트마케팅 플레이스",
-            animation: (window as any).naver.maps.Animation.DROP
-          });
-
-          mapInstance.current = map;
-      } catch (e) {
-          console.error("Map load failed", e);
-          setMapError(true);
-      }
-    };
-
-    initMap();
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,22 +201,20 @@ const Contact: React.FC = () => {
          </div>
       </section>
 
-      {/* Map Section with Naver Map */}
+      {/* Map Section with Google Map */}
       <section className="py-20 px-6">
          <div className="max-w-7xl mx-auto rounded-[3rem] overflow-hidden h-96 relative group shadow-lg border border-gray-100 bg-gray-100">
-             <div ref={mapRef} className="w-full h-full" style={{ minHeight: '400px', backgroundColor: '#f1f1f1' }}></div>
-             {(!mapRef.current || mapError) && (
-                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 text-gray-400 z-10">
-                     {mapError ? (
-                         <>
-                           <AlertCircle className="w-10 h-10 mb-4 text-red-400" />
-                           <p>지도를 불러올 수 없습니다.</p>
-                         </>
-                     ) : (
-                         <p>지도를 불러오는 중입니다...</p>
-                     )}
-                 </div>
-             )}
+             {/* Google Maps Embed showing Building Name */}
+             <iframe 
+                src="https://maps.google.com/maps?q=서울특별시+강서구+양천로+547+마스터밸류&hl=ko&z=17&output=embed"
+                width="100%" 
+                height="100%" 
+                style={{ border: 0, minHeight: '400px' }} 
+                allowFullScreen={true} 
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Google Map"
+             ></iframe>
          </div>
       </section>
     </div>
