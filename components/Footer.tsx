@@ -20,7 +20,8 @@ const Footer: React.FC = () => {
             <div className="space-y-2 text-sm text-gray-500 mb-8 font-medium">
                <p>상호 : 스마트마케팅 플레이스</p>
                <p>사업자등록번호 : 414-05-23978 <span className="mx-2 text-gray-300">|</span> 대표이사 : 박성민</p>
-               <p>주소 : 서울특별시 강서구 양천로 547 마스터밸류 805호</p>
+               <p>주소 : 서울특별시 강서구 양천로 547 마스터밸류</p>
+               <p>전화 : 02-6958-9144</p>
                <p>이메일 : yonging@kakao.com</p>
             </div>
 
@@ -62,6 +63,10 @@ const Footer: React.FC = () => {
             <div>
                <h4 className="font-bold text-lg mb-4 text-gray-900">Contact</h4>
                <div className="space-y-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                     <Phone className="w-4 h-4 text-brand-accent" />
+                     <span>02-6958-9144</span>
+                  </div>
                   <div className="flex items-center gap-2">
                      <Mail className="w-4 h-4 text-brand-accent" />
                      <span>yonging@kakao.com</span>

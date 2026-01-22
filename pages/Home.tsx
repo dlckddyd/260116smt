@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2, ExternalLink } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import CountUp from '../components/CountUp';
 import ServiceVisual from '../components/ServiceVisual';
@@ -186,10 +186,22 @@ const Home: React.FC = () => {
                데이터로 증명하는 <span className="text-green-400 font-semibold">확실한 성과</span><br/>
                당신의 비즈니스에 초록불을 켜드립니다.
             </p>
-            <div className="pointer-events-auto">
+            
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 pointer-events-auto">
               <Link to="/about" className="group inline-flex items-center gap-3 text-white border-b border-white/30 pb-1 hover:border-white transition-all text-lg">
                  Explore Our Vision <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
+              
+              <a 
+                href="https://m.idsn.co.kr/news/view/1065602129224578" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all text-white font-medium hover:scale-105 shadow-lg"
+              >
+                 <span className="bg-brand-accent text-white text-[10px] font-bold px-1.5 py-0.5 rounded leading-none">NEWS</span>
+                 <span className="text-sm">언론보도 선정기사 확인</span>
+                 <ExternalLink className="w-4 h-4 text-white/70" />
+              </a>
             </div>
           </RevealOnScroll>
         </div>
@@ -346,13 +358,13 @@ const Home: React.FC = () => {
                </p>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                  <a href="tel:02-1234-5678" className="group flex items-center justify-center gap-4 p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                  <a href="tel:02-6958-9144" className="group flex items-center justify-center gap-4 p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
                      <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Phone className="w-6 h-6 text-white" />
                      </div>
                      <div className="text-left">
                         <h3 className="text-lg font-bold">전화 문의</h3>
-                        <p className="text-gray-400 text-sm">02-1234-5678</p>
+                        <p className="text-gray-400 text-sm">02-6958-9144</p>
                      </div>
                   </a>
                   <a href="mailto:yonging@kakao.com" className="group flex items-center justify-center gap-4 p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
