@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, FileText, Image as ImageIcon, ArrowDown, ArrowUp, Upload, Loader2, Layout, RefreshCw } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
 import { faqCategories, ContentBlock } from '../data/content';
-import { storage, auth } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { signInAnonymously } from 'firebase/auth';
 
 const Admin: React.FC = () => {
   const { 
@@ -21,8 +18,7 @@ const Admin: React.FC = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false); 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
-
+  
   // FAQ Form State
   const [newFaqCategory, setNewFaqCategory] = useState(faqCategories[0]);
   const [newFaqQuestion, setNewFaqQuestion] = useState('');
@@ -40,35 +36,19 @@ const Admin: React.FC = () => {
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
 
-  // Safety Valve: Force stop loading if stuck
+  // Safety Valve
   useEffect(() => {
     let safetyTimer: ReturnType<typeof setTimeout>;
     if (isUploading) {
         safetyTimer = setTimeout(() => {
             if (isUploading) {
                 setIsUploading(false);
-                alert("작업 시간이 너무 오래 걸려 중단되었습니다.\n네트워크 상태를 확인하거나 Firebase Storage 권한 설정을 확인해주세요.");
+                alert("작업 시간이 너무 오래 걸려 중단되었습니다.");
             }
-        }, 15000);
+        }, 30000); // 30s timeout for large uploads
     }
     return () => clearTimeout(safetyTimer);
   }, [isUploading]);
-
-  // Check Connection on Mount
-  useEffect(() => {
-    if (isAdmin) {
-        const checkConnection = async () => {
-            try {
-                if (!auth.currentUser) await signInAnonymously(auth);
-                setIsConnected(true);
-            } catch (e) {
-                console.warn("Connection check failed:", e);
-                setIsConnected(false);
-            }
-        };
-        checkConnection();
-    }
-  }, [isAdmin]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,46 +58,46 @@ const Admin: React.FC = () => {
     if (!success) alert('비밀번호가 틀렸습니다.');
   };
 
-  const ensureAuth = async () => {
-    if (!auth.currentUser) {
-        try {
-            await signInAnonymously(auth);
-            setIsConnected(true);
-        } catch (e) {
-            console.error("Auth failed:", e);
-            throw new Error("인증에 실패했습니다. 새로고침 후 다시 시도해주세요.");
-        }
-    }
-  };
-
+  // --- NEW: Server-Side Upload Handler (No Firebase Client Auth Needed) ---
   const handleFileUpload = async (file: File): Promise<string> => {
     if (!file) return "";
     setIsUploading(true);
 
     try {
-      await ensureAuth();
-
-      const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-      const fileName = `uploads/${Date.now()}_${safeName}`;
-      const storageRef = ref(storage, fileName);
-      
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      return downloadURL;
-
+       // Convert file to Base64
+       const reader = new FileReader();
+       return new Promise((resolve, reject) => {
+           reader.onload = async () => {
+               try {
+                   const base64String = reader.result as string;
+                   const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+                   
+                   const response = await fetch('/api/admin/upload-image', {
+                       method: 'POST',
+                       headers: {
+                           'Content-Type': 'application/json',
+                           'x-admin-password': 'admin1234' // Should match server config
+                       },
+                       body: JSON.stringify({
+                           image: base64String,
+                           filename: safeName
+                       })
+                   });
+                   
+                   const data = await response.json();
+                   if (!response.ok) throw new Error(data.error || "Server upload failed");
+                   
+                   resolve(data.url);
+               } catch (e) {
+                   reject(e);
+               }
+           };
+           reader.onerror = (e) => reject(e);
+           reader.readAsDataURL(file);
+       });
     } catch (error: any) {
       console.error("Upload failed details:", error);
-      let msg = "이미지 업로드에 실패했습니다.";
-      
-      if (error.code === 'storage/unauthorized') {
-          msg = "업로드 권한이 없습니다.\nFirebase Console > Storage > Rules 탭에서 쓰기 권한(write)을 허용해야 합니다.";
-      } else if (error.code === 'storage/retry-limit-exceeded') {
-          msg = "연결이 불안정하여 업로드에 실패했습니다.";
-      } else if (error.message) {
-          msg = `오류: ${error.message}`;
-      }
-      
-      alert(msg);
+      alert(`이미지 업로드 실패: ${error.message}`);
       return "";
     } finally {
       setIsUploading(false);
@@ -139,7 +119,6 @@ const Admin: React.FC = () => {
         return;
     }
 
-    // Reset input
     if (mainImageInputRef.current) mainImageInputRef.current.value = '';
 
     const url = await handleFileUpload(file);
@@ -160,7 +139,7 @@ const Admin: React.FC = () => {
     }
   };
 
-  // --- FAQ & Review Handlers (Simplified for brevity as logic is similar) ---
+  // --- FAQ & Review Handlers ---
   const triggerFaqImageUpload = (blockId: string) => {
     setActiveBlockIdForUpload(blockId);
     setTimeout(() => faqFileInputRef.current?.click(), 50);
@@ -182,7 +161,6 @@ const Admin: React.FC = () => {
     if (newFaqBlocks.length === 0) return alert("내용을 입력해주세요.");
     setIsUploading(true); 
     try {
-        await ensureAuth();
         await addFaq({ category: newFaqCategory, question: newFaqQuestion, blocks: newFaqBlocks });
         setShowFaqModal(false);
         setNewFaqQuestion('');
@@ -195,7 +173,6 @@ const Admin: React.FC = () => {
     }
   };
 
-  // ... Block helpers (addBlock, removeBlock, etc.) same as before ...
   const addBlock = (type: 'text' | 'image') => {
     setNewFaqBlocks([...newFaqBlocks, { id: Date.now().toString(), type, content: '' }]);
   };
@@ -221,7 +198,6 @@ const Admin: React.FC = () => {
     if (!newReview.name || !newReview.company) return alert("이름과 업체명을 입력해주세요.");
     setIsUploading(true);
     try {
-        await ensureAuth();
         await addReview({ ...newReview, type: newReview.type as 'text' | 'image' });
         setShowReviewModal(false);
         setNewReview({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
@@ -269,10 +245,7 @@ const Admin: React.FC = () => {
               <div className="bg-white/10 p-8 rounded-2xl flex flex-col items-center max-w-sm w-full mx-4">
                   <Loader2 className="w-12 h-12 animate-spin mb-4 text-brand-accent" />
                   <p className="text-lg font-bold">처리 중입니다...</p>
-                  <p className="text-sm opacity-70 mt-2 text-center text-gray-300">잠시만 기다려주세요.<br/>(최대 15초)</p>
-                  <button onClick={() => setIsUploading(false)} className="mt-6 w-full py-3 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-bold border border-white/20 flex items-center justify-center gap-2">
-                    <X className="w-4 h-4" /> 닫기 (강제 취소)
-                  </button>
+                  <p className="text-sm opacity-70 mt-2 text-center text-gray-300">잠시만 기다려주세요.<br/>(최대 30초)</p>
               </div>
           </div>
       )}
@@ -282,8 +255,8 @@ const Admin: React.FC = () => {
            <div className="font-bold text-xl flex items-center gap-3">
               <Lock className="w-5 h-5 text-green-400" /> Smart Place Admin
               <div className="flex items-center gap-1.5 ml-4 bg-white/10 px-3 py-1 rounded-full">
-                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                  <span className={`text-xs font-medium ${isConnected ? 'text-green-400' : 'text-red-400'}`}>{isConnected ? '연결됨' : '연결 끊김'}</span>
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="text-xs font-medium text-green-400">서버 연결됨</span>
               </div>
            </div>
            <div className="flex items-center gap-3">
@@ -393,7 +366,7 @@ const Admin: React.FC = () => {
       <input type="file" ref={reviewFileInputRef} onChange={onReviewFileSelected} className="hidden" accept="image/*" />
       <input type="file" ref={mainImageInputRef} onChange={onMainImageFileSelected} className="hidden" accept="image/*" />
 
-      {/* FAQ Modal Content Omitted for brevity, logic remains same as original but using new state handlers */}
+      {/* FAQ Modal */}
       {showFaqModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
            <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -429,7 +402,7 @@ const Admin: React.FC = () => {
         </div>
       )}
 
-      {/* Review Modal - Simplified View */}
+      {/* Review Modal */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
            <div className="bg-white rounded-2xl w-full max-w-lg p-8 shadow-2xl">

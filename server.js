@@ -18,7 +18,8 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
+            credential: admin.credential.cert(serviceAccount),
+            storageBucket: "smartplace26.firebasestorage.app" // Bucket name is required for storage operations
         });
         console.log("[System] Firebase Admin SDK Initialized");
     } catch (error) {
@@ -29,6 +30,8 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
+// Initialize bucket safely
+const bucket = admin.apps.length ? admin.storage().bucket() : null;
 
 // 2. API Keys
 const AD_CUSTOMER_ID = "4242810";
@@ -37,7 +40,9 @@ const AD_SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
 const OPEN_CLIENT_ID = "vQAN_RNU8A7kvy4N_aZI";
 const OPEN_CLIENT_SECRET = "0efwCNoAP7";
 
-app.use(express.json());
+// Increase payload limit for base64 image uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Enable CORS
 app.use((req, res, next) => {
@@ -54,6 +59,35 @@ const requireAdmin = (req, res, next) => {
     if (password === 'admin1234') next();
     else res.status(403).json({ error: 'Unauthorized' });
 };
+
+// --- Server-Side Image Upload (Bypasses Client Auth) ---
+app.post('/api/admin/upload-image', requireAdmin, async (req, res) => {
+    try {
+        if (!bucket) throw new Error("Storage bucket not connected. Check server logs.");
+        
+        const { image, filename } = req.body; // image is base64 string
+        if (!image || !filename) return res.status(400).json({ error: "Missing image data" });
+
+        // Remove header if present (e.g., "data:image/png;base64,")
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        const file = bucket.file(`uploads/${Date.now()}_${filename}`);
+        
+        await file.save(buffer, {
+            metadata: { contentType: 'image/jpeg' }, // Defaulting to jpeg for simplicity, or detect from header
+            public: true, // Make the file publicly accessible
+        });
+
+        // Get public URL
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+        
+        res.json({ url: publicUrl });
+    } catch (e) {
+        console.error("Upload Error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
 
 // --- Database API Endpoints ---
 
