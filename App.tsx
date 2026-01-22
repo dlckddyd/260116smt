@@ -1,11 +1,11 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { DataProvider } from './context/DataContext';
 import { Loader2 } from 'lucide-react';
 
-// Lazy Load Pages for Performance Optimization
+// Lazy Load Pages
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
 const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
@@ -24,7 +24,7 @@ const ScrollToTop = () => {
   return null;
 };
 
-// Loading Fallback Component
+// Loading Fallback
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-white">
     <Loader2 className="w-10 h-10 text-brand-accent animate-spin" />
@@ -34,7 +34,7 @@ const PageLoader = () => (
 const App: React.FC = () => {
   return (
     <DataProvider>
-      <HashRouter>
+      <BrowserRouter>
         <ScrollToTop />
         <div className="min-h-screen bg-white text-brand-black flex flex-col font-sans selection:bg-brand-accent selection:text-white">
           <Navbar />
@@ -55,7 +55,7 @@ const App: React.FC = () => {
           </main>
           <Footer />
         </div>
-      </HashRouter>
+      </BrowserRouter>
     </DataProvider>
   );
 };

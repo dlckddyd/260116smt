@@ -13,10 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 3000; 
 const distPath = path.join(__dirname, 'dist');
 
-// =================================================================
-// [1. Firebase Admin SDK Setup]
-// =================================================================
-// 클라우드타입 환경변수 'FIREBASE_SERVICE_ACCOUNT'에 JSON 내용을 넣어주세요.
+// 1. Firebase Admin SDK Setup
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -33,13 +30,10 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 
 const db = admin.apps.length ? admin.firestore() : null;
 
-// =================================================================
-// [2. API Key Configuration for Keyword Analysis]
-// =================================================================
+// 2. API Keys
 const AD_CUSTOMER_ID = "4242810";
 const AD_ACCESS_LICENSE = "0100000000ef2a06633505a32a514eb5f877611ae3de9aa6466541db60a96fcbf1f10f0dea";
 const AD_SECRET_KEY = "AQAAAADvKgZjNQWjKlFOtfh3YRrjzeibNDztRquJCFhpADm79A==";
-
 const OPEN_CLIENT_ID = "vQAN_RNU8A7kvy4N_aZI";
 const OPEN_CLIENT_SECRET = "0efwCNoAP7";
 
@@ -54,30 +48,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware: Admin Auth Check
+// Admin Auth Middleware
 const requireAdmin = (req, res, next) => {
     const password = req.headers['x-admin-password'];
-    if (password === 'admin1234') {
-        next();
-    } else {
-        res.status(403).json({ error: 'Unauthorized' });
-    }
+    if (password === 'admin1234') next();
+    else res.status(403).json({ error: 'Unauthorized' });
 };
 
-// =================================================================
-// [3. Database API Endpoints (Admin SDK)]
-// =================================================================
+// --- Database API Endpoints ---
 
-// --- FAQs ---
+// FAQs
 app.get('/api/faqs', async (req, res) => {
     try {
         if (!db) throw new Error("Database not connected");
         const snapshot = await db.collection('faqs').get();
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.json(data);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+        res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/faqs', requireAdmin, async (req, res) => {
@@ -85,9 +71,7 @@ app.post('/api/admin/faqs', requireAdmin, async (req, res) => {
         if (!db) throw new Error("Database not connected");
         const docRef = await db.collection('faqs').add(req.body);
         res.json({ id: docRef.id, ...req.body });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/admin/faqs/:id', requireAdmin, async (req, res) => {
@@ -95,34 +79,24 @@ app.delete('/api/admin/faqs/:id', requireAdmin, async (req, res) => {
         if (!db) throw new Error("Database not connected");
         await db.collection('faqs').doc(req.params.id).delete();
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- Reviews ---
+// Reviews
 app.get('/api/reviews', async (req, res) => {
     try {
         if (!db) throw new Error("Database not connected");
         const snapshot = await db.collection('reviews').get();
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.json(data);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+        res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/reviews', requireAdmin, async (req, res) => {
     try {
         if (!db) throw new Error("Database not connected");
-        const docRef = await db.collection('reviews').add({
-            ...req.body,
-            date: new Date().toISOString().split('T')[0]
-        });
+        const docRef = await db.collection('reviews').add({ ...req.body, date: new Date().toISOString().split('T')[0] });
         res.json({ id: docRef.id, ...req.body });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/admin/reviews/:id', requireAdmin, async (req, res) => {
@@ -130,35 +104,24 @@ app.delete('/api/admin/reviews/:id', requireAdmin, async (req, res) => {
         if (!db) throw new Error("Database not connected");
         await db.collection('reviews').doc(req.params.id).delete();
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- Inquiries ---
+// Inquiries
 app.post('/api/inquiries', async (req, res) => {
     try {
         if (!db) throw new Error("Database not connected");
-        await db.collection('inquiries').add({
-            ...req.body,
-            date: new Date().toLocaleString(),
-            status: 'new'
-        });
+        await db.collection('inquiries').add({ ...req.body, date: new Date().toLocaleString(), status: 'new' });
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/admin/inquiries', requireAdmin, async (req, res) => {
     try {
         if (!db) throw new Error("Database not connected");
         const snapshot = await db.collection('inquiries').orderBy('date', 'desc').get();
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.json(data);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+        res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.patch('/api/admin/inquiries/:id', requireAdmin, async (req, res) => {
@@ -166,12 +129,10 @@ app.patch('/api/admin/inquiries/:id', requireAdmin, async (req, res) => {
         if (!db) throw new Error("Database not connected");
         await db.collection('inquiries').doc(req.params.id).update(req.body);
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- Service Images ---
+// Service Images
 app.get('/api/service-images', async (req, res) => {
     try {
         if (!db) throw new Error("Database not connected");
@@ -179,9 +140,7 @@ app.get('/api/service-images', async (req, res) => {
         const data = {};
         snapshot.forEach(doc => { data[doc.id] = doc.data().url; });
         res.json(data);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/service-images', requireAdmin, async (req, res) => {
@@ -190,50 +149,26 @@ app.post('/api/admin/service-images', requireAdmin, async (req, res) => {
         const { id, url } = req.body;
         await db.collection('service_images').doc(id).set({ url }, { merge: true });
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-
-// =================================================================
-// [4. Existing Helpers & Analysis API]
-// =================================================================
+// Keyword Analysis API Helper
 function doRequest(url, options, postData) {
   return new Promise((resolve) => {
     const requestOptions = { ...options };
-    if (postData) {
-        requestOptions.headers = {
-            ...(requestOptions.headers || {}),
-            'Content-Length': Buffer.byteLength(postData)
-        };
-    }
+    if (postData) requestOptions.headers = { ...(requestOptions.headers || {}), 'Content-Length': Buffer.byteLength(postData) };
 
     const req = https.request(url, requestOptions, (res) => {
         let data = '';
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
             if (res.statusCode >= 200 && res.statusCode < 300) {
-                try { 
-                    resolve({ success: true, data: JSON.parse(data) }); 
-                } catch(e) { 
-                    resolve({ success: false, error: "JSON Parse Error", raw: data }); 
-                }
-            } else {
-                resolve({ success: false, status: res.statusCode, raw: data });
-            }
+                try { resolve({ success: true, data: JSON.parse(data) }); } catch(e) { resolve({ success: false, error: "JSON Parse Error", raw: data }); }
+            } else { resolve({ success: false, status: res.statusCode, raw: data }); }
         });
     });
-    
-    req.on('error', (e) => {
-        resolve({ success: false, error: e.message });
-    });
-    
-    req.setTimeout(5000, () => {
-        req.destroy();
-        resolve({ success: false, error: "Request Timeout" });
-    });
-
+    req.on('error', (e) => resolve({ success: false, error: e.message }));
+    req.setTimeout(5000, () => { req.destroy(); resolve({ success: false, error: "Request Timeout" }); });
     if (postData) req.write(postData);
     req.end();
   });
@@ -242,10 +177,7 @@ function doRequest(url, options, postData) {
 function generateMockData(keyword) {
     let seed = 0;
     for (let i = 0; i < keyword.length; i++) seed += keyword.charCodeAt(i);
-    const random = () => {
-        const x = Math.sin(seed++) * 10000;
-        return x - Math.floor(x);
-    };
+    const random = () => { const x = Math.sin(seed++) * 10000; return x - Math.floor(x); };
     const baseVolume = Math.floor(random() * 40000) + 5000;
     const isHighComp = baseVolume > 20000;
     const mainKeyword = {
@@ -256,28 +188,8 @@ function generateMockData(keyword) {
         monthlyAveMobileClkCnt: Math.floor(baseVolume * 0.02),
         compIdx: isHighComp ? "높음" : "중간"
     };
-    const suffixes = ["추천", "가격", "비용", "후기", "예약", "위치", "잘하는곳", "정보", "할인", "이벤트", "맛집", "코스", "순위", "비교", "전문"];
-    const relatedKeywords = suffixes.slice(0, 10).map((suffix) => {
-        const subVol = Math.floor(baseVolume * random() * 0.5);
-        return {
-            relKeyword: `${keyword} ${suffix}`,
-            monthlyPcQc: Math.floor(subVol * 0.3),
-            monthlyMobileQc: Math.floor(subVol * 0.7),
-            monthlyAvePcClkCnt: Math.floor(subVol * 0.01),
-            monthlyAveMobileClkCnt: Math.floor(subVol * 0.02),
-            compIdx: random() > 0.6 ? "높음" : "중간"
-        };
-    });
-    const content = {
-        blog: Math.floor(baseVolume * (random() + 0.5)),
-        cafe: Math.floor(baseVolume * random() * 0.8),
-        news: Math.floor(baseVolume * random() * 0.3),
-        shop: Math.floor(baseVolume * random() * 0.5),
-        kin: Math.floor(baseVolume * random() * 0.4),
-        web: Math.floor(baseVolume * random() * 0.6),
-        image: Math.floor(baseVolume * random() * 0.9)
-    };
-    return { mainKeyword, relatedKeywords, content, _source: 'simulation_fallback' };
+    const content = { blog: Math.floor(baseVolume * 0.5), cafe: Math.floor(baseVolume * 0.4), news: Math.floor(baseVolume * 0.2), shop: Math.floor(baseVolume * 0.3), kin: Math.floor(baseVolume * 0.3), web: Math.floor(baseVolume * 0.5), image: Math.floor(baseVolume * 0.8) };
+    return { mainKeyword, relatedKeywords: [], content, _source: 'simulation_fallback' };
 }
 
 app.get('/api/keywords', async (req, res) => {
@@ -287,74 +199,41 @@ app.get('/api/keywords', async (req, res) => {
   
   try {
     const timestamp = Date.now().toString();
-    const signature = crypto.createHmac('sha256', AD_SECRET_KEY)
-        .update(`${timestamp}.GET./keywordstool`)
-        .digest('base64');
+    const signature = crypto.createHmac('sha256', AD_SECRET_KEY).update(`${timestamp}.GET./keywordstool`).digest('base64');
     
     const adPromise = doRequest(`https://api.naver.com/keywordstool?hintKeywords=${encodeURIComponent(cleanKeyword)}&showDetail=1`, {
         method: 'GET',
-        headers: {
-            'X-Timestamp': timestamp,
-            'X-API-KEY': AD_ACCESS_LICENSE,
-            'X-Customer': AD_CUSTOMER_ID,
-            'X-Signature': signature
-        }
+        headers: { 'X-Timestamp': timestamp, 'X-API-KEY': AD_ACCESS_LICENSE, 'X-Customer': AD_CUSTOMER_ID, 'X-Signature': signature }
     });
 
-    const openApiHeaders = {
-        'X-Naver-Client-Id': OPEN_CLIENT_ID,
-        'X-Naver-Client-Secret': OPEN_CLIENT_SECRET
-    };
+    const openApiHeaders = { 'X-Naver-Client-Id': OPEN_CLIENT_ID, 'X-Naver-Client-Secret': OPEN_CLIENT_SECRET };
     const targets = [
         { key: 'blog', url: `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(cleanKeyword)}&display=1` },
         { key: 'cafe', url: `https://openapi.naver.com/v1/search/cafearticle.json?query=${encodeURIComponent(cleanKeyword)}&display=1` },
         { key: 'news', url: `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(cleanKeyword)}&display=1` },
     ];
-    const openApiPromises = targets.map(target => 
-        doRequest(target.url, { method: 'GET', headers: openApiHeaders })
-            .then(res => ({ key: target.key, ...res }))
-    );
+    const openApiPromises = targets.map(target => doRequest(target.url, { method: 'GET', headers: openApiHeaders }).then(res => ({ key: target.key, ...res })));
 
     const [adRes, ...openApiResults] = await Promise.all([adPromise, ...openApiPromises]);
     const contentData = { blog: 0, cafe: 0, news: 0, shop: 0, kin: 0, web: 0, image: 0 };
-    openApiResults.forEach(r => {
-        if (r.success && r.data) { contentData[r.key] = r.data.total || 0; }
-    });
+    openApiResults.forEach(r => { if (r.success && r.data) contentData[r.key] = r.data.total || 0; });
 
     if (adRes.success && adRes.data && adRes.data.keywordList && adRes.data.keywordList.length > 0) {
-        const mainKeyword = adRes.data.keywordList[0];
-        const relatedKeywords = adRes.data.keywordList.slice(1, 21);
-        const mock = generateMockData(cleanKeyword);
-        if (contentData.blog === 0) Object.assign(contentData, mock.content);
-
-        return res.json({ mainKeyword, relatedKeywords, content: contentData, _source: 'api' });
+        return res.json({ mainKeyword: adRes.data.keywordList[0], relatedKeywords: adRes.data.keywordList.slice(1, 21), content: contentData, _source: 'api' });
     }
-    const mockData = generateMockData(cleanKeyword);
-    return res.json(mockData);
-
+    return res.json(generateMockData(cleanKeyword));
   } catch (error) {
     console.error("[Server Error]", error);
-    const mockData = generateMockData(cleanKeyword);
-    return res.json(mockData);
+    return res.json(generateMockData(cleanKeyword));
   }
 });
 
-// Health Check
+// Health Check & Serve React
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
-
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-}
-
+if (fs.existsSync(distPath)) app.use(express.static(distPath));
 app.get('*', (req, res) => {
   const indexPath = path.join(distPath, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).send('Build files not found. Please run build script.');
-  }
+  fs.existsSync(indexPath) ? res.sendFile(indexPath) : res.status(404).send('Build files not found.');
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

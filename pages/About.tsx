@@ -1,6 +1,7 @@
 import React from 'react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import ServiceVisual from '../components/ServiceVisual';
+import GoogleMap from '../components/GoogleMap';
 import { Target, Lightbulb, MapPin, Flag, TrendingUp, Users, Award, ExternalLink, Phone, Copy } from 'lucide-react';
 
 const About: React.FC = () => {
@@ -23,9 +24,8 @@ const About: React.FC = () => {
 
   return (
     <div className="bg-white">
-      {/* Hero Section - Fullscreen */}
+      {/* Hero Section */}
       <section className="relative w-full h-screen flex items-center justify-center overflow-hidden">
-         {/* Seoul Cityscape Night */}
          <img 
             src="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=2000&auto=format&fit=crop" 
             alt="Seoul Cityscape" 
@@ -39,7 +39,6 @@ const About: React.FC = () => {
                   데이터와 기술로 비즈니스의 문제를 해결하는<br/>
                   <span className="font-bold text-white">Digital Growth Partner</span>
                </p>
-               
                <a href="https://m.idsn.co.kr/news/view/1065602129224578" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors border-b border-gray-500 hover:border-white pb-1">
                   <ExternalLink className="w-4 h-4" /> [언론보도] 혁신 성장 기업 선정 뉴스 기사 확인하기
                </a>
@@ -47,53 +46,35 @@ const About: React.FC = () => {
          </div>
       </section>
 
-      {/* 1. Mission Section */}
+      {/* Mission */}
       <section className="py-24 px-6 max-w-7xl mx-auto">
          <RevealOnScroll>
             <div className="flex flex-col md:flex-row items-center gap-12">
                <div className="w-full md:w-1/2">
-                  <div className="inline-block p-3 bg-brand-accent/10 rounded-xl mb-6">
-                     <Target className="w-8 h-8 text-brand-accent" />
-                  </div>
+                  <div className="inline-block p-3 bg-brand-accent/10 rounded-xl mb-6"><Target className="w-8 h-8 text-brand-accent" /></div>
                   <h2 className="text-4xl font-bold mb-6">Mission</h2>
                   <h3 className="text-2xl font-semibold text-gray-800 mb-4">"모든 비즈니스의 잠재력을 현실로"</h3>
-                  <p className="text-gray-600 leading-relaxed text-lg">
-                     우리는 뛰어난 제품과 서비스를 가졌음에도 마케팅의 부재로 빛을 보지 못하는 기업들을 위해 존재합니다. 
-                     데이터 기반의 의사결정으로 성장의 장벽을 허물고, 클라이언트의 성공이 곧 우리의 성공이라는 믿음으로 나아갑니다.
-                  </p>
+                  <p className="text-gray-600 leading-relaxed text-lg">우리는 뛰어난 제품과 서비스를 가졌음에도 마케팅의 부재로 빛을 보지 못하는 기업들을 위해 존재합니다. 데이터 기반의 의사결정으로 성장의 장벽을 허물고, 클라이언트의 성공이 곧 우리의 성공이라는 믿음으로 나아갑니다.</p>
                </div>
-               <div className="w-full md:w-1/2">
-                  <div className="relative">
-                      {/* Using ServiceVisual for Popup Animation */}
-                      <ServiceVisual 
-                        image="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop"
-                        groups={aboutVisualGroups}
-                      />
-                  </div>
+               <div className="w-full md:w-1/2 relative">
+                  <ServiceVisual image="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop" groups={aboutVisualGroups} />
                </div>
             </div>
          </RevealOnScroll>
       </section>
 
-      {/* 2. Vision Section */}
+      {/* Vision */}
       <section className="py-24 px-6 bg-gray-50">
          <div className="max-w-7xl mx-auto">
             <RevealOnScroll>
                <div className="flex flex-col md:flex-row-reverse items-center gap-12">
                   <div className="w-full md:w-1/2">
-                     <div className="inline-block p-3 bg-green-100 rounded-xl mb-6">
-                        <Lightbulb className="w-8 h-8 text-green-600" />
-                     </div>
+                     <div className="inline-block p-3 bg-green-100 rounded-xl mb-6"><Lightbulb className="w-8 h-8 text-green-600" /></div>
                      <h2 className="text-4xl font-bold mb-6">Vision</h2>
                      <h3 className="text-2xl font-semibold text-gray-800 mb-4">"No.1 퍼포먼스 마케팅 생태계"</h3>
-                     <p className="text-gray-600 leading-relaxed text-lg">
-                        단순 대행을 넘어, 클라이언트와 함께 성장하는 상생의 생태계를 만듭니다. 
-                        기술(Tech)과 크리에이티브(Creative)가 결합된 독보적인 마케팅 솔루션 기업으로 
-                        글로벌 시장을 선도합니다.
-                     </p>
+                     <p className="text-gray-600 leading-relaxed text-lg">단순 대행을 넘어, 클라이언트와 함께 성장하는 상생의 생태계를 만듭니다. 기술(Tech)과 크리에이티브(Creative)가 결합된 독보적인 마케팅 솔루션 기업으로 글로벌 시장을 선도합니다.</p>
                   </div>
                   <div className="w-full md:w-1/2">
-                     {/* Modern Tech Office */}
                      <img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2000&auto=format&fit=crop" className="rounded-3xl shadow-xl w-full h-80 object-cover hover:-translate-y-2 transition-transform duration-500" alt="Vision" />
                   </div>
                </div>
@@ -101,12 +82,10 @@ const About: React.FC = () => {
          </div>
       </section>
 
-      {/* 3. History Section */}
+      {/* History */}
       <section className="py-24 px-6 max-w-5xl mx-auto">
          <div className="text-center mb-16">
-            <div className="inline-block p-3 bg-purple-100 rounded-xl mb-6">
-               <Flag className="w-8 h-8 text-purple-600" />
-            </div>
+            <div className="inline-block p-3 bg-purple-100 rounded-xl mb-6"><Flag className="w-8 h-8 text-purple-600" /></div>
             <h2 className="text-4xl font-bold">Our History</h2>
          </div>
          <div className="space-y-12 relative border-l-2 border-gray-200 ml-4 md:ml-0 md:pl-0">
@@ -117,9 +96,7 @@ const About: React.FC = () => {
                { year: "2021", title: "Smart Place Founded", desc: "스마트마케팅 플레이스 설립, 벤처기업 인증 획득" }
             ].map((item, idx) => (
                <RevealOnScroll key={idx} className="relative pl-12 md:pl-0 md:flex md:gap-12 md:items-center group">
-                  <div className="hidden md:block w-1/2 text-right pr-12">
-                     <span className="text-5xl font-bold text-gray-200 group-hover:text-brand-accent transition-colors">{item.year}</span>
-                  </div>
+                  <div className="hidden md:block w-1/2 text-right pr-12"><span className="text-5xl font-bold text-gray-200 group-hover:text-brand-accent transition-colors">{item.year}</span></div>
                   <div className="absolute left-[-9px] md:left-1/2 md:ml-[-9px] w-4 h-4 rounded-full bg-white border-4 border-brand-accent z-10"></div>
                   <div className="md:w-1/2 md:pl-12">
                      <span className="md:hidden text-3xl font-bold text-brand-accent block mb-2">{item.year}</span>
@@ -131,55 +108,30 @@ const About: React.FC = () => {
          </div>
       </section>
 
-      {/* 4. Location Section with Full Map & Floating Box */}
+      {/* Location */}
       <section className="py-24 px-6 bg-gray-900">
          <div className="max-w-7xl mx-auto relative h-[600px] rounded-3xl overflow-hidden shadow-2xl border border-gray-700 group">
-             
-             {/* Google Maps Embed */}
-             <iframe 
-                src="https://maps.google.com/maps?q=서울특별시+강서구+양천로+547+마스터밸류&hl=ko&z=17&output=embed"
-                width="100%" 
-                height="100%" 
-                style={{ border: 0 }} 
-                allowFullScreen={true} 
-                loading="lazy" 
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Google Map"
-                className="grayscale-[20%] group-hover:grayscale-0 transition-all duration-700"
-             ></iframe>
+             {/* Map Component */}
+             <GoogleMap className="w-full h-full grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" />
 
-             {/* Floating Animated Box */}
+             {/* Floating Info Box */}
              <div className="absolute top-8 left-8 md:top-12 md:left-12 bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] max-w-sm w-full animate-float-slow border border-white/50">
                  <div className="flex items-center gap-3 mb-6">
-                     <div className="w-12 h-12 bg-brand-black rounded-full flex items-center justify-center text-white shadow-lg">
-                         <MapPin className="w-5 h-5" />
-                     </div>
+                     <div className="w-12 h-12 bg-brand-black rounded-full flex items-center justify-center text-white shadow-lg"><MapPin className="w-5 h-5" /></div>
                      <div>
                         <span className="text-xs font-bold text-brand-accent uppercase tracking-wider block mb-0.5">Location</span>
                         <h3 className="text-xl font-bold text-gray-900">스마트마케팅 플레이스</h3>
                      </div>
                  </div>
-                 
                  <div className="space-y-4">
                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                        <p className="text-gray-600 leading-relaxed font-medium">
-                            서울특별시 강서구 양천로 547<br/>
-                            마스터밸류
-                        </p>
+                        <p className="text-gray-600 leading-relaxed font-medium">서울특별시 강서구 양천로 547<br/>마스터밸류</p>
                      </div>
-
                      <div className="flex items-center gap-4 pl-2">
-                        <a href="tel:02-6958-9144" className="flex items-center gap-2 text-gray-600 hover:text-brand-accent transition-colors font-bold">
-                            <Phone className="w-4 h-4 text-brand-accent" />
-                            02-6958-9144
-                        </a>
-                        <button onClick={copyAddress} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors border-b border-gray-300 pb-0.5">
-                            <Copy className="w-3 h-3" /> 주소 복사
-                        </button>
+                        <a href="tel:02-6958-9144" className="flex items-center gap-2 text-gray-600 hover:text-brand-accent transition-colors font-bold"><Phone className="w-4 h-4 text-brand-accent" /> 02-6958-9144</a>
+                        <button onClick={copyAddress} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors border-b border-gray-300 pb-0.5"><Copy className="w-3 h-3" /> 주소 복사</button>
                      </div>
                  </div>
-
-                 {/* Decorative Elements */}
                  <div className="absolute -top-2 -right-2 w-20 h-20 bg-brand-accent/10 rounded-full blur-2xl pointer-events-none"></div>
              </div>
          </div>
