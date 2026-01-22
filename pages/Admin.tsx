@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { ContentBlock, FAQItem } from '../data/content';
 
 const Admin: React.FC = () => {
@@ -200,6 +200,42 @@ const Admin: React.FC = () => {
     setActiveBlockIdForUpload(null);
   };
 
+  // FAQ Paste Handler (Global for modal)
+  const handleFaqPaste = async (e: React.ClipboardEvent) => {
+      const items = e.clipboardData.items;
+      let blob: File | null = null;
+      
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          blob = items[i].getAsFile();
+          break;
+        }
+      }
+
+      if (blob) {
+        e.preventDefault();
+        setIsUploading(true);
+        try {
+          const url = await handleFileUpload(blob);
+          if (url) {
+             setNewFaqBlocks(prev => {
+                 // Smart Paste: If the last block is an empty image block, fill it. Otherwise append.
+                 const lastBlock = prev[prev.length - 1];
+                 if (lastBlock && lastBlock.type === 'image' && !lastBlock.content) {
+                     return prev.map(b => b.id === lastBlock.id ? { ...b, content: url } : b);
+                 }
+                 return [...prev, { id: Date.now().toString(), type: 'image', content: url }];
+             });
+          }
+        } catch (err) {
+          console.error(err);
+          alert("이미지 붙여넣기 중 오류가 발생했습니다.");
+        } finally {
+          setIsUploading(false);
+        }
+      }
+  };
+
   const handleSaveFaq = async () => {
     if (!newFaqQuestion.trim()) return alert("제목을 입력해주세요.");
     if (newFaqBlocks.length === 0) return alert("내용을 입력해주세요.");
@@ -260,8 +296,29 @@ const Admin: React.FC = () => {
     if (url) setNewReview(prev => ({ ...prev, imageUrl: url, type: 'image' }));
   };
 
+  const handleReviewPaste = async (e: React.ClipboardEvent) => {
+    // Only handle paste if type is 'image'
+    if (newReview.type !== 'image') return;
+
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            e.preventDefault();
+            const file = items[i].getAsFile();
+            if (file) {
+                const url = await handleFileUpload(file);
+                if (url) setNewReview(prev => ({ ...prev, imageUrl: url }));
+            }
+            return;
+        }
+    }
+  };
+
   const handleAddReview = async () => {
     if (!newReview.name || !newReview.company) return alert("이름과 업체명을 입력해주세요.");
+    if (newReview.type === 'text' && !newReview.content) return alert("후기 내용을 입력해주세요.");
+    if (newReview.type === 'image' && !newReview.imageUrl) return alert("이미지를 등록해주세요.");
+
     setIsUploading(true);
     try {
         await addReview({ ...newReview, type: newReview.type as 'text' | 'image' });
@@ -502,7 +559,7 @@ const Admin: React.FC = () => {
 
       {/* FAQ Modal - Improved UI (Blog Style) */}
       {showFaqModal && (
-        <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-white z-50 overflow-y-auto" onPaste={handleFaqPaste}>
            <div className="max-w-4xl mx-auto px-6 py-10">
               {/* Header */}
               <div className="flex justify-between items-center mb-8 sticky top-0 bg-white/90 backdrop-blur-md py-4 border-b border-gray-100 z-10">
@@ -575,17 +632,44 @@ const Admin: React.FC = () => {
                                     {block.content ? (
                                         <img src={block.content} alt="Content" className="w-full h-auto max-h-[600px] object-contain mx-auto" />
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                                            <ImageIcon className="w-12 h-12 mb-3 opacity-20" />
-                                            <p className="text-sm">이미지를 업로드해주세요</p>
+                                        <div className="p-8 flex flex-col items-center justify-center text-center">
+                                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
+                                                <ImageIcon className="w-8 h-8 text-gray-400" />
+                                            </div>
+                                            <p className="font-bold text-gray-700 mb-1">이미지를 등록해주세요</p>
+                                            <p className="text-sm text-gray-400 mb-6">
+                                                버튼을 눌러 업로드하거나,<br/>
+                                                <span className="text-brand-accent font-bold">Ctrl+V</span>로 이미지를 붙여넣으세요.
+                                            </p>
+                                            
+                                            <div className="flex flex-col gap-3 w-full max-w-sm">
+                                                <button 
+                                                    onClick={() => triggerFaqImageUpload(block.id)} 
+                                                    className="px-6 py-2.5 bg-gray-800 text-white rounded-full font-bold hover:bg-black transition-colors flex items-center justify-center gap-2 w-full"
+                                                >
+                                                    <Upload className="w-4 h-4" /> 파일 선택하기
+                                                </button>
+                                                
+                                                <div className="relative">
+                                                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                    <input 
+                                                        className="w-full border border-gray-200 py-2.5 pl-10 pr-4 rounded-xl outline-none focus:border-brand-accent text-sm bg-white"
+                                                        placeholder="이미지 주소(URL) 입력"
+                                                        value={block.content}
+                                                        onChange={(e) => updateBlock(block.id, e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
-                                    <button 
-                                        onClick={() => triggerFaqImageUpload(block.id)} 
-                                        className="absolute bottom-4 right-4 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
-                                    >
-                                        {block.content ? '이미지 변경' : '이미지 업로드'}
-                                    </button>
+                                    {block.content && (
+                                        <button 
+                                            onClick={() => triggerFaqImageUpload(block.id)} 
+                                            className="absolute bottom-4 right-4 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
+                                        >
+                                            이미지 변경
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -613,22 +697,127 @@ const Admin: React.FC = () => {
         </div>
       )}
 
-      {/* Review Modal */}
+      {/* Review Modal - Modernized with Paste Support */}
       {showReviewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-           <div className="bg-white rounded-2xl w-full max-w-lg p-8 shadow-2xl">
-              <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold">후기 등록</h3>
-                 <button onClick={() => setShowReviewModal(false)}><X className="w-6 h-6" /></button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onPaste={handleReviewPaste}>
+           <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
+                 <h3 className="text-2xl font-bold">후기 등록</h3>
+                 <button onClick={() => setShowReviewModal(false)} className="p-2 hover:bg-gray-100 rounded-full"><X className="w-6 h-6" /></button>
               </div>
-              <div className="space-y-4">
-                 <input className="w-full border p-3 rounded-lg" placeholder="이름" value={newReview.name} onChange={e => setNewReview({...newReview, name: e.target.value})} />
-                 <input className="w-full border p-3 rounded-lg" placeholder="업체명" value={newReview.company} onChange={e => setNewReview({...newReview, company: e.target.value})} />
-                 <div className="flex gap-4"><label><input type="radio" checked={newReview.type === 'text'} onChange={() => setNewReview({...newReview, type: 'text'})} /> 텍스트</label><label><input type="radio" checked={newReview.type === 'image'} onChange={() => setNewReview({...newReview, type: 'image'})} /> 이미지</label></div>
-                 {newReview.type === 'text' ? <textarea className="w-full border p-3 rounded-lg h-24" value={newReview.content} onChange={e => setNewReview({...newReview, content: e.target.value})} /> : 
-                 <div className="flex gap-2"><input className="w-full border p-3 rounded-lg bg-gray-100" value={newReview.imageUrl} readOnly /><button onClick={triggerReviewImageUpload} className="px-4 py-2 bg-gray-800 text-white rounded"><Upload className="w-4 h-4"/> 업로드</button></div>}
-                 <input type="number" min="1" max="5" className="w-full border p-3 rounded-lg" value={newReview.rating} onChange={e => setNewReview({...newReview, rating: parseInt(e.target.value)})} />
-                 <button onClick={handleAddReview} className="w-full py-4 bg-brand-accent text-white font-bold rounded-xl">등록 완료</button>
+              
+              <div className="space-y-6">
+                 {/* Top Row: Basic Info */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-500">이름 (작성자)</label>
+                        <input className="w-full border border-gray-200 p-4 rounded-xl outline-none focus:border-brand-accent transition-colors" placeholder="예: 홍길동" value={newReview.name} onChange={e => setNewReview({...newReview, name: e.target.value})} />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-500">업체명</label>
+                        <input className="w-full border border-gray-200 p-4 rounded-xl outline-none focus:border-brand-accent transition-colors" placeholder="예: (주)스마트마케팅" value={newReview.company} onChange={e => setNewReview({...newReview, company: e.target.value})} />
+                     </div>
+                 </div>
+
+                 {/* Rating */}
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-500">평점 (별점)</label>
+                    <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map(score => (
+                            <button 
+                                key={score} 
+                                onClick={() => setNewReview({...newReview, rating: score})}
+                                className={`p-2 rounded-lg transition-all ${newReview.rating >= score ? 'text-yellow-400 scale-110' : 'text-gray-200'}`}
+                            >
+                                <Star className="w-8 h-8 fill-current" />
+                            </button>
+                        ))}
+                    </div>
+                 </div>
+
+                 {/* Content Type Selector */}
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-500">후기 형식</label>
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                        <button 
+                            className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${newReview.type === 'text' ? 'bg-white shadow-sm text-brand-black' : 'text-gray-400 hover:text-gray-600'}`}
+                            onClick={() => setNewReview({...newReview, type: 'text'})}
+                        >
+                            텍스트 후기
+                        </button>
+                        <button 
+                            className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${newReview.type === 'image' ? 'bg-white shadow-sm text-brand-black' : 'text-gray-400 hover:text-gray-600'}`}
+                            onClick={() => setNewReview({...newReview, type: 'image'})}
+                        >
+                            이미지 인증샷
+                        </button>
+                    </div>
+                 </div>
+
+                 {/* Content Input Area */}
+                 <div className="min-h-[200px]">
+                    {newReview.type === 'text' ? (
+                        <textarea 
+                            className="w-full h-48 border border-gray-200 p-4 rounded-xl outline-none focus:border-brand-accent transition-colors resize-none text-lg" 
+                            placeholder="고객님의 소중한 후기를 입력해주세요..."
+                            value={newReview.content} 
+                            onChange={e => setNewReview({...newReview, content: e.target.value})} 
+                        />
+                    ) : (
+                        <div className="space-y-4">
+                            {/* Preview Area */}
+                            <div className="relative border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-gray-50 hover:bg-gray-100 transition-colors group">
+                                {newReview.imageUrl ? (
+                                    <>
+                                        <img src={newReview.imageUrl} alt="Preview" className="max-h-64 rounded-lg shadow-sm mb-4" />
+                                        <button 
+                                            onClick={() => setNewReview({...newReview, imageUrl: ''})}
+                                            className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black transition-colors"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                        <p className="text-green-600 font-bold flex items-center gap-2"><CheckCircle className="w-4 h-4" /> 이미지가 등록되었습니다</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                                            <ImageIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="font-bold text-gray-700 mb-1">이미지를 등록해주세요</p>
+                                        <p className="text-sm text-gray-400 mb-6">
+                                            버튼을 눌러 업로드하거나,<br/>
+                                            <span className="text-brand-accent font-bold">Ctrl+V</span>로 이미지를 붙여넣으세요.
+                                        </p>
+                                        <button 
+                                            onClick={triggerReviewImageUpload}
+                                            className="px-6 py-2.5 bg-gray-800 text-white rounded-full font-bold hover:bg-black transition-colors flex items-center gap-2"
+                                        >
+                                            <Upload className="w-4 h-4" /> 파일 선택하기
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* URL Input */}
+                            <div className="flex gap-2">
+                                <div className="flex-1 relative">
+                                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input 
+                                        className="w-full border border-gray-200 py-3 pl-10 pr-4 rounded-xl outline-none focus:border-brand-accent text-sm"
+                                        placeholder="또는 이미지 주소(URL)를 직접 입력하세요"
+                                        value={newReview.imageUrl}
+                                        onChange={e => setNewReview({...newReview, imageUrl: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                 </div>
+
+                 {/* Submit Button */}
+                 <button onClick={handleAddReview} className="w-full py-4 bg-brand-accent text-white font-bold rounded-xl text-lg hover:bg-blue-600 shadow-lg hover:shadow-blue-500/30 transition-all">
+                    후기 등록 완료
+                 </button>
               </div>
            </div>
         </div>
