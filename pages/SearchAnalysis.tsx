@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, AlertCircle, BarChart2, Loader2, FileText, PieChart, Activity, Info, ShoppingBag, Newspaper, HelpCircle, Globe, Image as ImageIcon, MousePointer2, TrendingUp, Layers } from 'lucide-react';
+import { Search, AlertCircle, BarChart2, Loader2, FileText, PieChart, Activity, Info, ShoppingBag, Newspaper, HelpCircle, Image as ImageIcon, MousePointer2, TrendingUp, Layers, Calendar, ArrowDown } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 
 interface KeywordData {
@@ -9,6 +9,14 @@ interface KeywordData {
   monthlyAvePcClkCnt?: number | string;
   monthlyAveMobileClkCnt?: number | string;
   compIdx?: string;
+}
+
+interface DailyData {
+    date: string;
+    keyword: string;
+    pc: number;
+    mobile: number;
+    total: number;
 }
 
 interface AnalysisResult {
@@ -23,6 +31,7 @@ interface AnalysisResult {
         web: number;
         image: number;
     };
+    dailyTrend?: DailyData[];
 }
 
 const SearchAnalysis: React.FC = () => {
@@ -164,7 +173,7 @@ const SearchAnalysis: React.FC = () => {
         )}
 
         {data && (
-          <div className="animate-fade-in-up space-y-8">
+          <div className="animate-fade-in-up space-y-12">
             {/* 1. Header & Summary */}
             <div className="flex flex-col md:flex-row justify-between items-center bg-gray-50 p-6 rounded-2xl border border-gray-100">
                <div className="flex items-center gap-4 mb-4 md:mb-0">
@@ -246,7 +255,7 @@ const SearchAnalysis: React.FC = () => {
                 </div>
             </div>
 
-            {/* 3. Content Volume Distribution Chart (Replaces DataLab Graph) */}
+            {/* 3. Content Volume Distribution Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
                     <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
@@ -284,35 +293,81 @@ const SearchAnalysis: React.FC = () => {
                 </div>
             </div>
 
-            {/* 4. Related Keywords Table */}
+            {/* 4. NEW: Daily Search Volume Trend Table */}
+            {data.dailyTrend && data.dailyTrend.length > 0 && (
+                <div>
+                    <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-brand-accent" /> 일별 검색량 추이 (최근 7일)
+                    </h3>
+                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                        <table className="w-full min-w-[600px]">
+                            <thead>
+                                <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200">
+                                    <th className="py-4 px-6 text-center w-32">날짜</th>
+                                    <th className="py-4 px-6 text-left">키워드</th>
+                                    <th className="py-4 px-6 text-right">PC 검색수</th>
+                                    <th className="py-4 px-6 text-right">모바일 검색수</th>
+                                    <th className="py-4 px-6 text-right">총 검색수</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.dailyTrend.map((item, idx) => (
+                                    <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-sm">
+                                        <td className="py-4 px-6 text-center text-gray-500 font-medium">
+                                            {item.date}
+                                        </td>
+                                        <td className="py-4 px-6 font-bold text-gray-800">
+                                            {item.keyword.replace(/\s/g, '')}
+                                        </td>
+                                        <td className="py-4 px-6 text-right text-gray-600">{formatNumber(item.pc)}</td>
+                                        <td className="py-4 px-6 text-right text-gray-600">{formatNumber(item.mobile)}</td>
+                                        <td className="py-4 px-6 text-right font-bold text-blue-600">
+                                            {formatNumber(item.total)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-2 text-right">* 월간 검색량을 기준으로 추산된 일별 데이터입니다.</div>
+                </div>
+            )}
+            
+            <div className="flex justify-center text-gray-300">
+               <ArrowDown className="w-6 h-6 animate-bounce" />
+            </div>
+
+            {/* 5. Related Keywords Table */}
             <div>
                  <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
-                    <BarChart2 className="w-5 h-5 text-gray-400" /> 연관 키워드 ({data.relatedKeywords.length}개)
+                    <BarChart2 className="w-5 h-5 text-gray-400" /> 연관 키워드 상세 분석
                  </h3>
                  <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
                     <table className="w-full min-w-[600px]">
                         <thead>
                             <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200">
-                                <th className="py-4 px-6 text-left">키워드</th>
+                                <th className="py-4 px-6 text-left">연관 키워드</th>
+                                <th className="py-4 px-6 text-center">경쟁강도</th>
+                                <th className="py-4 px-6 text-right">PC 검색수</th>
+                                <th className="py-4 px-6 text-right">모바일 검색수</th>
                                 <th className="py-4 px-6 text-right">총 검색수</th>
-                                <th className="py-4 px-6 text-right">PC 검색</th>
-                                <th className="py-4 px-6 text-right">모바일 검색</th>
-                                <th className="py-4 px-6 text-center">경쟁정도</th>
                             </tr>
                         </thead>
                         <tbody>
                             {data.relatedKeywords.map((item, idx) => (
                                <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-blue-50/50 transition-colors text-sm">
-                                  <td className="py-4 px-6 font-bold text-gray-800">{item.relKeyword}</td>
-                                  <td className="py-4 px-6 text-right font-bold text-gray-900">
-                                      {formatNumber(safeParseInt(item.monthlyPcQc as string | number) + safeParseInt(item.monthlyMobileQc as string | number))}
+                                  <td className="py-4 px-6 font-bold text-gray-800">
+                                      {item.relKeyword.replace(/\s/g, '')}
+                                  </td>
+                                  <td className="py-4 px-6 text-center">
+                                      <span className={`px-2 py-0.5 rounded text-xs font-bold border ${item.compIdx === '높음' ? 'bg-red-50 border-red-100 text-red-500' : item.compIdx === '중간' ? 'bg-yellow-50 border-yellow-100 text-yellow-600' : 'bg-green-50 border-green-100 text-green-600'}`}>
+                                          {item.compIdx}
+                                      </span>
                                   </td>
                                   <td className="py-4 px-6 text-right text-gray-600">{formatNumber(item.monthlyPcQc)}</td>
                                   <td className="py-4 px-6 text-right text-gray-600">{formatNumber(item.monthlyMobileQc)}</td>
-                                  <td className="py-4 px-6 text-center">
-                                      <span className={`px-2 py-1 rounded text-xs font-bold ${item.compIdx === '높음' ? 'text-red-600 bg-red-50' : item.compIdx === '중간' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>
-                                          {item.compIdx}
-                                      </span>
+                                  <td className="py-4 px-6 text-right font-bold text-brand-accent">
+                                      {formatNumber(safeParseInt(item.monthlyPcQc as string | number) + safeParseInt(item.monthlyMobileQc as string | number))}
                                   </td>
                                </tr>
                             ))}

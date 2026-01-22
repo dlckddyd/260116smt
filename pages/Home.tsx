@@ -212,7 +212,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* About Us Section */}
-      <section className="py-32 px-6 bg-white relative">
+      <section className="py-24 px-6 bg-white relative">
          <div className="max-w-7xl mx-auto">
             <RevealOnScroll>
                <div className="flex flex-col lg:flex-row gap-20 items-start">
@@ -239,8 +239,9 @@ const Home: React.FC = () => {
                      </div>
                   </div>
                   
-                  <div className="w-full lg:w-1/2 space-y-8">
-                      <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-gray-100 group shadow-2xl">
+                  <div className="w-full lg:w-1/2 space-y-8 flex justify-center lg:justify-end">
+                      {/* Reduced height/aspect ratio for a cleaner look and max-width-sm */}
+                      <div className="relative w-full max-w-sm aspect-[4/3] overflow-hidden rounded-[2rem] bg-gray-100 group shadow-2xl">
                          {/* Korean Business Meeting */}
                          <img 
                             src="https://images.unsplash.com/photo-1577412647305-991150c7d163?q=80&w=1200&auto=format&fit=crop" 
@@ -250,7 +251,6 @@ const Home: React.FC = () => {
                             decoding="async"
                          />
                          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                         {/* Floating Card removed as requested */}
                       </div>
                   </div>
                </div>
@@ -258,9 +258,9 @@ const Home: React.FC = () => {
          </div>
       </section>
 
-      {/* Services Section with Sequential Pop-up Animation */}
-      <section className="py-32 bg-gray-50">
-         <div className="max-w-7xl mx-auto px-6 mb-24 text-center">
+      {/* Services Section - Cleaner Layout with reduced spacing */}
+      <section className="py-12 bg-white">
+         <div className="max-w-7xl mx-auto px-6 mb-12 text-center">
             <RevealOnScroll>
                <h2 className="text-4xl md:text-6xl font-bold text-brand-black mb-6 tracking-tight">Our Solutions</h2>
                <p className="text-xl text-gray-500 max-w-2xl mx-auto">비즈니스 성장의 모든 단계에 필요한 최적의 솔루션을 제안합니다.</p>
@@ -269,18 +269,18 @@ const Home: React.FC = () => {
 
          <div className="flex flex-col gap-0">
             {services.map((service, index) => (
-               <div key={service.id} className="sticky top-0 min-h-screen flex items-center bg-white border-t border-gray-100 last:border-b py-20 lg:py-0">
+               <div key={service.id} className="sticky top-0 bg-white py-12 lg:py-16">
                   <div className="max-w-7xl mx-auto px-6 w-full">
                      <RevealOnScroll className="w-full">
-                        <div className={`flex flex-col lg:flex-row items-center gap-16 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
+                        <div className={`flex flex-col lg:flex-row items-center gap-12 lg:gap-16 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
                            <div className="w-full lg:w-1/2 relative">
                               <ServiceVisual image={service.image} groups={service.groups} />
                            </div>
                            
                            <div className="w-full lg:w-1/2">
                               <span className="text-brand-accent font-bold tracking-[0.2em] uppercase mb-4 block">{service.category}</span>
-                              <h3 className="text-4xl md:text-6xl font-bold mb-8 text-brand-black leading-tight tracking-tight">{service.title}</h3>
-                              <p className="text-xl text-gray-500 leading-relaxed mb-10 whitespace-pre-line">
+                              <h3 className="text-4xl md:text-5xl font-bold mb-6 text-brand-black leading-tight tracking-tight">{service.title}</h3>
+                              <p className="text-xl text-gray-500 leading-relaxed mb-8 whitespace-pre-line">
                                  {service.desc}
                               </p>
                               <Link 
