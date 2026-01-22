@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, FileText, Image as ImageIcon, ArrowDown, ArrowUp, Upload, Loader2, Layout, AlertTriangle } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, FileText, Image as ImageIcon, ArrowDown, ArrowUp, Upload, Loader2, Layout, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { faqCategories, ContentBlock } from '../data/content';
 import { storage, auth } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -21,6 +21,7 @@ const Admin: React.FC = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false); 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
   // FAQ Form State
   const [newFaqCategory, setNewFaqCategory] = useState(faqCategories[0]);
@@ -39,11 +40,33 @@ const Admin: React.FC = () => {
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-attempt login on mount if admin
+  // Safety Valve: Force stop loading if stuck for more than 15 seconds
   useEffect(() => {
-    if (isAdmin && !auth.currentUser) {
-        // Try silent login
-        signInAnonymously(auth).catch(() => {});
+    let safetyTimer: ReturnType<typeof setTimeout>;
+    if (isUploading) {
+        safetyTimer = setTimeout(() => {
+            if (isUploading) {
+                setIsUploading(false);
+                alert("작업 시간이 너무 오래 걸려 중단되었습니다. 인터넷 연결을 확인하거나 다시 시도해주세요.");
+            }
+        }, 15000);
+    }
+    return () => clearTimeout(safetyTimer);
+  }, [isUploading]);
+
+  // Check Connection on Mount
+  useEffect(() => {
+    if (isAdmin) {
+        const checkConnection = async () => {
+            try {
+                if (!auth.currentUser) await signInAnonymously(auth);
+                setIsConnected(true);
+            } catch (e) {
+                console.warn("Connection check failed:", e);
+                setIsConnected(false);
+            }
+        };
+        checkConnection();
     }
   }, [isAdmin]);
 
@@ -58,21 +81,19 @@ const Admin: React.FC = () => {
     }
   };
 
-  // Helper: Promise with timeout
-  const withTimeout = <T,>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> => {
-      return Promise.race([
-          promise,
-          new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms))
-      ]);
-  };
-
   // Helper: Try auth with short timeout
   const ensureAuth = async () => {
     if (!auth.currentUser) {
         try {
-            await withTimeout(signInAnonymously(auth), 3000, "Auth Timeout");
+            // Give it 3 seconds to auth, otherwise proceed (might be public mode)
+            await Promise.race([
+                signInAnonymously(auth),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Auth Timeout")), 3000))
+            ]);
+            setIsConnected(true);
         } catch (e) {
-            console.warn("Auth attempt skipped (timeout or error). Proceeding assuming public rules.");
+            console.warn("Auth attempt skipped or failed.", e);
+            // Don't set isConnected to false here, as it might work in public mode
         }
     }
   };
@@ -90,13 +111,7 @@ const Admin: React.FC = () => {
       const fileName = `uploads/${Date.now()}_${safeName}`;
       const storageRef = ref(storage, fileName);
       
-      // Upload with 15s timeout
-      const snapshot = await withTimeout(
-          uploadBytes(storageRef, file), 
-          15000, 
-          "업로드 시간이 초과되었습니다."
-      ) as any;
-      
+      const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
       return downloadURL;
 
@@ -104,10 +119,10 @@ const Admin: React.FC = () => {
       console.error("Upload failed", error);
       let msg = "이미지 업로드에 실패했습니다.";
       
-      if (error.message === "업로드 시간이 초과되었습니다.") {
-          msg = "서버 응답이 너무 느립니다. (시간 초과)";
-      } else if (error.code === 'storage/unauthorized') {
-          msg = "업로드 권한이 없습니다. Firebase Storage 규칙을 확인해주세요.";
+      if (error.code === 'storage/unauthorized') {
+          msg = "업로드 권한이 없습니다. Firebase Console 설정을 확인해주세요.";
+      } else if (error.code === 'storage/retry-limit-exceeded') {
+          msg = "연결이 불안정합니다.";
       }
       
       alert(msg);
@@ -129,7 +144,6 @@ const Admin: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || !activeServiceIdForUpload) return;
 
-    // Reset input immediately to allow re-selection of same file if needed
     if (mainImageInputRef.current) mainImageInputRef.current.value = '';
 
     const url = await handleFileUpload(file);
@@ -177,11 +191,11 @@ const Admin: React.FC = () => {
     setIsUploading(true); 
     try {
         await ensureAuth();
-        await withTimeout(addFaq({
+        await addFaq({
             category: newFaqCategory,
             question: newFaqQuestion,
             blocks: newFaqBlocks
-        }), 10000, "DB 저장 시간 초과");
+        });
         
         setShowFaqModal(false);
         setNewFaqQuestion('');
@@ -240,10 +254,10 @@ const Admin: React.FC = () => {
     setIsUploading(true);
     try {
         await ensureAuth();
-        await withTimeout(addReview({
+        await addReview({
             ...newReview,
             type: newReview.type as 'text' | 'image'
-        }), 10000, "DB 저장 시간 초과");
+        });
         
         setShowReviewModal(false);
         setNewReview({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
@@ -300,29 +314,60 @@ const Admin: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pt-20">
       {/* Loading Overlay with Cancel Button */}
       {isUploading && (
-          <div className="fixed inset-0 bg-black/70 z-[60] flex flex-col items-center justify-center text-white backdrop-blur-sm">
-              <Loader2 className="w-12 h-12 animate-spin mb-4 text-brand-accent" />
-              <p className="text-lg font-bold">처리 중입니다...</p>
-              <p className="text-sm opacity-80 mt-2 text-gray-300">잠시만 기다려주세요</p>
-              
-              <button 
-                onClick={() => setIsUploading(false)}
-                className="mt-8 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-medium border border-white/20 transition-colors flex items-center gap-2"
-              >
-                <X className="w-4 h-4" /> 취소하기
-              </button>
+          <div className="fixed inset-0 bg-black/80 z-[60] flex flex-col items-center justify-center text-white backdrop-blur-sm">
+              <div className="bg-white/10 p-8 rounded-2xl flex flex-col items-center max-w-sm w-full mx-4">
+                  <Loader2 className="w-12 h-12 animate-spin mb-4 text-brand-accent" />
+                  <p className="text-lg font-bold">처리 중입니다...</p>
+                  <p className="text-sm opacity-70 mt-2 text-center text-gray-300">잠시만 기다려주세요.<br/>(최대 15초 소요)</p>
+                  
+                  <button 
+                    onClick={() => setIsUploading(false)}
+                    className="mt-6 w-full py-3 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-bold border border-white/20 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <X className="w-4 h-4" /> 닫기 (강제 취소)
+                  </button>
+              </div>
           </div>
       )}
 
       <div className="bg-brand-black text-white px-6 py-4 shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-           <div className="font-bold text-xl flex items-center gap-2">
+           <div className="font-bold text-xl flex items-center gap-3">
               <Lock className="w-5 h-5 text-green-400" />
               Smart Place Admin
+              {/* Connection Status Indicator */}
+              <div className="flex items-center gap-1.5 ml-4 bg-white/10 px-3 py-1 rounded-full">
+                  {isConnected === true ? (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span className="text-xs font-medium text-green-400">연결됨</span>
+                      </>
+                  ) : isConnected === false ? (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        <span className="text-xs font-medium text-red-400">연결 끊김</span>
+                      </>
+                  ) : (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin text-yellow-400" />
+                        <span className="text-xs font-medium text-yellow-400">연결 확인 중...</span>
+                      </>
+                  )}
+              </div>
            </div>
-           <button onClick={logout} className="text-sm bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 flex items-center gap-2">
-              <LogOut className="w-4 h-4" /> 로그아웃
-           </button>
+           
+           <div className="flex items-center gap-3">
+               <button 
+                onClick={() => window.location.reload()}
+                className="text-sm bg-white/10 px-3 py-2 rounded-full hover:bg-white/20 flex items-center gap-2"
+                title="새로고침"
+               >
+                  <RefreshCw className="w-4 h-4" />
+               </button>
+               <button onClick={logout} className="text-sm bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 flex items-center gap-2">
+                  <LogOut className="w-4 h-4" /> 로그아웃
+               </button>
+           </div>
         </div>
       </div>
 

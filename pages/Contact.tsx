@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import { Mail, Phone, MapPin, Clock, ArrowRight } from 'lucide-react';
 import { useData } from '../context/DataContext';
@@ -13,6 +13,42 @@ const Contact: React.FC = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Naver Map Initialization
+    const initMap = () => {
+      if (mapRef.current && (window as any).naver) {
+        const location = new (window as any).naver.maps.LatLng(37.558385, 126.860875); // Coordinates for Yangcheon-ro 547
+        const map = new (window as any).naver.maps.Map(mapRef.current, {
+          center: location,
+          zoom: 16,
+          zoomControl: true,
+          zoomControlOptions: {
+            position: (window as any).naver.maps.Position.TOP_RIGHT
+          }
+        });
+
+        new (window as any).naver.maps.Marker({
+          position: location,
+          map: map,
+          title: "스마트마케팅 플레이스"
+        });
+      }
+    };
+
+    if ((window as any).naver && (window as any).naver.maps) {
+        initMap();
+    } else {
+        const interval = setInterval(() => {
+            if ((window as any).naver && (window as any).naver.maps) {
+                initMap();
+                clearInterval(interval);
+            }
+        }, 100);
+        return () => clearInterval(interval);
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,16 +238,10 @@ const Contact: React.FC = () => {
          </div>
       </section>
 
-      {/* Map Section with Interactive Iframe */}
+      {/* Map Section with Naver Map */}
       <section className="py-20 px-6">
-         <div className="max-w-7xl mx-auto rounded-[3rem] overflow-hidden h-96 relative group shadow-lg border border-gray-100">
-             <iframe 
-                title="Smart Place Contact Map"
-                className="w-full h-full grayscale hover:grayscale-0 transition-all duration-700"
-                src="https://maps.google.com/maps?q=%EC%84%9C%EC%9A%B8%EC%8B%9C%20%EA%B0%95%EC%84%9C%EA%B5%AC%20%EC%96%91%EC%B2%9C%EB%A1%9C%20547%20%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B0%B8%EB%A5%98&t=&z=16&ie=UTF8&iwloc=&output=embed"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-             ></iframe>
+         <div className="max-w-7xl mx-auto rounded-[3rem] overflow-hidden h-96 relative group shadow-lg border border-gray-100 bg-gray-100">
+             <div ref={mapRef} className="w-full h-full"></div>
          </div>
       </section>
     </div>

@@ -1,9 +1,46 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import ServiceVisual from '../components/ServiceVisual';
 import { Target, Lightbulb, MapPin, Flag, TrendingUp, Users, Award } from 'lucide-react';
 
 const About: React.FC = () => {
+  const mapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Naver Map Initialization
+    const initMap = () => {
+      if (mapRef.current && (window as any).naver) {
+        const location = new (window as any).naver.maps.LatLng(37.558385, 126.860875); // Coordinates for Yangcheon-ro 547
+        const map = new (window as any).naver.maps.Map(mapRef.current, {
+          center: location,
+          zoom: 16,
+          zoomControl: true,
+          zoomControlOptions: {
+            position: (window as any).naver.maps.Position.TOP_RIGHT
+          }
+        });
+
+        new (window as any).naver.maps.Marker({
+          position: location,
+          map: map,
+          title: "스마트마케팅 플레이스"
+        });
+      }
+    };
+
+    if ((window as any).naver && (window as any).naver.maps) {
+        initMap();
+    } else {
+        // Fallback if script loads later or window.naver not ready immediately
+        const interval = setInterval(() => {
+            if ((window as any).naver && (window as any).naver.maps) {
+                initMap();
+                clearInterval(interval);
+            }
+        }, 100);
+        return () => clearInterval(interval);
+    }
+  }, []);
    
   const aboutVisualGroups = [
     [
@@ -122,7 +159,7 @@ const About: React.FC = () => {
          </div>
       </section>
 
-      {/* 4. Location Section with Interactive Google Map */}
+      {/* 4. Location Section with Naver Map */}
       <section className="py-24 px-6 bg-gray-900 text-white">
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-16">
             <div className="w-full md:w-1/3">
@@ -145,14 +182,8 @@ const About: React.FC = () => {
                   </div>
                </div>
             </div>
-            <div className="w-full md:w-2/3 h-96 bg-gray-800 rounded-3xl overflow-hidden relative shadow-2xl">
-               <iframe 
-                  title="Smart Place Location"
-                  className="w-full h-full grayscale hover:grayscale-0 transition-all duration-700"
-                  src="https://maps.google.com/maps?q=%EC%84%9C%EC%9A%B8%EC%8B%9C%20%EA%B0%95%EC%84%9C%EA%B5%AC%20%EC%96%91%EC%B2%9C%EB%A1%9C%20547%20%EB%A7%88%EC%8A%A4%ED%84%B0%EB%B0%B8%EB%A5%98&t=&z=16&ie=UTF8&iwloc=&output=embed"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-               ></iframe>
+            <div className="w-full md:w-2/3 h-96 bg-gray-800 rounded-3xl overflow-hidden relative shadow-2xl border border-gray-700">
+               <div ref={mapRef} className="w-full h-full" id="naver-map"></div>
             </div>
          </div>
       </section>
