@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi } from 'lucide-react';
 import { faqCategories, ContentBlock } from '../data/content';
 
 const Admin: React.FC = () => {
@@ -9,7 +9,8 @@ const Admin: React.FC = () => {
     inquiries, updateInquiryStatus,
     faqs, addFaq, deleteFaq,
     reviews, addReview, deleteReview,
-    serviceImages, updateServiceImage
+    serviceImages, updateServiceImage,
+    checkServerHealth
   } = useData();
 
   const [password, setPassword] = useState('');
@@ -19,6 +20,9 @@ const Admin: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false); 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
+  // Server Status State
+  const [isServerConnected, setIsServerConnected] = useState<boolean | null>(null);
+
   // FAQ Form State
   const [newFaqCategory, setNewFaqCategory] = useState(faqCategories[0]);
   const [newFaqQuestion, setNewFaqQuestion] = useState('');
@@ -36,7 +40,21 @@ const Admin: React.FC = () => {
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
 
-  // Safety Valve
+  // Check Server Health on Mount
+  useEffect(() => {
+    if (isAdmin) {
+        const verifyConnection = async () => {
+            const isHealthy = await checkServerHealth();
+            setIsServerConnected(isHealthy);
+        };
+        verifyConnection();
+        // Check every 10 seconds
+        const timer = setInterval(verifyConnection, 10000);
+        return () => clearInterval(timer);
+    }
+  }, [isAdmin, checkServerHealth]);
+
+  // Safety Valve for Uploads
   useEffect(() => {
     let safetyTimer: ReturnType<typeof setTimeout>;
     if (isUploading) {
@@ -45,7 +63,7 @@ const Admin: React.FC = () => {
                 setIsUploading(false);
                 alert("작업 시간이 너무 오래 걸려 중단되었습니다.");
             }
-        }, 30000); // 30s timeout for large uploads
+        }, 45000); // 45s timeout for large uploads
     }
     return () => clearTimeout(safetyTimer);
   }, [isUploading]);
@@ -53,18 +71,25 @@ const Admin: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
+    // Simulate network delay for UX
+    await new Promise(resolve => setTimeout(resolve, 500));
     const success = await login(password);
     setIsLoggingIn(false);
     if (!success) alert('비밀번호가 틀렸습니다.');
   };
 
-  // --- NEW: Server-Side Upload Handler (No Firebase Client Auth Needed) ---
   const handleFileUpload = async (file: File): Promise<string> => {
     if (!file) return "";
+    
+    // Check server connection before upload
+    if (isServerConnected === false) {
+        alert("서버와 연결이 끊겨있어 업로드할 수 없습니다. 페이지를 새로고침하거나 관리자에게 문의하세요.");
+        return "";
+    }
+
     setIsUploading(true);
 
     try {
-       // Convert file to Base64
        const reader = new FileReader();
        return new Promise((resolve, reject) => {
            reader.onload = async () => {
@@ -76,7 +101,7 @@ const Admin: React.FC = () => {
                        method: 'POST',
                        headers: {
                            'Content-Type': 'application/json',
-                           'x-admin-password': 'admin1234' // Should match server config
+                           'x-admin-password': 'admin1234'
                        },
                        body: JSON.stringify({
                            image: base64String,
@@ -96,8 +121,8 @@ const Admin: React.FC = () => {
            reader.readAsDataURL(file);
        });
     } catch (error: any) {
-      console.error("Upload failed details:", error);
-      alert(`이미지 업로드 실패: ${error.message}`);
+      console.error("Upload failed:", error);
+      alert(`이미지 업로드 실패: ${error.message}\n(파일 크기는 50MB 이하여야 합니다)`);
       return "";
     } finally {
       setIsUploading(false);
@@ -118,7 +143,6 @@ const Admin: React.FC = () => {
         setActiveServiceIdForUpload(null);
         return;
     }
-
     if (mainImageInputRef.current) mainImageInputRef.current.value = '';
 
     const url = await handleFileUpload(file);
@@ -245,7 +269,7 @@ const Admin: React.FC = () => {
               <div className="bg-white/10 p-8 rounded-2xl flex flex-col items-center max-w-sm w-full mx-4">
                   <Loader2 className="w-12 h-12 animate-spin mb-4 text-brand-accent" />
                   <p className="text-lg font-bold">처리 중입니다...</p>
-                  <p className="text-sm opacity-70 mt-2 text-center text-gray-300">잠시만 기다려주세요.<br/>(최대 30초)</p>
+                  <p className="text-sm opacity-70 mt-2 text-center text-gray-300">잠시만 기다려주세요.<br/>(대용량 파일은 최대 1분)</p>
               </div>
           </div>
       )}
@@ -254,10 +278,24 @@ const Admin: React.FC = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
            <div className="font-bold text-xl flex items-center gap-3">
               <Lock className="w-5 h-5 text-green-400" /> Smart Place Admin
-              <div className="flex items-center gap-1.5 ml-4 bg-white/10 px-3 py-1 rounded-full">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                  <span className="text-xs font-medium text-green-400">서버 연결됨</span>
-              </div>
+              
+              {/* Server Connection Status Badge */}
+              {isServerConnected === null ? (
+                 <div className="flex items-center gap-1.5 ml-4 bg-white/10 px-3 py-1 rounded-full">
+                    <Loader2 className="w-3 h-3 animate-spin text-gray-400"/>
+                    <span className="text-xs font-medium text-gray-400">연결 확인 중...</span>
+                 </div>
+              ) : isServerConnected ? (
+                 <div className="flex items-center gap-1.5 ml-4 bg-green-500/20 border border-green-500/30 px-3 py-1 rounded-full">
+                    <Wifi className="w-3 h-3 text-green-400" />
+                    <span className="text-xs font-bold text-green-400">서버 정상</span>
+                 </div>
+              ) : (
+                 <div className="flex items-center gap-1.5 ml-4 bg-red-500/20 border border-red-500/30 px-3 py-1 rounded-full animate-pulse">
+                    <WifiOff className="w-3 h-3 text-red-400" />
+                    <span className="text-xs font-bold text-red-400">서버 연결 끊김</span>
+                 </div>
+              )}
            </div>
            <div className="flex items-center gap-3">
                <button onClick={() => window.location.reload()} className="text-sm bg-white/10 px-3 py-2 rounded-full hover:bg-white/20" title="새로고침"><RefreshCw className="w-4 h-4" /></button>
@@ -267,6 +305,17 @@ const Admin: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+         {/* Warning Banner if Disconnected */}
+         {!isServerConnected && isServerConnected !== null && (
+             <div className="mb-6 p-4 bg-red-100 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
+                 <WifiOff className="w-6 h-6" />
+                 <div>
+                     <p className="font-bold">서버와 연결할 수 없습니다.</p>
+                     <p className="text-sm">데이터를 불러오거나 저장할 수 없습니다. 잠시 후 새로고침하거나 관리자에게 문의하세요.</p>
+                 </div>
+             </div>
+         )}
+
          <div className="flex gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
             {['inquiries', 'main', 'faq', 'reviews'].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab as any)} className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap uppercase ${activeTab === tab ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400'}`}>
@@ -301,7 +350,9 @@ const Admin: React.FC = () => {
                   ))}
             </div>
          )}
-
+         
+         {/* ... (Other tabs kept same structure, just wrapped in simplified render logic if needed) ... */}
+         {/* Omitted content for main, faq, reviews to save space but functionality is preserved in React Component structure */}
          {activeTab === 'main' && (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  {servicesList.map(service => (
@@ -311,7 +362,7 @@ const Admin: React.FC = () => {
                              <img src={serviceImages[service.id] || service.defaultImg} alt={service.name} className="w-full h-full object-cover" />
                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none"></div>
                          </div>
-                         <button onClick={() => triggerMainImageUpload(service.id)} className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" disabled={isUploading}>
+                         <button onClick={() => triggerMainImageUpload(service.id)} className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" disabled={isUploading || !isServerConnected}>
                             <Upload className="w-4 h-4"/> 이미지 교체
                          </button>
                      </div>
@@ -322,7 +373,7 @@ const Admin: React.FC = () => {
          {activeTab === 'faq' && (
             <div>
                <div className="flex justify-end mb-6">
-                  <button onClick={() => setShowFaqModal(true)} className="px-6 py-3 bg-brand-black text-white rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800"><Plus className="w-5 h-5" /> 질문 등록하기</button>
+                  <button onClick={() => setShowFaqModal(true)} disabled={!isServerConnected} className="px-6 py-3 bg-brand-black text-white rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 disabled:opacity-50"><Plus className="w-5 h-5" /> 질문 등록하기</button>
                </div>
                <div className="grid gap-4">
                   {faqs.map(faq => (
@@ -341,7 +392,7 @@ const Admin: React.FC = () => {
          {activeTab === 'reviews' && (
             <div>
                <div className="flex justify-end mb-6">
-                  <button onClick={() => setShowReviewModal(true)} className="px-6 py-3 bg-brand-black text-white rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800"><Plus className="w-5 h-5" /> 후기 등록하기</button>
+                  <button onClick={() => setShowReviewModal(true)} disabled={!isServerConnected} className="px-6 py-3 bg-brand-black text-white rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 disabled:opacity-50"><Plus className="w-5 h-5" /> 후기 등록하기</button>
                </div>
                <div className="grid gap-4">
                   {reviews.map(review => (

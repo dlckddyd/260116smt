@@ -1,7 +1,4 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import { getAuth } from "firebase/auth";
 
 // =================================================================
 // [설정 완료] 스마트플레이스 파이어베이스 키 설정
@@ -17,8 +14,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-// 앱이 이미 초기화되었는지 확인 후 초기화 (중복 방지)
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const storage = getStorage(app); 
-export const auth = getAuth(app);
+
+// Auth and Storage are handled server-side now.
+// Only export app if needed for other client-side SDKs later.
+export default app;

@@ -1,15 +1,2 @@
-[build]
-  command = "npm run build"
-  publish = "dist"
-
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-
-[build.environment]
-  NODE_VERSION = "20"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# 이 파일은 삭제하셔도 됩니다.
+# 현재 server.js를 사용하여 배포하므로 Netlify 설정은 필요하지 않습니다.

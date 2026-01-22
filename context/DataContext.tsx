@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { faqData as initialFaqs, reviewsData as initialReviews, FAQItem, ReviewItem } from '../data/content';
-import { auth } from '../firebase'; 
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // Inquiry Type Definition
 export interface InquiryItem {
@@ -30,6 +28,7 @@ interface DataContextType {
   isAdmin: boolean;
   login: (password: string) => Promise<boolean>; 
   logout: () => void;
+  checkServerHealth: () => Promise<boolean>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -44,15 +43,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return localStorage.getItem('growth_lab_is_admin') === 'true';
   });
 
-  const ADMIN_PASSWORD = 'admin1234'; // Simple check
-
-  // Auth Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        // Just listening
-    });
-    return () => unsubscribe();
-  }, []);
+  const ADMIN_PASSWORD = 'admin1234'; // Matches server.js check
 
   // --- API Helpers ---
   const fetchPublicData = async () => {
@@ -83,6 +74,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
+  const checkServerHealth = async () => {
+      try {
+          const res = await fetch('/healthz', { method: 'GET', cache: 'no-store' });
+          return res.ok;
+      } catch (e) {
+          return false;
+      }
+  };
+
   // Initial Fetch
   useEffect(() => {
       fetchPublicData();
@@ -92,18 +92,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
       if (isAdmin) {
           fetchAdminData();
-          // Optional: Poll every 30s
+          // Poll every 30s to keep data fresh
           const interval = setInterval(fetchAdminData, 30000);
           return () => clearInterval(interval);
       }
   }, [isAdmin]);
 
-
   // Admin Auth Persistence
   useEffect(() => {
     localStorage.setItem('growth_lab_is_admin', String(isAdmin));
   }, [isAdmin]);
-
 
   // --- Actions (Using Server API) ---
 
@@ -114,7 +112,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify(faq)
     });
     if (res.ok) fetchPublicData();
-    else throw new Error("Server Error");
+    else throw new Error("Server communication failed");
   };
 
   const deleteFaq = async (id: string) => {
@@ -132,7 +130,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify(review)
     });
     if (res.ok) fetchPublicData();
-    else throw new Error("Server Error");
+    else throw new Error("Server communication failed");
   };
 
   const deleteReview = async (id: string) => {
@@ -144,7 +142,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addInquiry = async (inquiry: Omit<InquiryItem, 'id' | 'date' | 'status'>) => {
-    // Public Endpoint
     await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -172,11 +169,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (password: string) => {
     if (password === ADMIN_PASSWORD) {
-      try {
-        await signInAnonymously(auth);
-      } catch (error) {
-        console.warn("Client Auth Warning", error);
-      }
+      // Pure client-side state update. 
+      // Security is handled by the server checking the password header on API calls.
       setIsAdmin(true);
       return true;
     }
@@ -185,7 +179,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     setIsAdmin(false);
-    auth.signOut().catch(console.error);
     setInquiries([]);
   };
 
@@ -196,7 +189,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addReview, deleteReview, 
       addInquiry, updateInquiryStatus,
       updateServiceImage,
-      isAdmin, login, logout
+      isAdmin, login, logout, checkServerHealth
     }}>
       {children}
     </DataContext.Provider>

@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { DataProvider } from './context/DataContext';
@@ -34,7 +34,7 @@ const PageLoader = () => (
 const App: React.FC = () => {
   return (
     <DataProvider>
-      <BrowserRouter>
+      <HashRouter>
         <ScrollToTop />
         <div className="min-h-screen bg-white text-brand-black flex flex-col font-sans selection:bg-brand-accent selection:text-white">
           <Navbar />
@@ -55,7 +55,7 @@ const App: React.FC = () => {
           </main>
           <Footer />
         </div>
-      </BrowserRouter>
+      </HashRouter>
     </DataProvider>
   );
 };
