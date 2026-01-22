@@ -215,13 +215,13 @@ const Home: React.FC = () => {
       <section className="py-24 px-6 bg-white relative">
          <div className="max-w-7xl mx-auto">
             <RevealOnScroll>
-               <div className="flex flex-col lg:flex-row gap-20 items-start">
-                  <div className="w-full lg:w-1/2 sticky top-32">
+               <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                  <div className="w-full lg:w-1/2">
                      <span className="text-brand-accent font-bold text-sm tracking-[0.2em] uppercase mb-4 block opacity-80">About Us</span>
-                     <h2 className="text-5xl md:text-7xl font-bold mb-8 text-brand-black leading-[0.9] tracking-tight">
+                     <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 text-brand-black leading-tight tracking-tight">
                         We Design<br/>Success.
                      </h2>
-                     <p className="text-gray-500 text-xl leading-relaxed mb-12">
+                     <p className="text-gray-500 text-xl leading-relaxed mb-10">
                         스마트마케팅 플레이스는 감이 아닌 데이터로 움직입니다.<br/>
                         수천 건의 성공 사례를 통해 검증된 알고리즘 분석 시스템과
                         트래픽 최적화 솔루션으로 비즈니스의 확실한 성장을 약속합니다.
@@ -239,10 +239,8 @@ const Home: React.FC = () => {
                      </div>
                   </div>
                   
-                  <div className="w-full lg:w-1/2 space-y-8 flex justify-center lg:justify-end">
-                      {/* Reduced height/aspect ratio for a cleaner look and max-width-sm */}
-                      <div className="relative w-full max-w-sm aspect-[4/3] overflow-hidden rounded-[2rem] bg-gray-100 group shadow-2xl">
-                         {/* Korean Business Meeting */}
+                  <div className="w-full lg:w-1/2">
+                      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[2rem] bg-gray-100 group shadow-2xl">
                          <img 
                             src="https://images.unsplash.com/photo-1577412647305-991150c7d163?q=80&w=1200&auto=format&fit=crop" 
                             alt="Strategy Meeting" 
