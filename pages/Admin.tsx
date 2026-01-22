@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download } from 'lucide-react';
 import { ContentBlock, FAQItem } from '../data/content';
+import { naverFaqData } from '../data/naverFaqs';
 
 const Admin: React.FC = () => {
   const { 
     isAdmin, login, logout, 
     inquiries, updateInquiryStatus,
-    faqs, addFaq, updateFaq, deleteFaq,
+    faqs, addFaq, addMultipleFaqs, updateFaq, deleteFaq,
     categories, addCategory, deleteCategory,
     reviews, addReview, deleteReview,
     serviceImages, updateServiceImage,
@@ -18,6 +19,7 @@ const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'inquiries' | 'faq' | 'reviews' | 'main'>('inquiries');
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false); // Text Import Modal
   const [isUploading, setIsUploading] = useState(false); 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
@@ -32,6 +34,9 @@ const Admin: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   
+  // Bulk Import State
+  const [bulkText, setBulkText] = useState('');
+
   // Review Form State
   const [newReview, setNewReview] = useState({ name: '', company: '', content: '', rating: 5, type: 'text', imageUrl: '' });
 
@@ -260,6 +265,76 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleImportNaverFaqs = async () => {
+      if (!confirm(`네이버 스마트플레이스 관련 주요 질문 ${naverFaqData.length}개를 일괄 등록하시겠습니까?\n(기존 데이터는 유지됩니다)`)) return;
+      
+      setIsUploading(true);
+      try {
+          // Ensure all categories exist first
+          const uniqueCategories = Array.from(new Set(naverFaqData.flatMap(f => f.categories)));
+          for (const cat of uniqueCategories) {
+              if (!categories.includes(cat)) {
+                  await addCategory(cat);
+              }
+          }
+          
+          await addMultipleFaqs(naverFaqData);
+          alert("성공적으로 등록되었습니다.");
+      } catch (e: any) {
+          alert(`등록 실패: ${e.message}`);
+      } finally {
+          setIsUploading(false);
+      }
+  };
+
+  const handleBulkTextImport = async () => {
+      if (!bulkText.trim()) return alert("내용을 입력해주세요.");
+      
+      // Simple Parser: Split by Q. or Q: patterns
+      // Assuming pattern: Q. Question \n A. Answer
+      const chunks = bulkText.split(/(?=Q\.|Q:|질문:)/gi);
+      const parsedFaqs: any[] = [];
+
+      chunks.forEach(chunk => {
+          if (!chunk.trim()) return;
+          
+          // Split into lines
+          const lines = chunk.split('\n').map(l => l.trim()).filter(l => l);
+          if (lines.length < 2) return;
+
+          const question = lines[0].replace(/^(Q\.|Q:|질문:)\s*/i, '');
+          // Join the rest as answer, removing A. prefix from the first answer line if present
+          const answerLines = lines.slice(1);
+          if (answerLines[0]) answerLines[0] = answerLines[0].replace(/^(A\.|A:|답변:)\s*/i, '');
+          
+          const answer = answerLines.join('\n');
+
+          if (question && answer) {
+              parsedFaqs.push({
+                  categories: ["자주 찾는 도움말"], // Default category
+                  question: question,
+                  blocks: [{ id: Date.now() + Math.random().toString(), type: 'text', content: answer }]
+              });
+          }
+      });
+
+      if (parsedFaqs.length === 0) return alert("질문/답변 형식을 인식하지 못했습니다. (예: Q. 질문 A. 답변)");
+
+      if (confirm(`${parsedFaqs.length}개의 질문을 인식했습니다. 등록하시겠습니까?`)) {
+          setIsUploading(true);
+          try {
+              await addMultipleFaqs(parsedFaqs);
+              setShowBulkModal(false);
+              setBulkText('');
+              alert("등록되었습니다.");
+          } catch(e: any) {
+              alert(`실패: ${e.message}`);
+          } finally {
+              setIsUploading(false);
+          }
+      }
+  };
+
   const addBlock = (type: 'text' | 'image') => {
     setNewFaqBlocks([...newFaqBlocks, { id: Date.now().toString(), type, content: '' }]);
   };
@@ -368,7 +443,7 @@ const Admin: React.FC = () => {
               <div className="bg-white/10 p-8 rounded-2xl flex flex-col items-center max-w-sm w-full mx-4">
                   <Loader2 className="w-12 h-12 animate-spin mb-4 text-brand-accent" />
                   <p className="text-lg font-bold">처리 중입니다...</p>
-                  <p className="text-sm opacity-70 mt-2 text-center text-gray-300">잠시만 기다려주세요.<br/>(대용량 파일은 최대 1분)</p>
+                  <p className="text-sm opacity-70 mt-2 text-center text-gray-300">잠시만 기다려주세요.<br/>(대용량 데이터는 시간이 걸릴 수 있습니다)</p>
               </div>
           </div>
       )}
@@ -474,9 +549,18 @@ const Admin: React.FC = () => {
                     <button onClick={() => setShowCategoryManager(!showCategoryManager)} className="text-gray-500 hover:text-gray-800 flex items-center gap-2 font-medium">
                         <Settings className="w-4 h-4" /> 카테고리 관리 {showCategoryManager ? '접기' : '펼치기'}
                     </button>
-                    <button onClick={() => { resetFaqForm(); setShowFaqModal(true); }} disabled={!isServerConnected} className="px-6 py-3 bg-brand-black text-white rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 disabled:opacity-50">
-                        <Plus className="w-5 h-5" /> 새 글 작성
-                    </button>
+                    
+                    <div className="flex gap-2">
+                        <button onClick={() => setShowBulkModal(true)} disabled={!isServerConnected} className="px-4 py-3 bg-gray-100 text-gray-600 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-200 disabled:opacity-50">
+                            <FileText className="w-5 h-5" /> 텍스트로 일괄 등록
+                        </button>
+                        <button onClick={handleImportNaverFaqs} disabled={!isServerConnected} className="px-4 py-3 bg-green-500 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-green-600 disabled:opacity-50">
+                            <Download className="w-5 h-5" /> 네이버 FAQ 가져오기
+                        </button>
+                        <button onClick={() => { resetFaqForm(); setShowFaqModal(true); }} disabled={!isServerConnected} className="px-6 py-3 bg-brand-black text-white rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 disabled:opacity-50">
+                            <Plus className="w-5 h-5" /> 새 글 작성
+                        </button>
+                    </div>
                 </div>
 
                 {/* Category Manager */}
@@ -556,6 +640,40 @@ const Admin: React.FC = () => {
       <input type="file" ref={faqFileInputRef} onChange={onFaqFileSelected} className="hidden" accept="image/*" />
       <input type="file" ref={reviewFileInputRef} onChange={onReviewFileSelected} className="hidden" accept="image/*" />
       <input type="file" ref={mainImageInputRef} onChange={onMainImageFileSelected} className="hidden" accept="image/*" />
+
+      {/* Bulk Import Modal */}
+      {showBulkModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl flex flex-col max-h-[90vh]">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-2xl font-bold">텍스트로 일괄 등록</h3>
+                      <button onClick={() => setShowBulkModal(false)}><X className="w-6 h-6" /></button>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 text-sm text-gray-600">
+                      <p className="font-bold mb-2 text-gray-800">입력 예시:</p>
+                      <pre className="bg-white p-3 rounded-lg border border-gray-100 font-mono text-xs">
+{`Q. 플레이스 등록은 무료인가요?
+A. 네, 무료입니다.
+
+Q. 예약은 어떻게 하나요?
+A. 예약 버튼을 눌러주세요.`}
+                      </pre>
+                      <p className="mt-2 text-xs text-gray-400">* 질문은 Q. 또는 Q: 로 시작해야 인식됩니다.</p>
+                  </div>
+                  <textarea 
+                      className="flex-1 w-full border border-gray-200 p-4 rounded-xl outline-none focus:border-brand-accent transition-colors resize-none mb-6 font-medium text-gray-700" 
+                      placeholder="여기에 내용을 붙여넣으세요..."
+                      rows={10}
+                      value={bulkText}
+                      onChange={(e) => setBulkText(e.target.value)}
+                  />
+                  <div className="flex justify-end gap-3">
+                      <button onClick={() => setShowBulkModal(false)} className="px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors">취소</button>
+                      <button onClick={handleBulkTextImport} className="px-8 py-3 bg-brand-black text-white rounded-xl font-bold hover:bg-gray-800 transition-colors">분석 및 등록</button>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {/* FAQ Modal - Improved UI (Blog Style) */}
       {showFaqModal && (

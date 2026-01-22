@@ -25,6 +25,7 @@ interface DataContextType {
   serviceImages: Record<string, string>;
   categories: string[];
   addFaq: (faq: Omit<FAQItem, 'id'>) => Promise<void>;
+  addMultipleFaqs: (faqs: Omit<FAQItem, 'id'>[]) => Promise<void>;
   updateFaq: (id: string, faq: Partial<FAQItem>) => Promise<void>;
   deleteFaq: (id: string) => Promise<void>;
   addReview: (review: Omit<ReviewItem, 'id' | 'date'>) => Promise<void>;
@@ -145,6 +146,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     else throw new Error("Server communication failed");
   };
 
+  const addMultipleFaqs = async (faqs: Omit<FAQItem, 'id'>[]) => {
+    const res = await fetch('/api/admin/faqs/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PASSWORD },
+        body: JSON.stringify({ faqs })
+    });
+    if (res.ok) fetchPublicData();
+    else throw new Error("Batch upload failed");
+  };
+
   const updateFaq = async (id: string, faq: Partial<FAQItem>) => {
     const res = await fetch(`/api/admin/faqs/${id}`, {
         method: 'PATCH',
@@ -247,7 +258,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <DataContext.Provider value={{
       faqs, reviews, inquiries, serviceImages, categories,
-      addFaq, updateFaq, deleteFaq, 
+      addFaq, addMultipleFaqs, updateFaq, deleteFaq, 
       addCategory, deleteCategory,
       addReview, deleteReview, 
       addInquiry, updateInquiryStatus,

@@ -136,6 +136,28 @@ app.post('/api/admin/faqs', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Batch Upload Endpoint
+app.post('/api/admin/faqs/batch', requireAdmin, async (req, res) => {
+    try {
+        if (!db) throw new Error("Database not connected");
+        const { faqs } = req.body; // Expecting { faqs: [...] }
+        if (!Array.isArray(faqs)) return res.status(400).json({ error: "Invalid data format" });
+
+        const batch = db.batch();
+        
+        faqs.forEach(faq => {
+            const docRef = db.collection('faqs').doc(); // Auto-ID
+            batch.set(docRef, faq);
+        });
+
+        await batch.commit();
+        res.json({ success: true, count: faqs.length });
+    } catch (e) { 
+        console.error(e);
+        res.status(500).json({ error: e.message }); 
+    }
+});
+
 app.patch('/api/admin/faqs/:id', requireAdmin, async (req, res) => {
     try {
         if (!db) throw new Error("Database not connected");
