@@ -60,36 +60,60 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // --- API Helpers ---
   const fetchPublicData = async () => {
       try {
-          const [resFaqs, resReviews, resImgs, resCats] = await Promise.all([
+          // Use allSettled to prevent one failure from blocking others
+          const results = await Promise.allSettled([
               fetch('/api/faqs'),
               fetch('/api/reviews'),
               fetch('/api/service-images'),
               fetch('/api/categories')
           ]);
-          
-          if(resFaqs.ok) {
-              const rawFaqs = await resFaqs.json();
-              // Migration: Map old 'category' to 'categories' array
+
+          const [resFaqs, resReviews, resImgs, resCats] = results;
+
+          // FAQs
+          if (resFaqs.status === 'fulfilled' && resFaqs.value.ok) {
+              const rawFaqs = await resFaqs.value.json();
               const mappedFaqs = rawFaqs.map((f: any) => ({
                   ...f,
                   categories: f.categories || (f.category ? [f.category] : [])
               }));
               setFaqs(mappedFaqs);
           }
-          if(resReviews.ok) setReviews(await resReviews.json());
-          if(resImgs.ok) setServiceImages(await resImgs.json());
-          if(resCats.ok) {
-              const cats = await resCats.json();
-              if (cats.length > 0) {
-                  setCategoryDocs(cats);
-                  setCategories(cats.map((c: any) => c.name));
-              } else {
-                  // Fallback to defaults if DB is empty
-                  setCategories(defaultFaqCategories);
+
+          // Reviews
+          if (resReviews.status === 'fulfilled' && resReviews.value.ok) {
+              setReviews(await resReviews.value.json());
+          }
+
+          // Service Images
+          if (resImgs.status === 'fulfilled' && resImgs.value.ok) {
+              setServiceImages(await resImgs.value.json());
+          }
+
+          // Categories with robust fallback
+          let catsLoaded = false;
+          if (resCats.status === 'fulfilled' && resCats.value.ok) {
+              try {
+                  const cats = await resCats.value.json();
+                  if (cats && cats.length > 0) {
+                      setCategoryDocs(cats);
+                      setCategories(cats.map((c: any) => c.name));
+                      catsLoaded = true;
+                  }
+              } catch (e) {
+                  console.error("Failed to parse categories", e);
               }
           }
+          
+          if (!catsLoaded) {
+              console.warn("Using default categories fallback");
+              setCategories(defaultFaqCategories);
+          }
+
       } catch (e) {
           console.error("Failed to fetch public data:", e);
+          // Safety fallback
+          if (categories.length === 0) setCategories(defaultFaqCategories);
       }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download, Scissors, Wand2, ArrowRight } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download, Scissors, Wand2, ArrowRight, Palette } from 'lucide-react';
 import { ContentBlock, FAQItem } from '../data/content';
 import { naverFaqData } from '../data/naverFaqs';
 
@@ -23,6 +23,7 @@ const Admin: React.FC = () => {
   // Smart Clipper Modal State
   const [showSmartClipper, setShowSmartClipper] = useState(false);
   const [clipperData, setClipperData] = useState<{ question: string; blocks: ContentBlock[] } | null>(null);
+  const [replaceColor, setReplaceColor] = useState(true); // Default to replacing colors
   
   const [isUploading, setIsUploading] = useState(false); 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -289,7 +290,7 @@ const Admin: React.FC = () => {
       }
   };
 
-  // --- Smart Clipper Logic (Enhanced for Rich HTML) ---
+  // --- Smart Clipper Logic (Enhanced for Rich HTML & Color Swap) ---
   const handleSmartClipperPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
       e.preventDefault();
       
@@ -316,12 +317,10 @@ const Admin: React.FC = () => {
       let question = "";
 
       // 1. Detect Question (Title)
-      // Look for the largest header or bold text at the top
       const headers = doc.querySelectorAll('h1, h2, h3, strong, b');
       if (headers.length > 0 && headers[0].textContent?.trim()) {
           question = headers[0].textContent?.trim() || "";
       } else {
-          // Fallback: First paragraph
           const firstP = doc.querySelector('p, div');
           if (firstP?.textContent?.trim()) {
               question = firstP.textContent.trim().split('\n')[0];
@@ -331,11 +330,24 @@ const Admin: React.FC = () => {
       }
 
       // 2. Process Content
-      // We will accumulate HTML content in a "buffer" string.
-      // When we hit an image, we push the buffer as a Text Block, then push the Image Block.
       let htmlBuffer = "";
 
-      // Clean HTML Helper: remove dangerous tags, keep formatting
+      // Color Replacement Helper
+      // Target Naver Green variations and common dark text to adapt to our brand
+      const processStyle = (styleString: string | null): string => {
+          if (!styleString || !replaceColor) return styleString || '';
+          
+          let newStyle = styleString;
+          // Regex for Naver Greens: #03c75a, #00c73c, rgb(0, 199, 60), etc.
+          const greenRegex = /color:\s*(#03c75a|#00c73c|#00C73C|#2db400|rgb\(\s*3,\s*199,\s*90\s*\)|rgb\(\s*0,\s*199,\s*60\s*\))/gi;
+          
+          // Replace with Brand Accent (Blue - #2563eb)
+          if (greenRegex.test(newStyle)) {
+              newStyle = newStyle.replace(greenRegex, 'color: #2563eb; font-weight: bold;');
+          }
+          return newStyle;
+      };
+
       const cleanNode = (node: Node): string | null => {
           if (node.nodeType === Node.TEXT_NODE) {
               return node.textContent;
@@ -344,63 +356,61 @@ const Admin: React.FC = () => {
               const el = node as HTMLElement;
               const tagName = el.tagName.toLowerCase();
 
-              // Skip Title if found
+              // Skip Title
               if (el.textContent?.trim() === question && htmlBuffer.length === 0 && blocks.length === 0) return null;
 
-              // Handle Images separately (Break Buffer)
+              // Image -> Break Buffer
               if (tagName === 'img') {
                   const src = (el as HTMLImageElement).src;
-                  if (src) return `__IMG__${src}__IMG__`; // Marker
+                  if (src) return `__IMG__${src}__IMG__`; 
                   return null;
               }
 
-              // Discard specific containers but keep content
               if (['script', 'style', 'iframe', 'object'].includes(tagName)) return null;
 
-              // Allow styling attributes
+              // Process Attributes
               let attrs = "";
               if (el.getAttribute('href')) attrs += ` href="${el.getAttribute('href')}" target="_blank"`;
-              if (el.getAttribute('style')) attrs += ` style="${el.getAttribute('style')}"`;
-              if (el.getAttribute('class')) attrs += ` class="${el.getAttribute('class')}"`; // Optional
+              
+              // Handle Styles (Color Swap)
+              let style = el.getAttribute('style');
+              if (style) {
+                  style = processStyle(style);
+                  if (style) attrs += ` style="${style}"`;
+              }
+              
+              // Force replace color classes if they exist (Naver specific classes might not work here, but good practice)
+              // Instead, we mainly rely on inline styles which is what clipboard usually provides.
 
-              // Recursive process for children
               let childrenHtml = "";
               el.childNodes.forEach(child => {
                   const cleaned = cleanNode(child);
                   if (cleaned) childrenHtml += cleaned;
               });
 
-              // Return reconstructed HTML
-              // Block elements that should break lines
               if (['div', 'p', 'br', 'li', 'h1','h2','h3','h4','h5','h6'].includes(tagName)) {
                   if (tagName === 'br') return '<br/>';
                   return `<${tagName}${attrs}>${childrenHtml}</${tagName}>`;
               }
-              // Inline elements
               if (['b', 'strong', 'i', 'u', 'span', 'a', 'ul', 'ol'].includes(tagName)) {
                   return `<${tagName}${attrs}>${childrenHtml}</${tagName}>`;
               }
               
-              // Default to just returning children for unknown tags to strip the tag but keep text
               return childrenHtml;
           }
           return null;
       };
 
-      // Traverse Body
       doc.body.childNodes.forEach(node => {
           const processed = cleanNode(node);
           if (processed) {
-              // Check for Image Marker
               const parts = processed.split(/(__IMG__.*?__IMG__)/);
               parts.forEach(part => {
                   if (part.startsWith('__IMG__')) {
-                      // Flush buffer if exists
                       if (htmlBuffer.trim()) {
                           blocks.push({ id: Math.random().toString(), type: 'text', content: htmlBuffer });
                           htmlBuffer = "";
                       }
-                      // Add Image Block
                       const src = part.replace(/__IMG__/g, '');
                       blocks.push({ id: Math.random().toString(), type: 'image', content: src });
                   } else {
@@ -410,7 +420,6 @@ const Admin: React.FC = () => {
           }
       });
 
-      // Flush remaining buffer
       if (htmlBuffer.trim()) {
           blocks.push({ id: Math.random().toString(), type: 'text', content: htmlBuffer });
       }
@@ -764,7 +773,15 @@ const Admin: React.FC = () => {
                           <p className="text-indigo-600/70 max-w-md">
                               네이버 도움말, 블로그 등 웹페이지의 텍스트와 이미지를<br/>자동으로 분리하여 가져옵니다.
                           </p>
-                          <p className="text-indigo-600/50 text-xs mt-2">
+                          
+                          <div className="mt-6 flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-indigo-100 cursor-pointer" onClick={(e) => { e.stopPropagation(); setReplaceColor(!replaceColor); }}>
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${replaceColor ? 'bg-blue-600' : 'bg-gray-200'}`}>
+                                  {replaceColor && <CheckCircle className="w-3 h-3 text-white" />}
+                              </div>
+                              <span className="text-sm text-gray-600 font-bold">네이버 색상(초록)을 브랜드 색상(파랑)으로 변경</span>
+                          </div>
+
+                          <p className="text-indigo-600/50 text-xs mt-4">
                               * 숨겨진 내용은 '펼치기'를 누른 뒤 복사해야 가져올 수 있습니다.
                           </p>
                       </div>
@@ -773,9 +790,11 @@ const Admin: React.FC = () => {
                           <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
                               <CheckCircle className="w-5 h-5 text-green-600" />
                               <div className="text-green-800 text-sm font-medium">
-                                  성공적으로 분석했습니다! 내용을 확인하고 등록 버튼을 눌러주세요.
+                                  성공적으로 분석했습니다! 내용을 확인하고 편집기로 가져오세요.
                               </div>
-                              <button onClick={() => setClipperData(null)} className="ml-auto text-xs underline text-green-700 hover:text-green-900">다시 붙여넣기</button>
+                              <button onClick={() => setClipperData(null)} className="ml-auto px-4 py-2 bg-white border border-green-200 rounded-lg text-xs font-bold text-green-700 hover:bg-green-50">
+                                  다시 붙여넣기
+                              </button>
                           </div>
 
                           <div className="space-y-6">
@@ -792,11 +811,11 @@ const Admin: React.FC = () => {
                                       {clipperData.blocks.map((block, idx) => (
                                           <div key={idx} className="relative group">
                                               {block.type === 'text' ? (
-                                                  <div className="p-4 bg-white border border-gray-200 rounded-xl text-gray-700 text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: block.content }}>
+                                                  <div className="p-6 bg-white border border-gray-200 rounded-xl text-gray-700 text-sm whitespace-pre-wrap leading-relaxed shadow-sm" dangerouslySetInnerHTML={{ __html: block.content }}>
                                                   </div>
                                               ) : (
-                                                  <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-                                                      <img src={block.content} alt={`Block ${idx}`} className="w-full h-48 object-cover" />
+                                                  <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-sm">
+                                                      <img src={block.content} alt={`Block ${idx}`} className="w-full h-auto max-h-[400px] object-contain mx-auto" />
                                                       <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">이미지 자동추출</div>
                                                   </div>
                                               )}
@@ -957,132 +976,6 @@ const Admin: React.FC = () => {
                         <ImageIcon className="w-5 h-5" /> 이미지 추가
                     </button>
                  </div>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* Review Modal - Modernized with Paste Support */}
-      {showReviewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onPaste={handleReviewPaste}>
-           <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
-                 <h3 className="text-2xl font-bold">후기 등록</h3>
-                 <button onClick={() => setShowReviewModal(false)} className="p-2 hover:bg-gray-100 rounded-full"><X className="w-6 h-6" /></button>
-              </div>
-              
-              <div className="space-y-6">
-                 {/* Top Row: Basic Info */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-500">이름 (작성자)</label>
-                        <input className="w-full border border-gray-200 p-4 rounded-xl outline-none focus:border-brand-accent transition-colors" placeholder="예: 홍길동" value={newReview.name} onChange={e => setNewReview({...newReview, name: e.target.value})} />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-500">업체명</label>
-                        <input className="w-full border border-gray-200 p-4 rounded-xl outline-none focus:border-brand-accent transition-colors" placeholder="예: (주)스마트마케팅" value={newReview.company} onChange={e => setNewReview({...newReview, company: e.target.value})} />
-                     </div>
-                 </div>
-
-                 {/* Rating */}
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-500">평점 (별점)</label>
-                    <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map(score => (
-                            <button 
-                                key={score} 
-                                onClick={() => setNewReview({...newReview, rating: score})}
-                                className={`p-2 rounded-lg transition-all ${newReview.rating >= score ? 'text-yellow-400 scale-110' : 'text-gray-200'}`}
-                            >
-                                <Star className="w-8 h-8 fill-current" />
-                            </button>
-                        ))}
-                    </div>
-                 </div>
-
-                 {/* Content Type Selector */}
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-500">후기 형식</label>
-                    <div className="flex bg-gray-100 p-1 rounded-xl">
-                        <button 
-                            className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${newReview.type === 'text' ? 'bg-white shadow-sm text-brand-black' : 'text-gray-400 hover:text-gray-600'}`}
-                            onClick={() => setNewReview({...newReview, type: 'text'})}
-                        >
-                            텍스트 후기
-                        </button>
-                        <button 
-                            className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${newReview.type === 'image' ? 'bg-white shadow-sm text-brand-black' : 'text-gray-400 hover:text-gray-600'}`}
-                            onClick={() => setNewReview({...newReview, type: 'image'})}
-                        >
-                            이미지 인증샷
-                        </button>
-                    </div>
-                 </div>
-
-                 {/* Content Input Area */}
-                 <div className="min-h-[200px]">
-                    {newReview.type === 'text' ? (
-                        <textarea 
-                            className="w-full h-48 border border-gray-200 p-4 rounded-xl outline-none focus:border-brand-accent transition-colors resize-none text-lg" 
-                            placeholder="고객님의 소중한 후기를 입력해주세요..."
-                            value={newReview.content} 
-                            onChange={e => setNewReview({...newReview, content: e.target.value})} 
-                        />
-                    ) : (
-                        <div className="space-y-4">
-                            {/* Preview Area */}
-                            <div className="relative border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-gray-50 hover:bg-gray-100 transition-colors group">
-                                {newReview.imageUrl ? (
-                                    <>
-                                        <img src={newReview.imageUrl} alt="Preview" className="max-h-64 rounded-lg shadow-sm mb-4" />
-                                        <button 
-                                            onClick={() => setNewReview({...newReview, imageUrl: ''})}
-                                            className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black transition-colors"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                        <p className="text-green-600 font-bold flex items-center gap-2"><CheckCircle className="w-4 h-4" /> 이미지가 등록되었습니다</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform">
-                                            <ImageIcon className="w-8 h-8 text-gray-400" />
-                                        </div>
-                                        <p className="font-bold text-gray-700 mb-1">이미지를 등록해주세요</p>
-                                        <p className="text-sm text-gray-400 mb-6">
-                                            버튼을 눌러 업로드하거나,<br/>
-                                            <span className="text-brand-accent font-bold">Ctrl+V</span>로 이미지를 붙여넣으세요.
-                                        </p>
-                                        <button 
-                                            onClick={triggerReviewImageUpload}
-                                            className="px-6 py-2.5 bg-gray-800 text-white rounded-full font-bold hover:bg-black transition-colors flex items-center gap-2"
-                                        >
-                                            <Upload className="w-4 h-4" /> 파일 선택하기
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-
-                            {/* URL Input */}
-                            <div className="flex gap-2">
-                                <div className="flex-1 relative">
-                                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input 
-                                        className="w-full border border-gray-200 py-3 pl-10 pr-4 rounded-xl outline-none focus:border-brand-accent text-sm"
-                                        placeholder="또는 이미지 주소(URL)를 직접 입력하세요"
-                                        value={newReview.imageUrl}
-                                        onChange={e => setNewReview({...newReview, imageUrl: e.target.value})}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                 </div>
-
-                 {/* Submit Button */}
-                 <button onClick={handleAddReview} className="w-full py-4 bg-brand-accent text-white font-bold rounded-xl text-lg hover:bg-blue-600 shadow-lg hover:shadow-blue-500/30 transition-all">
-                    후기 등록 완료
-                 </button>
               </div>
            </div>
         </div>

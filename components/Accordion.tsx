@@ -26,8 +26,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ question, blocks }) => {
         )}
       </button>
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+          isOpen ? 'max-h-[20000px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
         <div className="p-6 bg-gray-50/50 rounded-b-lg space-y-6">
