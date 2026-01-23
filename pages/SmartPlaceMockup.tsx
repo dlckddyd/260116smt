@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, ArcElement } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
 import html2canvas from 'html2canvas';
-import { Settings, Download, X, HelpCircle, ChevronUp, ChevronDown, ChevronRight, Home, Calendar, MessageSquare, BarChart2, Store, CreditCard, Monitor, User, Menu } from 'lucide-react';
+import { Settings, Download, X, HelpCircle, ChevronUp, ChevronDown, ChevronRight, Home, Calendar, MessageSquare, BarChart2, Store, CreditCard, Monitor, User } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, ArcElement);
 
@@ -17,8 +17,8 @@ const SmartPlaceMockup: React.FC = () => {
     dateRange: "25. 12. 22. 월 - 12. 28. 일",
     
     // 1. 방문 전 지표 (Before Visit)
-    visitCount: 12222,
-    visitPrev: 700,
+    visitCount: 304,
+    visitPrev: 390,
     
     reservationCount: 7,
     reservationPrev: 13,
@@ -48,13 +48,13 @@ const SmartPlaceMockup: React.FC = () => {
     chartCallDataCurrent: [0, 2, 0, 0, 0, 0, 0],
     chartCallDataPrev: [1, 2, 1, 0, 2, 1, 1],
 
-    // Chart 5: Reservation/Order Count (Added)
+    // Chart 4: Reservation Count (Chart 5 in logic, visual placement varies)
     chartResCountTotal: 7,
     chartResCountPrevTotal: 13,
     chartResCountDataCurrent: [1, 1, 1, 0, 2, 1, 1],
     chartResCountDataPrev: [2, 2, 2, 2, 2, 1, 2],
 
-    // Chart 4: Revenue (Reservation/Order)
+    // Chart 5: Revenue (Reservation/Order)
     chartRevenueTotal: 600000,
     chartRevenuePrevTotal: 940000,
     chartRevenueDataCurrent: [180000, 120000, 240000, 0, 0, 0, 60000],
@@ -105,7 +105,7 @@ const SmartPlaceMockup: React.FC = () => {
   const calcPercent = (curr: number, prev: number) => {
       if (prev === 0) {
           if (curr === 0) return { val: 0, text: '-', isUp: false, isZero: true };
-          return { val: 100, text: '100% 증가', isUp: true, isZero: false }; // Assuming 0 -> positive is 100% (or could be Infinity)
+          return { val: 100, text: '100% 증가', isUp: true, isZero: false }; // Assuming 0 -> positive is 100%
       }
       const diff = curr - prev;
       const percent = Math.round(Math.abs(diff) / prev * 100);
@@ -133,7 +133,7 @@ const SmartPlaceMockup: React.FC = () => {
     scales: {
         x: { 
             grid: { display: false, drawBorder: false },
-            ticks: { display: true, color: '#999', font: { size: 11, family: "'Pretendard', sans-serif" }, padding: 8 },
+            ticks: { display: true, color: '#999', font: { size: 11, family: "-apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif" }, padding: 8 },
             border: { display: false }
         },
         y: { 
@@ -181,10 +181,6 @@ const SmartPlaceMockup: React.FC = () => {
       }]
   };
 
-  // --- Helper Components for Layout ---
-  const UpIcon = () => <span className="text-[10px] text-[#f03e3e] font-bold mr-0.5">▲</span>;
-  const DownIcon = () => <span className="text-[10px] text-[#2485fe] font-bold mr-0.5">▼</span>;
-
   return (
     <div className="min-h-screen bg-[#eef0f3] flex font-sans">
       
@@ -194,7 +190,7 @@ const SmartPlaceMockup: React.FC = () => {
             ref={captureRef}
             id="smartplace-preview"
             className="flex w-[1480px] bg-[#f0f2f5] min-h-screen relative text-[#1c1c1c]"
-            style={{ fontFamily: "'Apple SD Gothic Neo', 'Pretendard', sans-serif" }}
+            style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', sans-serif" }}
         >
             {/* 1. Left Sidebar (LNB) */}
             <div className="w-[220px] bg-white border-r border-[#d3d5d7] flex flex-col flex-shrink-0 z-20 sticky top-0 h-screen">
@@ -274,7 +270,7 @@ const SmartPlaceMockup: React.FC = () => {
                                 <button className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full text-[#999]"><ChevronDown className="-rotate-90 w-4 h-4" /></button>
                             </div>
                         </div>
-                        <div className="w-[100px]"></div> {/* Spacer for center alignment */}
+                        <div className="w-[100px]"></div>
                     </div>
 
                     {/* --- Summary Section (Before Visit) --- */}
@@ -517,6 +513,7 @@ const SmartPlaceMockup: React.FC = () => {
                       <Input name="chartCallTotal" label="총 통화수" type="number" value={config.chartCallTotal} onChange={handleChange} />
                       <Input name="chartCallPrevTotal" label="지난주 통화수" type="number" value={config.chartCallPrevTotal} onChange={handleChange} />
                       <ArrayInput label="이번주 데이터" values={config.chartCallDataCurrent} onChange={(e, i) => handleArrayChange(e, 'chartCallDataCurrent', i)} />
+                      <ArrayInput label="지난주 데이터" values={config.chartCallDataPrev} onChange={(e, i) => handleArrayChange(e, 'chartCallDataPrev', i)} />
                   </Section>
 
                   <Section title="차트 4: 유입 채널">
@@ -599,21 +596,23 @@ const SummaryItem = ({ label, value, prev, isLast = false }: any) => {
         <div className={`flex-1 flex flex-col justify-between h-[86px] px-6 ${!isLast ? '' : ''}`}>
             {/* Top Row: Label and Percent */}
             <div className="flex justify-between items-start mb-1">
-                <span className="text-[15px] font-bold text-[#595959] tracking-tight">{label}</span>
-                {!isZero && prev !== 0 && (
-                     <span className={`text-[14px] font-bold flex items-center gap-0.5 ${isDown ? 'text-[#2485fe]' : 'text-[#fc4c4e]'}`}>
-                         {isDown ? <span className="text-[10px]">▼</span> : <span className="text-[10px]">▲</span>} {percent}%
-                     </span>
-                )}
-                {(isZero || prev === 0) && <span className="text-[14px] text-[#ccc]">-</span>}
-            </div>
-            
-            {/* Bottom Row: Prev count and Current Value */}
-            <div className="flex justify-between items-end mt-auto">
-                <span className="text-[13px] text-[#8c8c8c] tracking-tight">지난 기간 {prev.toLocaleString()}회</span>
+                <div className="flex items-center gap-2">
+                    <span className="text-[15px] font-bold text-[#424242] tracking-tight">{label}</span>
+                    {!isZero && prev !== 0 && (
+                        <span className={`text-[13px] font-bold flex items-center ${isDown ? 'text-[#2485fe]' : 'text-[#fc4c4e]'}`}>
+                            {isDown ? '↓' : '↑'}{percent}%
+                        </span>
+                    )}
+                    {(isZero || prev === 0) && <span className="text-[13px] font-bold text-[#424242]">-</span>}
+                </div>
                 <strong className="text-[24px] font-bold text-[#1c1c1c] leading-none">
                     {value.toLocaleString()}<span className="text-[15px] font-normal ml-0.5">회</span>
                 </strong>
+            </div>
+            
+            {/* Bottom Row: Prev count (Right Aligned) */}
+            <div className="text-right mt-auto">
+                <span className="text-[13px] text-[#8c8c8c] tracking-tight">지난 기간 {prev.toLocaleString()}회</span>
             </div>
         </div>
     );
@@ -670,28 +669,6 @@ const StatsLegend = () => (
 );
 
 const InflowItem = ({ rank, name, count, total }: any) => {
-    const percent = ((count / total) * 100).toFixed(2);
-    // Mimic the progress bar logic from HTML
-    // Logic: 1st rank is 100% (or reference), others are relative? 
-    // Usually total is sum of all, so just count/total * 100 for bar width 
-    // But visuals show 1st rank filling almost full width. Let's make 1st rank 100% visual width reference?
-    // No, standard is % of total.
-    
-    // Actually, visually:
-    // Naver Map (188) looks full width.
-    // Naver Search (108) looks ~60%.
-    // So visual width is relative to the max value in the list, not total sum.
-    // However, I don't have the max value passed easily here without calc.
-    // Let's assume standard % for now, or just use a multiplier for visual effect.
-    
-    // To match screenshot exactly where top item bar is full:
-    // We would need the max count. For now, let's just use raw percentage calculation * 1.5 to make bars look bigger?
-    // Or just standard percentage.
-    
-    // Re-analyzing screenshot: 1st item (188) has bar width: 100%. 2nd item (108) has bar width ~57%.
-    // So width = (count / maxCount) * 100.
-    // I will simply use count/300 * 100 for a mock visual scaling if max not available, or just reuse count/total.
-    
     // Visual tweak:
     const visualWidth = Math.min(100, (count / 188) * 100); // 188 is the top value in default config.
 
