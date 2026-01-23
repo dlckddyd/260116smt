@@ -330,9 +330,8 @@ const Admin: React.FC = () => {
       }
 
       // 2. Process Content
-      let htmlBuffer = "";
 
-      // Color Replacement Helper
+      // Helper: Color Replacement
       const processStyle = (styleString: string | null): string => {
           if (!styleString || !replaceColor) return styleString || '';
           
@@ -347,6 +346,7 @@ const Admin: React.FC = () => {
           return newStyle;
       };
 
+      // Helper: Recursive Node Cleaner
       const cleanNode = (node: Node): string | null => {
           if (node.nodeType === Node.TEXT_NODE) {
               return node.textContent;
@@ -356,9 +356,9 @@ const Admin: React.FC = () => {
               const tagName = el.tagName.toLowerCase();
 
               // Skip Title match in body
-              if (el.textContent?.trim() === question && htmlBuffer.length === 0 && blocks.length === 0) return null;
+              if (el.textContent?.trim() === question && blocks.length === 0) return null;
 
-              // Image -> Break Buffer
+              // Image -> Special Marker
               if (tagName === 'img') {
                   const src = (el as HTMLImageElement).src;
                   if (src) return `__IMG__${src}__IMG__`; 
@@ -385,11 +385,9 @@ const Admin: React.FC = () => {
               });
 
               // Allow semantic structural tags
-              if (['div', 'p', 'br', 'li', 'h1','h2','h3','h4','h5','h6', 'details', 'summary'].includes(tagName)) {
+              if (['div', 'p', 'br', 'li', 'h1','h2','h3','h4','h5','h6', 'details', 'summary', 'ul', 'ol', 'b', 'strong', 'i', 'u', 'span', 'a'].includes(tagName)) {
                   if (tagName === 'br') return '<br/>';
-                  return `<${tagName}${attrs}>${childrenHtml}</${tagName}>`;
-              }
-              if (['b', 'strong', 'i', 'u', 'span', 'a', 'ul', 'ol'].includes(tagName)) {
+                  // Strip Naver specific classes for cleaner HTML
                   return `<${tagName}${attrs}>${childrenHtml}</${tagName}>`;
               }
               
@@ -398,6 +396,91 @@ const Admin: React.FC = () => {
           return null;
       };
 
+      // SPECIAL: Detect Naver Service Scenario List (The accordion list structure user provided)
+      const scenarioList = doc.querySelector('[class*="ServiceScenario_scenario_list"]');
+      
+      if (scenarioList) {
+           // If we found a scenario list, we prioritize this structure
+           let listHtml = "";
+           
+           const items = scenarioList.querySelectorAll('li');
+           items.forEach(item => {
+               // Get Title (Button Text)
+               const btn = item.querySelector('button');
+               const title = btn?.textContent?.trim() || "";
+               
+               // Get Content (Div)
+               const contentDiv = item.querySelector('[class*="ScenarioListItem_scenario_info"]');
+               
+               // Check if content exists
+               let hasContent = false;
+               let cleanedContent = "";
+               
+               if (contentDiv) {
+                   // Only process content if it has actual text/images
+                   if(contentDiv.textContent?.trim() || contentDiv.querySelector('img')) {
+                       // Clean the inner content using our cleaner
+                       // We create a temp div to traverse children cleanly
+                       cleanedContent = "";
+                       contentDiv.childNodes.forEach(child => {
+                           const c = cleanNode(child);
+                           if(c) cleanedContent += c;
+                       });
+                       
+                       // Process markers for images within content
+                       // Note: Our blocks system splits text and images. 
+                       // For nested details, we must keep images inline as HTML <img> tags or handle complexly.
+                       // For simplicity in nested details, we revert __IMG__ to <img src="...">
+                       cleanedContent = cleanedContent.replace(/__IMG__(.*?)__IMG__/g, '<img src="$1" class="w-full rounded-lg my-2"/>');
+                       
+                       if (cleanedContent.trim().length > 0) hasContent = true;
+                   }
+               }
+               
+               if (hasContent) {
+                   // Accordion Style (Details/Summary)
+                   listHtml += `
+                    <details class="mb-3 group border border-gray-100 rounded-xl overflow-hidden bg-white">
+                        <summary class="px-5 py-4 font-bold cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors flex justify-between items-center list-none select-none">
+                            <span>${title}</span>
+                        </summary>
+                        <div class="p-5 text-gray-600 bg-white border-t border-gray-100 prose prose-sm max-w-none">
+                            ${cleanedContent}
+                        </div>
+                    </details>
+                   `;
+               } else {
+                   // Link/Static Style (No content)
+                   listHtml += `
+                    <div class="mb-3 px-5 py-4 font-bold text-gray-500 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> ${title}
+                        <span class="text-xs font-normal text-gray-400 ml-auto border border-gray-200 px-2 py-0.5 rounded">외부 링크/상세 참조</span>
+                    </div>
+                   `;
+               }
+           });
+           
+           if (listHtml) {
+               // Add the entire constructed HTML as one block
+               blocks.push({ id: Math.random().toString(), type: 'text', content: listHtml });
+               
+               // If we detected a title from the list, update it
+               // Try to find a header before the list
+               const prevHeader = scenarioList.previousElementSibling; // or parent's previous
+               if(prevHeader && (prevHeader.tagName.startsWith('H') || prevHeader.classList.contains('title'))) {
+                   question = prevHeader.textContent?.trim() || "자주 묻는 질문 모음";
+               } else if (!question) {
+                   question = "도움말 상세 가이드";
+               }
+               
+               setClipperData({ question, blocks });
+               return; // Exit standard processing
+           }
+      }
+
+      // Standard Processing (if not a scenario list)
+      let htmlBuffer = "";
+      
       doc.body.childNodes.forEach(node => {
           const processed = cleanNode(node);
           if (processed) {

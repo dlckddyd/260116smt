@@ -62,14 +62,14 @@ const FAQ: React.FC = () => {
       {/* Category Navigation - Responsive Layout */}
       {searchQuery.trim().length === 0 && (
           <div className="sticky top-[72px] z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm transition-all duration-300">
-            <div className="max-w-7xl mx-auto py-4 px-4 md:px-6">
+            <div className="max-w-7xl mx-auto py-4 px-4 md:px-0">
               {/* Mobile: Horizontal Scroll | Desktop: Wrap (Grid-like) */}
-              <div className="flex overflow-x-auto md:flex-wrap md:justify-center md:overflow-visible gap-2 no-scrollbar pb-2 md:pb-0">
+              <div className="flex overflow-x-auto md:flex-wrap md:justify-center md:overflow-visible gap-2 pb-2 md:pb-0">
                 {categories.length > 0 ? categories.map((category) => (
                   <button
                     key={category}
                     onClick={() => setActiveCategory(category)}
-                    className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 border flex-shrink-0 ${
+                    className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 border flex-shrink-0 mb-1 ${
                       activeCategory === category
                         ? 'bg-brand-accent text-white border-brand-accent shadow-md'
                         : 'bg-white text-gray-500 border-gray-200 hover:border-brand-accent hover:text-brand-accent'
