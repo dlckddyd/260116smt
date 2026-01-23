@@ -81,7 +81,7 @@ const Footer: React.FC = () => {
         </div>
         
         <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400">
-          <p>&copy; 2024 Smart Marketing Place. All rights reserved.</p>
+          <p>&copy; <Link to="/mockup" className="hover:text-gray-500 transition-colors">2024</Link> Smart Marketing Place. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-brand-accent transition-colors">이용약관</a>
             <a href="#" className="hover:text-brand-accent transition-colors">개인정보처리방침</a>

@@ -15,7 +15,7 @@ const Reward = lazy(() => import('./pages/Reward'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Admin = lazy(() => import('./pages/Admin'));
 const SearchAnalysis = lazy(() => import('./pages/SearchAnalysis'));
-const SmartPlaceMockup = lazy(() => import('./pages/SmartPlaceMockup')); // Added
+const SmartPlaceMockup = lazy(() => import('./pages/SmartPlaceMockup')); 
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -51,7 +51,8 @@ const App: React.FC = () => {
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/admin" element={<Admin />} />
-                <Route path="/admin/mockup" element={<SmartPlaceMockup />} /> {/* Added Protected-ish Route */}
+                <Route path="/admin/mockup" element={<SmartPlaceMockup />} /> 
+                <Route path="/mockup" element={<SmartPlaceMockup />} /> {/* Shortcut Route */}
               </Routes>
             </Suspense>
           </main>

@@ -658,13 +658,14 @@ const Admin: React.FC = () => {
               )}
            </div>
            <div className="flex items-center gap-3">
-               <button onClick={() => navigate('/admin/mockup')} className="text-sm bg-white/10 px-3 py-2 rounded-full hover:bg-white/20 flex items-center gap-2" title="캡쳐 도구"><PieChart className="w-4 h-4" /> 캡쳐 도구</button>
+               <button onClick={() => navigate('/admin/mockup')} className="text-sm bg-green-600 px-4 py-2 rounded-full hover:bg-green-700 flex items-center gap-2 font-bold shadow-lg shadow-green-900/20 transition-all border border-green-500" title="캡쳐 도구"><PieChart className="w-4 h-4" /> 캡쳐 도구</button>
                <button onClick={() => window.location.reload()} className="text-sm bg-white/10 px-3 py-2 rounded-full hover:bg-white/20" title="새로고침"><RefreshCw className="w-4 h-4" /></button>
                <button onClick={logout} className="text-sm bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 flex items-center gap-2"><LogOut className="w-4 h-4" /> 로그아웃</button>
            </div>
         </div>
       </div>
-
+      
+      {/* Rest of the component ... */}
       <div className="max-w-7xl mx-auto px-6 py-8">
          {/* Warning Banner if Disconnected */}
          {!isServerConnected && isServerConnected !== null && (
@@ -676,7 +677,8 @@ const Admin: React.FC = () => {
                  </div>
              </div>
          )}
-
+         
+         {/* ... Tabs and content ... */}
          <div className="flex gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
             {['inquiries', 'main', 'faq', 'reviews'].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab as any)} className={`pb-4 px-4 font-bold flex items-center gap-2 whitespace-nowrap uppercase ${activeTab === tab ? 'text-brand-accent border-b-2 border-brand-accent' : 'text-gray-400'}`}>

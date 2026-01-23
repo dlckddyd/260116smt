@@ -78,8 +78,11 @@ const SmartPlaceMockup: React.FC = () => {
 
   const handleCapture = async () => {
     if (captureRef.current) {
-        // Temporarily hide the editor button if it overlaps (though editor itself is outside)
-        const canvas = await html2canvas(captureRef.current, { scale: 2, useCORS: true });
+        const canvas = await html2canvas(captureRef.current, { 
+            scale: 2, 
+            useCORS: true,
+            windowWidth: 1200 // Force desktop width for capture
+        });
         const image = canvas.toDataURL("image/png");
         const link = document.createElement("a");
         link.href = image;
@@ -147,7 +150,7 @@ const SmartPlaceMockup: React.FC = () => {
               borderColor: '#cbd0da', // Light Gray
               backgroundColor: 'transparent',
               order: 2,
-              borderDash: [0, 0] // Solid line for previous week as per new design or dashed? Screenshot shows solid gray.
+              borderDash: [0, 0]
           }
       ]
   });
@@ -167,11 +170,11 @@ const SmartPlaceMockup: React.FC = () => {
     <div className="min-h-screen bg-[#eef0f3] flex">
       
       {/* --- Main Preview Area --- */}
-      <div className="flex-1 overflow-auto p-8 flex justify-center">
+      <div className="flex-1 overflow-auto p-4 md:p-8 flex justify-center">
         <div 
             ref={captureRef}
             id="smartplace-preview"
-            className="w-[1000px] bg-[#fcfcfc] min-h-screen relative font-sans text-[#1c1c1c]"
+            className="w-[1000px] bg-[#fcfcfc] min-h-screen relative font-sans text-[#1c1c1c] shadow-2xl"
             style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', sans-serif" }}
         >
             {/* Top Navigation Bar Mockup (Partial) */}
@@ -361,7 +364,7 @@ const SmartPlaceMockup: React.FC = () => {
                             </div>
                             <div className="py-6 text-center">
                                 <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1">
-                                    유입 더보기 <span className="text-[#c9c9c9]">?</span>
+                                    유입 더보기 <span className="text-[#c9c9c9]">&gt;</span>
                                 </button>
                             </div>
                         </div>
