@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, ArcElement } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
 import html2canvas from 'html2canvas';
-import { Settings, Download, X, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Settings, Download, X, HelpCircle, ChevronUp, ChevronDown, RefreshCw, MoreHorizontal, Home, Calendar, MessageSquare, BarChart2, Store } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, ArcElement);
 
@@ -12,10 +12,11 @@ const SmartPlaceMockup: React.FC = () => {
 
   // --- State for Editable Data ---
   const [config, setConfig] = useState({
+    storeName: "스마트마케팅 플레이스", // Added Store Name
     dateRange: "25. 12. 22. 월 - 12. 28. 일",
     // Top Summary
-    visitCount: 304,
-    visitPrev: 390,
+    visitCount: 12222,
+    visitPrev: 700,
     reservationCount: 7,
     reservationPrev: 13,
     callCount: 2,
@@ -81,7 +82,8 @@ const SmartPlaceMockup: React.FC = () => {
         const canvas = await html2canvas(captureRef.current, { 
             scale: 2, 
             useCORS: true,
-            windowWidth: 1200 // Force desktop width for capture
+            width: 1280, // Fixed width for sidebar + content
+            windowWidth: 1280
         });
         const image = canvas.toDataURL("image/png");
         const link = document.createElement("a");
@@ -112,7 +114,7 @@ const SmartPlaceMockup: React.FC = () => {
     maintainAspectRatio: false,
     plugins: {
         legend: { display: false },
-        tooltip: { enabled: false } // Hide tooltips for screenshot look
+        tooltip: { enabled: false } 
     },
     scales: {
         x: { 
@@ -155,12 +157,11 @@ const SmartPlaceMockup: React.FC = () => {
       ]
   });
   
-  // Doughnut for "Call Keywords" (Mock visual)
   const doughnutData = {
       labels: ['안마(50%)', '포유마사지안마원(50%)'],
       datasets: [{
           data: [50, 50],
-          backgroundColor: ['#e4e4e4', '#d1d1d1'], // Simplified gray scale
+          backgroundColor: ['#e4e4e4', '#d1d1d1'],
           borderWidth: 0,
           cutout: '70%'
       }]
@@ -171,234 +172,298 @@ const SmartPlaceMockup: React.FC = () => {
       
       {/* --- Main Preview Area --- */}
       <div className="flex-1 overflow-auto p-4 md:p-8 flex justify-center">
+        {/* Capture Container: Sidebar + Content */}
         <div 
             ref={captureRef}
             id="smartplace-preview"
-            className="w-[1000px] bg-[#fcfcfc] min-h-screen relative font-sans text-[#1c1c1c] shadow-2xl"
+            className="flex w-[1280px] bg-[#f4f6f8] min-h-screen relative font-sans text-[#1c1c1c] overflow-hidden"
             style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', sans-serif" }}
         >
-            {/* Top Navigation Bar Mockup (Partial) */}
-            <div className="h-[60px] bg-white border-b border-[#e1e5e7] flex items-center px-6 mb-4 sticky top-0 z-10">
-                <div className="text-xl font-bold text-[#03aa5a] mr-8 cursor-pointer">SmartPlace</div>
-                <div className="flex gap-6 text-[15px] font-bold text-[#1c1c1c]">
-                    <span className="border-b-2 border-black pb-[17px]">리포트</span>
-                    <span className="text-[#74787f] font-normal">플레이스</span>
-                    <span className="text-[#74787f] font-normal">스마트콜</span>
-                    <span className="text-[#74787f] font-normal">예약·주문</span>
-                    <span className="text-[#74787f] font-normal">리뷰</span>
+            {/* Left Sidebar (LNB) */}
+            <div className="w-[220px] bg-white border-r border-[#d3d5d7] flex flex-col flex-shrink-0 z-20">
+                {/* Store Name Dropdown Mockup */}
+                <div className="h-[60px] flex items-center justify-between px-5 border-b border-[#e2e5e8]">
+                    <span className="font-bold text-[#333] truncate max-w-[150px]" title={config.storeName}>{config.storeName}</span>
+                    <ChevronDown className="w-4 h-4 text-[#999]" />
                 </div>
-                <div className="ml-auto flex items-center gap-2 text-xs text-[#8c8c8c]">
-                    <span className="text-[#03aa5a] font-bold bg-[#e9fbf2] px-2 py-0.5 rounded">유경짱 님</span>
-                    <span>로그아웃</span>
+                
+                {/* Menu Items */}
+                <div className="flex-1 py-4 overflow-y-auto">
+                    <div className="px-5 py-2.5 flex items-center gap-3 text-[#333] font-bold text-[15px] hover:bg-[#f4f6f8] cursor-pointer">
+                        <Home className="w-5 h-5 text-[#333]" />
+                        <span>홈</span>
+                    </div>
+                    <div className="px-5 py-2.5 flex items-center gap-3 text-[#333] font-bold text-[15px] hover:bg-[#f4f6f8] cursor-pointer">
+                        <Calendar className="w-5 h-5 text-[#333]" />
+                        <span>예약·주문</span>
+                    </div>
+                    <div className="px-5 py-2.5 flex items-center gap-3 text-[#333] font-bold text-[15px] hover:bg-[#f4f6f8] cursor-pointer">
+                        <MessageSquare className="w-5 h-5 text-[#333]" />
+                        <span>리뷰</span>
+                    </div>
+                    {/* Active Menu */}
+                    <div className="px-5 py-2.5 flex items-center gap-3 text-[#03aa5a] font-bold text-[15px] bg-[#e9fbf2] cursor-pointer relative">
+                        <BarChart2 className="w-5 h-5 text-[#03aa5a]" />
+                        <span>통계</span>
+                        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-[#03aa5a]"></div>
+                    </div>
+                    <div className="pl-12 pr-5 py-2 text-[#666] text-[14px] hover:text-[#03aa5a] cursor-pointer">요약</div>
+                    <div className="pl-12 pr-5 py-2 text-[#666] text-[14px] hover:text-[#03aa5a] cursor-pointer">보고서</div>
+                    
+                    <div className="px-5 py-2.5 flex items-center gap-3 text-[#333] font-bold text-[15px] hover:bg-[#f4f6f8] cursor-pointer mt-2">
+                        <Store className="w-5 h-5 text-[#333]" />
+                        <span>업체정보</span>
+                    </div>
                 </div>
             </div>
 
-            <div className="px-[40px] pb-[100px]">
+            {/* Right Content Area */}
+            <div className="flex-1 flex flex-col min-w-0">
                 
-                {/* Ad Banner Placeholder */}
-                <div className="w-full h-[80px] bg-[#f2f3f9] rounded-xl mb-[30px] flex items-center justify-center text-[#ccc] text-sm">
-                    AD Banner Area
-                </div>
-
-                {/* Date Filter */}
-                <div className="flex justify-between items-center mb-[30px]">
-                    <div className="flex gap-2">
-                         <div className="bg-white border border-[#e5e5e5] rounded-lg px-4 py-2 text-[15px] flex items-center gap-2 min-w-[100px]">
-                            주간 <ChevronDown className="w-4 h-4 text-[#c9c9c9]" />
-                         </div>
-                    </div>
-                    <div className="flex-1 flex justify-center">
-                        <div className="flex items-center bg-white border border-[#e5e5e5] rounded-xl px-4 py-2.5 gap-4">
-                            <ChevronDown className="rotate-90 w-5 h-5 text-[#c9c9c9] cursor-pointer" />
-                            <span className="font-bold text-[15px]">{config.dateRange}</span>
-                            <ChevronDown className="-rotate-90 w-5 h-5 text-[#c9c9c9] cursor-pointer" />
-                        </div>
+                {/* Top Global Nav (GNB) Mockup */}
+                <div className="h-[60px] bg-white border-b border-[#d3d5d7] flex items-center justify-between px-8 flex-shrink-0">
+                    <h1 className="text-[20px] font-bold text-[#333]">통계</h1>
+                    <div className="flex items-center gap-4 text-xs text-[#888]">
+                        <span className="flex items-center gap-1 cursor-pointer hover:text-[#333]">
+                            <span className="w-6 h-6 bg-[#03aa5a] rounded-full text-white flex items-center justify-center font-bold">N</span>
+                            <span className="font-bold text-[#333]">{config.storeName} 님</span>
+                        </span>
+                        <span>로그아웃</span>
                     </div>
                 </div>
 
-                {/* Top Summary Cards */}
-                <div className="mb-10">
-                    {/* Before Visit */}
-                    <div className="bg-white border border-[#e5e5e5] rounded-xl p-6 mb-4">
-                        <div className="flex justify-between mb-4">
-                            <h3 className="text-[19px] font-bold">방문 전 지표 <span className="text-[#03aa5a]">3</span></h3>
-                            <ChevronUp className="w-5 h-5 text-[#424242]" />
+                {/* Content Scroll Area */}
+                <div className="flex-1 overflow-y-auto p-8">
+                    
+                    {/* Ad Banner Placeholder */}
+                    <div className="w-full h-[80px] bg-[#f2f3f9] rounded-xl mb-[30px] flex items-center justify-center text-[#ccc] text-sm">
+                        AD Banner Area
+                    </div>
+
+                    {/* Date Filter */}
+                    <div className="flex justify-between items-center mb-[20px]">
+                        <div className="flex gap-2">
+                            <div className="bg-white border border-[#e5e5e5] rounded-lg px-4 py-2 text-[14px] flex items-center gap-2 min-w-[100px] text-[#333] cursor-pointer shadow-sm">
+                                주간 <ChevronDown className="w-4 h-4 text-[#999]" />
+                            </div>
                         </div>
-                        <div className="flex divide-x divide-[#e5e5e5]">
-                            <SummaryItem label="플레이스 유입" value={config.visitCount} prev={config.visitPrev} />
-                            <SummaryItem label="예약·주문 신청" value={config.reservationCount} prev={config.reservationPrev} />
-                            <SummaryItem label="스마트콜 통화" value={config.callCount} prev={config.callPrev} />
+                        <div className="flex-1 flex justify-center">
+                            <div className="flex items-center bg-white border border-[#e5e5e5] rounded-xl px-5 py-2.5 gap-6 shadow-sm">
+                                <ChevronDown className="rotate-90 w-4 h-4 text-[#999] cursor-pointer" />
+                                <span className="font-bold text-[15px] text-[#333]">{config.dateRange}</span>
+                                <ChevronDown className="-rotate-90 w-4 h-4 text-[#999] cursor-pointer" />
+                            </div>
                         </div>
                     </div>
 
-                    {/* After Visit */}
-                    <div className="bg-white border border-[#e5e5e5] rounded-xl p-6">
-                        <div className="flex justify-between mb-4">
-                            <h3 className="text-[19px] font-bold">방문 후 지표 <span className="text-[#03aa5a]">1</span></h3>
-                            <ChevronUp className="w-5 h-5 text-[#424242]" />
-                        </div>
-                        <div className="flex">
-                            <SummaryItem label="리뷰 등록" value={config.reviewCount} prev={config.reviewPrev} isLast />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Charts Grid - Masonry-like Layout */}
-                <div className="flex gap-5 items-start">
-                    {/* Left Column */}
-                    <div className="flex-1 flex flex-col gap-5">
-                         
-                         {/* Card 1: Reviews */}
-                         <ChartCard 
-                            title={
-                                <>한 주간 <span className="text-[#03aa5a]">리뷰</span>는 {formatCurrency(config.chartReviewTotal)}회,<br/>일 평균 {Math.round(config.chartReviewTotal/7)}회 입니다.</>
-                            }
-                            desc={`지난 기간 대비 리뷰 작성이 ${calcPercent(config.chartReviewTotal, config.chartReviewPrev).text} 했습니다.`}
-                            percentData={calcPercent(config.chartReviewTotal, config.chartReviewPrev)}
-                        >
-                            <div className="h-[180px] w-full">
-                                <Line data={createLineData(config.chartReviewDataCurrent, config.chartReviewDataPrev)} options={lineOptions} />
-                            </div>
-                            <StatsLegend />
-                            <div className="mt-4 text-center">
-                                <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1">
-                                    리뷰 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
-                                </button>
-                            </div>
-                         </ChartCard>
-
-                         {/* Card 3: Smart Call */}
-                         <ChartCard 
-                            title={
-                                <>한 주간 <span className="text-[#03aa5a]">스마트콜 통화</span>는 {formatCurrency(config.chartCallTotal)}회,<br/>일 평균 {Math.round(config.chartCallTotal/7)}회 입니다.</>
-                            }
-                            desc={`지난 기간 대비 통화 수가 ${calcPercent(config.chartCallTotal, config.chartCallPrevTotal).text} 했습니다.`}
-                            percentData={calcPercent(config.chartCallTotal, config.chartCallPrevTotal)}
-                        >
-                            <div className="h-[180px] w-full mb-6">
-                                <Line data={createLineData(config.chartCallDataCurrent, config.chartCallDataPrev)} options={lineOptions} />
-                            </div>
-                            <StatsLegend />
-                            
-                            <div className="mt-6 border-t border-[#f0f0f0] pt-6">
-                                <h4 className="text-[15px] text-[#737373] mb-4">전화 많이 온 키워드</h4>
-                                <div className="h-[200px] flex items-center justify-center relative">
-                                    <div className="w-[160px]">
-                                        <Doughnut data={doughnutData} options={{ cutout: '70%', plugins: { legend: { display: false } } }} />
-                                    </div>
-                                    <div className="absolute flex gap-4 bottom-0 text-[11px] text-[#8c8c8c]">
-                                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#e4e4e4]"></span>안마(50%)</div>
-                                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#d1d1d1]"></span>상호명(50%)</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-6 text-center">
-                                <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1">
-                                    스마트콜 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
-                                </button>
-                            </div>
-                         </ChartCard>
-
-                         {/* Card 5: Revenue */}
-                         <ChartCard 
-                            title={
-                                <>한 주간 <span className="text-[#03aa5a]">예약·주문 매출액</span>은 {formatCurrency(config.chartRevenueTotal)}원,<br/>일 평균 {formatCurrency(Math.round(config.chartRevenueTotal/7))}원 입니다.</>
-                            }
-                            desc={`지난 기간 대비 매출액이 ${calcPercent(config.chartRevenueTotal, config.chartRevenuePrevTotal).text} 했습니다.`}
-                            percentData={calcPercent(config.chartRevenueTotal, config.chartRevenuePrevTotal)}
-                        >
-                            <div className="text-right text-xs text-[#737373] mb-2">단위:원</div>
-                            <div className="h-[180px] w-full">
-                                <Line data={createLineData(config.chartRevenueDataCurrent, config.chartRevenueDataPrev)} options={lineOptions} />
-                            </div>
-                            <StatsLegend />
-                            <div className="mt-4 text-center">
-                                <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1">
-                                    예약·주문 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
-                                </button>
-                            </div>
-                         </ChartCard>
-
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="flex-1 flex flex-col gap-5">
-                        
-                        {/* Card 2: Place Visits */}
-                        <ChartCard 
-                            title={
-                                <>한 주간 <span className="text-[#03aa5a]">플레이스 유입</span>은 {formatCurrency(config.chartVisitTotal)}회,<br/>일 평균 {Math.round(config.chartVisitTotal/7)}회 입니다.</>
-                            }
-                            desc={`지난 기간 대비 유입 수가 ${calcPercent(config.chartVisitTotal, config.chartVisitPrevTotal).text} 했습니다.`}
-                            percentData={calcPercent(config.chartVisitTotal, config.chartVisitPrevTotal)}
-                        >
-                            <div className="h-[180px] w-full">
-                                <Line data={createLineData(config.chartVisitDataCurrent, config.chartVisitDataPrev)} options={lineOptions} />
-                            </div>
-                            <StatsLegend />
-                        </ChartCard>
-
-                        {/* Card 4: Inflow Channels (Rankings) */}
-                        <div className="bg-white border border-[#e5e5e5] rounded-xl p-0 overflow-hidden shadow-sm">
-                            <div className="p-8 pb-5 border-b border-[#f0f0f0]">
-                                <h3 className="text-[20px] font-bold leading-snug mb-2">
-                                    <span className="text-[#03aa5a]">네이버지도</span>에서 많이 방문했고,<br/>
-                                    <span className="text-[#03aa5a]">{config.targetKeyword}</span> 키워드를 주로 검색했어요.
+                    {/* Top Summary Cards Container */}
+                    <div className="space-y-4 mb-8">
+                        {/* Before Visit */}
+                        <div className="bg-white border border-[#e5e5e5] rounded-xl p-6 shadow-sm">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-[19px] font-bold text-[#1e1e23] flex items-center gap-2">
+                                    방문 전 지표 <span className="text-[#03aa5a]">3</span>
+                                    <HelpCircle className="w-4 h-4 text-[#c9c9c9] cursor-pointer" />
                                 </h3>
-                                <p className="text-[14px] text-[#737373]">
-                                    플레이스 방문 기준입니다. <HelpCircle className="w-3 h-3 inline text-[#c9c9c9] align-top" />
-                                </p>
+                                <button className="text-[#999] hover:text-[#333]"><ChevronUp className="w-5 h-5" /></button>
                             </div>
-                            <div className="flex border-b border-[#f0f0f0]">
-                                <button className="flex-1 py-3 text-[15px] font-bold text-white bg-[#424242]">유입채널</button>
-                                <button className="flex-1 py-3 text-[15px] text-[#424242] bg-white">유입키워드</button>
-                            </div>
-                            <div className="p-0">
-                                <ul className="flex flex-col">
-                                    <InflowItem rank={1} name={config.inflow1Name} count={config.inflow1Count} total={config.chartVisitTotal} />
-                                    <InflowItem rank={2} name={config.inflow2Name} count={config.inflow2Count} total={config.chartVisitTotal} />
-                                    <InflowItem rank={3} name={config.inflow3Name} count={config.inflow3Count} total={config.chartVisitTotal} />
-                                    <InflowItem rank={4} name={config.inflow4Name} count={config.inflow4Count} total={config.chartVisitTotal} />
-                                </ul>
-                            </div>
-                            <div className="py-6 text-center">
-                                <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1">
-                                    유입 더보기 <span className="text-[#c9c9c9]">&gt;</span>
-                                </button>
+                            
+                            {/* Improved Grid Layout for Metrics */}
+                            <div className="flex divide-x divide-[#f0f0f0]">
+                                <SummaryItem 
+                                    label="플레이스 유입" 
+                                    value={config.visitCount} 
+                                    prev={config.visitPrev} 
+                                />
+                                <SummaryItem 
+                                    label="예약·주문 신청" 
+                                    value={config.reservationCount} 
+                                    prev={config.reservationPrev} 
+                                />
+                                <SummaryItem 
+                                    label="스마트콜 통화" 
+                                    value={config.callCount} 
+                                    prev={config.callPrev} 
+                                />
                             </div>
                         </div>
 
-                         {/* Card 6: Reservation Count */}
-                         <div className="relative">
-                            <div className="absolute top-0 right-0 transform -translate-y-full -translate-x-full mb-2 mr-2">
-                                <div className="bg-[#03aa5a] text-white text-xs px-2 py-1 rounded-full animate-bounce">
-                                    ?
-                                </div>
+                        {/* After Visit */}
+                        <div className="bg-white border border-[#e5e5e5] rounded-xl p-6 shadow-sm">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-[19px] font-bold text-[#1e1e23] flex items-center gap-2">
+                                    방문 후 지표 <span className="text-[#03aa5a]">1</span>
+                                    <HelpCircle className="w-4 h-4 text-[#c9c9c9] cursor-pointer" />
+                                </h3>
+                                <button className="text-[#999] hover:text-[#333]"><ChevronUp className="w-5 h-5" /></button>
                             </div>
+                            <div className="flex">
+                                <SummaryItem 
+                                    label="리뷰 등록" 
+                                    value={config.reviewCount} 
+                                    prev={config.reviewPrev} 
+                                    isLast 
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Charts Grid - Masonry-like Layout */}
+                    <div className="flex gap-5 items-start">
+                        {/* Left Column */}
+                        <div className="flex-1 flex flex-col gap-5">
+                            
+                            {/* Card 1: Reviews */}
                             <ChartCard 
                                 title={
-                                    <>한 주간 <span className="text-[#03aa5a]">예약·주문 신청</span>은 {config.chartResCountTotal}회,<br/>일 평균 {Math.round(config.chartResCountTotal/7)}회 입니다.</>
+                                    <>한 주간 <span className="text-[#03aa5a]">리뷰</span>는 {formatCurrency(config.chartReviewTotal)}회,<br/>일 평균 {Math.round(config.chartReviewTotal/7)}회 입니다.</>
                                 }
-                                desc={`지난 기간 대비 신청이 ${calcPercent(config.chartResCountTotal, config.chartResCountPrevTotal).text} 했습니다.`}
-                                percentData={calcPercent(config.chartResCountTotal, config.chartResCountPrevTotal)}
+                                desc={`지난 기간 대비 리뷰 작성이 ${calcPercent(config.chartReviewTotal, config.chartReviewPrev).text} 했습니다.`}
+                                percentData={calcPercent(config.chartReviewTotal, config.chartReviewPrev)}
                             >
                                 <div className="h-[180px] w-full">
-                                    <Line data={createLineData(config.chartResCountDataCurrent, config.chartResCountDataPrev)} options={lineOptions} />
+                                    <Line data={createLineData(config.chartReviewDataCurrent, config.chartReviewDataPrev)} options={lineOptions} />
+                                </div>
+                                <StatsLegend />
+                                <div className="mt-4 text-center">
+                                    <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1 hover:bg-[#f9f9f9]">
+                                        리뷰 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
+                                    </button>
+                                </div>
+                            </ChartCard>
+
+                            {/* Card 3: Smart Call */}
+                            <ChartCard 
+                                title={
+                                    <>한 주간 <span className="text-[#03aa5a]">스마트콜 통화</span>는 {formatCurrency(config.chartCallTotal)}회,<br/>일 평균 {Math.round(config.chartCallTotal/7)}회 입니다.</>
+                                }
+                                desc={`지난 기간 대비 통화 수가 ${calcPercent(config.chartCallTotal, config.chartCallPrevTotal).text} 했습니다.`}
+                                percentData={calcPercent(config.chartCallTotal, config.chartCallPrevTotal)}
+                            >
+                                <div className="h-[180px] w-full mb-6">
+                                    <Line data={createLineData(config.chartCallDataCurrent, config.chartCallDataPrev)} options={lineOptions} />
+                                </div>
+                                <StatsLegend />
+                                
+                                <div className="mt-6 border-t border-[#f0f0f0] pt-6">
+                                    <h4 className="text-[15px] text-[#737373] mb-4">전화 많이 온 키워드</h4>
+                                    <div className="h-[200px] flex items-center justify-center relative">
+                                        <div className="w-[160px]">
+                                            <Doughnut data={doughnutData} options={{ cutout: '70%', plugins: { legend: { display: false } } }} />
+                                        </div>
+                                        <div className="absolute flex gap-4 bottom-0 text-[11px] text-[#8c8c8c]">
+                                            <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#e4e4e4]"></span>안마(50%)</div>
+                                            <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#d1d1d1]"></span>상호명(50%)</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 text-center">
+                                    <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1 hover:bg-[#f9f9f9]">
+                                        스마트콜 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
+                                    </button>
+                                </div>
+                            </ChartCard>
+
+                            {/* Card 5: Revenue */}
+                            <ChartCard 
+                                title={
+                                    <>한 주간 <span className="text-[#03aa5a]">예약·주문 매출액</span>은 {formatCurrency(config.chartRevenueTotal)}원,<br/>일 평균 {formatCurrency(Math.round(config.chartRevenueTotal/7))}원 입니다.</>
+                                }
+                                desc={`지난 기간 대비 매출액이 ${calcPercent(config.chartRevenueTotal, config.chartRevenuePrevTotal).text} 했습니다.`}
+                                percentData={calcPercent(config.chartRevenueTotal, config.chartRevenuePrevTotal)}
+                            >
+                                <div className="text-right text-xs text-[#737373] mb-2">단위:원</div>
+                                <div className="h-[180px] w-full">
+                                    <Line data={createLineData(config.chartRevenueDataCurrent, config.chartRevenueDataPrev)} options={lineOptions} />
+                                </div>
+                                <StatsLegend />
+                                <div className="mt-4 text-center">
+                                    <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1 hover:bg-[#f9f9f9]">
+                                        예약·주문 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
+                                    </button>
+                                </div>
+                            </ChartCard>
+
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="flex-1 flex flex-col gap-5">
+                            
+                            {/* Card 2: Place Visits */}
+                            <ChartCard 
+                                title={
+                                    <>한 주간 <span className="text-[#03aa5a]">플레이스 유입</span>은 {formatCurrency(config.chartVisitTotal)}회,<br/>일 평균 {Math.round(config.chartVisitTotal/7)}회 입니다.</>
+                                }
+                                desc={`지난 기간 대비 유입 수가 ${calcPercent(config.chartVisitTotal, config.chartVisitPrevTotal).text} 했습니다.`}
+                                percentData={calcPercent(config.chartVisitTotal, config.chartVisitPrevTotal)}
+                            >
+                                <div className="h-[180px] w-full">
+                                    <Line data={createLineData(config.chartVisitDataCurrent, config.chartVisitDataPrev)} options={lineOptions} />
                                 </div>
                                 <StatsLegend />
                             </ChartCard>
+
+                            {/* Card 4: Inflow Channels (Rankings) */}
+                            <div className="bg-white border border-[#e5e5e5] rounded-xl p-0 overflow-hidden shadow-sm">
+                                <div className="p-8 pb-5 border-b border-[#f0f0f0]">
+                                    <h3 className="text-[20px] font-bold leading-snug mb-2">
+                                        <span className="text-[#03aa5a]">네이버지도</span>에서 많이 방문했고,<br/>
+                                        <span className="text-[#03aa5a]">{config.targetKeyword}</span> 키워드를 주로 검색했어요.
+                                    </h3>
+                                    <p className="text-[14px] text-[#737373]">
+                                        플레이스 방문 기준입니다. <HelpCircle className="w-3 h-3 inline text-[#c9c9c9] align-top" />
+                                    </p>
+                                </div>
+                                <div className="flex border-b border-[#f0f0f0]">
+                                    <button className="flex-1 py-3 text-[15px] font-bold text-white bg-[#424242]">유입채널</button>
+                                    <button className="flex-1 py-3 text-[15px] text-[#424242] bg-white">유입키워드</button>
+                                </div>
+                                <div className="p-0">
+                                    <ul className="flex flex-col">
+                                        <InflowItem rank={1} name={config.inflow1Name} count={config.inflow1Count} total={config.chartVisitTotal} />
+                                        <InflowItem rank={2} name={config.inflow2Name} count={config.inflow2Count} total={config.chartVisitTotal} />
+                                        <InflowItem rank={3} name={config.inflow3Name} count={config.inflow3Count} total={config.chartVisitTotal} />
+                                        <InflowItem rank={4} name={config.inflow4Name} count={config.inflow4Count} total={config.chartVisitTotal} />
+                                    </ul>
+                                </div>
+                                <div className="py-6 text-center">
+                                    <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1 hover:bg-[#f9f9f9]">
+                                        유입 더보기 <span className="text-[#c9c9c9]">&gt;</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Card 6: Reservation Count */}
+                            <div className="relative">
+                                <div className="absolute top-0 right-0 transform -translate-y-full -translate-x-full mb-2 mr-2">
+                                    <div className="bg-[#03aa5a] text-white text-xs px-2 py-1 rounded-full animate-bounce">
+                                        ?
+                                    </div>
+                                </div>
+                                <ChartCard 
+                                    title={
+                                        <>한 주간 <span className="text-[#03aa5a]">예약·주문 신청</span>은 {config.chartResCountTotal}회,<br/>일 평균 {Math.round(config.chartResCountTotal/7)}회 입니다.</>
+                                    }
+                                    desc={`지난 기간 대비 신청이 ${calcPercent(config.chartResCountTotal, config.chartResCountPrevTotal).text} 했습니다.`}
+                                    percentData={calcPercent(config.chartResCountTotal, config.chartResCountPrevTotal)}
+                                >
+                                    <div className="h-[180px] w-full">
+                                        <Line data={createLineData(config.chartResCountDataCurrent, config.chartResCountDataPrev)} options={lineOptions} />
+                                    </div>
+                                    <StatsLegend />
+                                </ChartCard>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Floating Help Button */}
+                    <div className="fixed bottom-10 right-10 z-50">
+                        <div className="bg-[#03aa5a] w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white font-bold text-xl cursor-pointer">
+                            ?
                         </div>
                     </div>
                 </div>
-
-                {/* Floating Help Button */}
-                <div className="fixed bottom-10 right-10 z-50">
-                    <div className="bg-[#03aa5a] w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white font-bold text-xl cursor-pointer">
-                        ?
-                    </div>
-                </div>
-
             </div>
         </div>
       </div>
@@ -412,7 +477,8 @@ const SmartPlaceMockup: React.FC = () => {
               </div>
 
               <div className="space-y-6">
-                  <Section title="날짜 설정">
+                  <Section title="기본 정보">
+                      <Input name="storeName" label="업체명 (좌측 사이드바)" value={config.storeName} onChange={handleChange} />
                       <Input name="dateRange" label="날짜 범위" value={config.dateRange} onChange={handleChange} />
                   </Section>
 
@@ -509,20 +575,29 @@ const SummaryItem = ({ label, value, prev, isLast = false }: any) => {
     const isDown = diff < 0;
     const percent = prev === 0 ? 0 : Math.round(Math.abs(diff) / prev * 100);
 
+    // Layout based on specific request: 
+    // Top Row: [Label] [Percent]
+    // Bottom Row: [Prev] [Current Value]
     return (
-        <div className={`flex-1 ${!isLast ? 'pr-[20px] mr-[20px] border-r border-[#f0f0f0]' : ''}`}>
-            <div className="flex items-center justify-between mb-1">
-                <span className="text-[15px] font-bold text-[#595959]">{label}</span>
-                {prev !== 0 && (
-                     <span className={`text-[14px] font-bold ${isDown ? 'text-[#2485fe]' : 'text-[#fc4c4e]'}`}>
+        <div className={`flex-1 flex flex-col justify-between h-[84px] px-6 ${!isLast ? 'border-r border-[#f0f0f0]' : ''}`}>
+            {/* Top Row: Label and Percent */}
+            <div className="flex justify-between items-start mb-1">
+                <span className="text-[15px] font-bold text-[#424242] tracking-tight">{label}</span>
+                {prev !== 0 ? (
+                     <span className={`text-[13px] font-bold ${isDown ? 'text-[#2485fe]' : 'text-[#f03e3e]'}`}>
                          {isDown ? 'down' : 'up'} <span className="blind">{isDown ? '▼' : '▲'}</span> {percent}%
                      </span>
+                ) : (
+                    <span className="text-[13px] text-[#ccc]">-</span>
                 )}
-                {prev === 0 && <span className="text-[14px] text-[#ccc]">-</span>}
             </div>
-            <div className="flex justify-between items-end">
-                <span className="text-[13px] text-[#8c8c8c]">지난 기간 {prev.toLocaleString()}회</span>
-                <strong className="text-[20px] font-normal text-[#1c1c1c]"><em className="font-bold not-italic">{value.toLocaleString()}</em>회</strong>
+            
+            {/* Bottom Row: Prev count and Current Value */}
+            <div className="flex justify-between items-end mt-auto">
+                <span className="text-[13px] text-[#929294] tracking-tight">지난 기간 {prev.toLocaleString()}회</span>
+                <strong className="text-[24px] font-bold text-[#1e1e23] leading-none">
+                    {value.toLocaleString()}<span className="text-[15px] font-normal ml-0.5">회</span>
+                </strong>
             </div>
         </div>
     );
