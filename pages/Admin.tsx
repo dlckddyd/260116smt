@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download, Scissors, Wand2, ArrowRight, Palette } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download, Scissors, Wand2, ArrowRight, Palette, Layers } from 'lucide-react';
 import { ContentBlock, FAQItem } from '../data/content';
 import { naverFaqData } from '../data/naverFaqs';
 
@@ -290,7 +290,7 @@ const Admin: React.FC = () => {
       }
   };
 
-  // --- Smart Clipper Logic (Enhanced for Rich HTML & Color Swap) ---
+  // --- Smart Clipper Logic (Enhanced for Rich HTML & Nested Accordions) ---
   const handleSmartClipperPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
       e.preventDefault();
       
@@ -333,12 +333,11 @@ const Admin: React.FC = () => {
       let htmlBuffer = "";
 
       // Color Replacement Helper
-      // Target Naver Green variations and common dark text to adapt to our brand
       const processStyle = (styleString: string | null): string => {
           if (!styleString || !replaceColor) return styleString || '';
           
           let newStyle = styleString;
-          // Regex for Naver Greens: #03c75a, #00c73c, rgb(0, 199, 60), etc.
+          // Regex for Naver Greens
           const greenRegex = /color:\s*(#03c75a|#00c73c|#00C73C|#2db400|rgb\(\s*3,\s*199,\s*90\s*\)|rgb\(\s*0,\s*199,\s*60\s*\))/gi;
           
           // Replace with Brand Accent (Blue - #2563eb)
@@ -356,7 +355,7 @@ const Admin: React.FC = () => {
               const el = node as HTMLElement;
               const tagName = el.tagName.toLowerCase();
 
-              // Skip Title
+              // Skip Title match in body
               if (el.textContent?.trim() === question && htmlBuffer.length === 0 && blocks.length === 0) return null;
 
               // Image -> Break Buffer
@@ -378,9 +377,6 @@ const Admin: React.FC = () => {
                   style = processStyle(style);
                   if (style) attrs += ` style="${style}"`;
               }
-              
-              // Force replace color classes if they exist (Naver specific classes might not work here, but good practice)
-              // Instead, we mainly rely on inline styles which is what clipboard usually provides.
 
               let childrenHtml = "";
               el.childNodes.forEach(child => {
@@ -388,7 +384,8 @@ const Admin: React.FC = () => {
                   if (cleaned) childrenHtml += cleaned;
               });
 
-              if (['div', 'p', 'br', 'li', 'h1','h2','h3','h4','h5','h6'].includes(tagName)) {
+              // Allow semantic structural tags
+              if (['div', 'p', 'br', 'li', 'h1','h2','h3','h4','h5','h6', 'details', 'summary'].includes(tagName)) {
                   if (tagName === 'br') return '<br/>';
                   return `<${tagName}${attrs}>${childrenHtml}</${tagName}>`;
               }
@@ -781,9 +778,12 @@ const Admin: React.FC = () => {
                               <span className="text-sm text-gray-600 font-bold">네이버 색상(초록)을 브랜드 색상(파랑)으로 변경</span>
                           </div>
 
-                          <p className="text-indigo-600/50 text-xs mt-4">
-                              * 숨겨진 내용은 '펼치기'를 누른 뒤 복사해야 가져올 수 있습니다.
-                          </p>
+                          <div className="flex items-start gap-2 text-amber-600/80 text-xs mt-4 bg-amber-50 p-3 rounded-lg border border-amber-100 max-w-md text-left">
+                              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                              <p>
+                                  <strong>Tip:</strong> 숨겨진 내용(펼치기/접기)이 있는 경우, 반드시 <u>내용을 펼친 상태</u>에서 복사해야 모든 내용을 가져올 수 있습니다.
+                              </p>
+                          </div>
                       </div>
                   ) : (
                       <div className="flex-1 overflow-y-auto pr-2 min-h-[300px]">
