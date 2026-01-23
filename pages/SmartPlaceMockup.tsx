@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, ArcElement } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
 import html2canvas from 'html2canvas';
-import { Settings, Download, X, HelpCircle, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
+import { Settings, Download, X, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, ArcElement);
 
@@ -259,7 +259,7 @@ const SmartPlaceMockup: React.FC = () => {
                             <StatsLegend />
                             <div className="mt-4 text-center">
                                 <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1">
-                                    리뷰 통계 더보기 <span className="text-[#c9c9c9]">></span>
+                                    리뷰 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
                                 </button>
                             </div>
                          </ChartCard>
@@ -292,7 +292,7 @@ const SmartPlaceMockup: React.FC = () => {
 
                             <div className="mt-6 text-center">
                                 <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1">
-                                    스마트콜 통계 더보기 <span className="text-[#c9c9c9]">></span>
+                                    스마트콜 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
                                 </button>
                             </div>
                          </ChartCard>
@@ -312,7 +312,7 @@ const SmartPlaceMockup: React.FC = () => {
                             <StatsLegend />
                             <div className="mt-4 text-center">
                                 <button className="border border-[#e5e5e5] rounded-full px-6 py-2.5 text-[14px] text-[#737373] bg-white flex items-center justify-center mx-auto gap-1">
-                                    예약·주문 통계 더보기 <span className="text-[#c9c9c9]">></span>
+                                    예약·주문 통계 더보기 <span className="text-[#c9c9c9]">&gt;</span>
                                 </button>
                             </div>
                          </ChartCard>
