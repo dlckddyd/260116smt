@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download, Scissors, Wand2, ArrowRight, Palette, Layers } from 'lucide-react';
+import { Lock, LogOut, CheckCircle, Clock, Trash2, Plus, X, MessageSquare, HelpCircle, Star, Camera, Layout, RefreshCw, Upload, Loader2, ArrowUp, ArrowDown, WifiOff, Wifi, Edit3, Image as ImageIcon, Type, Settings, Link as LinkIcon, AlertCircle, FileText, Download, Scissors, Wand2, ArrowRight, Palette, Layers, PieChart } from 'lucide-react';
 import { ContentBlock, FAQItem } from '../data/content';
 import { naverFaqData } from '../data/naverFaqs';
+import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 
 const Admin: React.FC = () => {
   const { 
@@ -15,6 +16,7 @@ const Admin: React.FC = () => {
     checkServerHealth
   } = useData();
 
+  const navigate = useNavigate(); // Hook for navigation
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState<'inquiries' | 'faq' | 'reviews' | 'main'>('inquiries');
   const [showFaqModal, setShowFaqModal] = useState(false);
@@ -450,12 +452,16 @@ const Admin: React.FC = () => {
                     </details>
                    `;
                } else {
-                   // Link/Static Style (No content)
+                   // Placeholder Accordion Style (Instead of static link)
                    listHtml += `
-                    <div class="mb-3 px-5 py-4 font-bold text-gray-500 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> ${title}
-                        <span class="text-xs font-normal text-gray-400 ml-auto border border-gray-200 px-2 py-0.5 rounded">외부 링크/상세 참조</span>
-                    </div>
+                    <details class="mb-3 group border border-gray-100 rounded-xl overflow-hidden bg-white">
+                        <summary class="px-5 py-4 font-bold cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors flex justify-between items-center list-none select-none">
+                            <span>${title}</span>
+                        </summary>
+                        <div class="p-5 text-gray-400 bg-white border-t border-gray-100 prose prose-sm max-w-none italic">
+                            (내용이 없습니다. 이곳을 지우고 내용을 입력해주세요. 원본 페이지에서 내용을 펼치지 않고 복사하면 내용이 누락될 수 있습니다.)
+                        </div>
+                    </details>
                    `;
                }
            });
@@ -652,6 +658,7 @@ const Admin: React.FC = () => {
               )}
            </div>
            <div className="flex items-center gap-3">
+               <button onClick={() => navigate('/admin/mockup')} className="text-sm bg-white/10 px-3 py-2 rounded-full hover:bg-white/20 flex items-center gap-2" title="캡쳐 도구"><PieChart className="w-4 h-4" /> 캡쳐 도구</button>
                <button onClick={() => window.location.reload()} className="text-sm bg-white/10 px-3 py-2 rounded-full hover:bg-white/20" title="새로고침"><RefreshCw className="w-4 h-4" /></button>
                <button onClick={logout} className="text-sm bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 flex items-center gap-2"><LogOut className="w-4 h-4" /> 로그아웃</button>
            </div>

@@ -62,7 +62,7 @@ const FAQ: React.FC = () => {
       {/* Category Navigation - Responsive Layout */}
       {searchQuery.trim().length === 0 && (
           <div className="sticky top-[72px] z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm transition-all duration-300">
-            <div className="max-w-7xl mx-auto py-4 px-4 md:px-0">
+            <div className="max-w-7xl mx-auto py-4 px-4 md:px-6">
               {/* Mobile: Horizontal Scroll | Desktop: Wrap (Grid-like) */}
               <div className="flex overflow-x-auto md:flex-wrap md:justify-center md:overflow-visible gap-2 pb-2 md:pb-0">
                 {categories.length > 0 ? categories.map((category) => (
