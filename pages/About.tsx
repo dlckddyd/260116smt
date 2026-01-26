@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import ServiceVisual from '../components/ServiceVisual';
@@ -26,10 +27,12 @@ const About: React.FC = () => {
     <div className="bg-white">
       {/* Hero Section */}
       <section className="relative w-full h-screen flex items-center justify-center overflow-hidden">
+         {/* Corrected fetchPriority attribute name */}
          <img 
             src="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=2000&auto=format&fit=crop" 
             alt="Seoul Cityscape" 
             className="absolute inset-0 w-full h-full object-cover"
+            fetchPriority="high"
          />
          <div className="absolute inset-0 bg-black/60"></div>
          <div className="relative z-10 text-center px-6 max-w-5xl">
@@ -75,7 +78,7 @@ const About: React.FC = () => {
                      <p className="text-gray-600 leading-relaxed text-lg">단순 대행을 넘어, 클라이언트와 함께 성장하는 상생의 생태계를 만듭니다. 기술(Tech)과 크리에이티브(Creative)가 결합된 독보적인 마케팅 솔루션 기업으로 글로벌 시장을 선도합니다.</p>
                   </div>
                   <div className="w-full md:w-1/2">
-                     <img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2000&auto=format&fit=crop" className="rounded-3xl shadow-xl w-full h-80 object-cover hover:-translate-y-2 transition-transform duration-500" alt="Vision" />
+                     <img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2000&auto=format&fit=crop" className="rounded-3xl shadow-xl w-full h-80 object-cover hover:-translate-y-2 transition-transform duration-500" alt="Vision" loading="lazy" decoding="async" />
                   </div>
                </div>
             </RevealOnScroll>
@@ -108,14 +111,16 @@ const About: React.FC = () => {
          </div>
       </section>
 
-      {/* Location */}
+      {/* Location (Improved Responsive Overlay) */}
       <section className="py-24 px-6 bg-gray-900">
-         <div className="max-w-7xl mx-auto relative h-[600px] rounded-3xl overflow-hidden shadow-2xl border border-gray-700 group">
+         <div className="max-w-7xl mx-auto flex flex-col md:block relative h-auto md:h-[600px] rounded-3xl overflow-hidden shadow-2xl border border-gray-700 group">
              {/* Map Component */}
-             <GoogleMap className="w-full h-full grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" />
+             <div className="h-[400px] md:h-full w-full">
+                <GoogleMap className="w-full h-full grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" />
+             </div>
 
-             {/* Floating Info Box */}
-             <div className="absolute top-8 left-8 md:top-12 md:left-12 bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] max-w-sm w-full animate-float-slow border border-white/50">
+             {/* Responsive Overlay Info Box */}
+             <div className="md:absolute static top-8 left-8 md:top-12 md:left-12 bg-white/95 backdrop-blur-xl p-8 rounded-b-3xl md:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] max-w-none md:max-w-sm w-full animate-float-slow border-t md:border border-white/50 z-20">
                  <div className="flex items-center gap-3 mb-6">
                      <div className="w-12 h-12 bg-brand-black rounded-full flex items-center justify-center text-white shadow-lg"><MapPin className="w-5 h-5" /></div>
                      <div>
@@ -127,7 +132,7 @@ const About: React.FC = () => {
                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                         <p className="text-gray-600 leading-relaxed font-medium">서울특별시 강서구 양천로 547<br/>마스터밸류</p>
                      </div>
-                     <div className="flex items-center gap-4 pl-2">
+                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pl-2">
                         <a href="tel:02-6958-9144" className="flex items-center gap-2 text-gray-600 hover:text-brand-accent transition-colors font-bold"><Phone className="w-4 h-4 text-brand-accent" /> 02-6958-9144</a>
                         <button onClick={copyAddress} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors border-b border-gray-300 pb-0.5"><Copy className="w-3 h-3" /> 주소 복사</button>
                      </div>

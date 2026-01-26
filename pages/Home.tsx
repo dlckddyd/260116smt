@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2, ExternalLink } from 'lucide-react';
@@ -7,7 +8,7 @@ import ServiceVisual from '../components/ServiceVisual';
 import { partners } from '../data/content';
 import { useData } from '../context/DataContext';
 
-// Wrapper for custom element to avoid TypeScript errors with JSX.IntrinsicElements
+// Wrapper for custom element
 const SplineViewer = React.forwardRef<any, any>((props, ref) => {
   return React.createElement('spline-viewer', { ...props, ref });
 });
@@ -18,21 +19,21 @@ const Home: React.FC = () => {
   const { serviceImages } = useData();
 
   useEffect(() => {
-    // Shorter timeout to improve perceived speed
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 300);
-
+    // Check if spline is ready or timeout to show content
     const element = splineRef.current;
     
     const handleLoad = () => {
-      console.log("Spline loaded via event listener");
       setIsLoaded(true);
     };
 
     if (element) {
       element.addEventListener('load', handleLoad);
     }
+
+    // Fail-safe to ensure user sees content even if Spline is slow
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 1500);
 
     return () => {
       clearTimeout(timer);
@@ -42,7 +43,6 @@ const Home: React.FC = () => {
     };
   }, []);
 
-  // Split partners into 3 rows for the marquee
   const row1 = partners.slice(0, 14);
   const row2 = partners.slice(14, 28);
   const row3 = partners.slice(28);
@@ -53,16 +53,14 @@ const Home: React.FC = () => {
       category: "Service 01",
       title: "플레이스 마케팅",
       desc: "매출의 80%는 지역 검색에서 시작됩니다.\n상권 분석 데이터와 최적화 로직으로 당신의 매장을 지역 1위로 만듭니다.",
-      image: serviceImages['place'] || "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop", // Phone Map mockup
+      image: serviceImages['place'] || "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop",
       link: "/services/place",
       groups: [
-        // Group A
         [
           { icon: Search, title: "검색 순위", value: "강남 맛집 1위", position: "top-[10%] -left-[5%]", color: "text-blue-600", bgColor: "bg-blue-100" },
           { icon: MousePointer2, title: "클릭 경쟁률", value: "32.5%", sub: "매우좋음", position: "bottom-[20%] -right-[5%]", color: "text-green-600", bgColor: "bg-green-100" },
           { icon: MapPin, title: "지역 유입", value: "12,405명", position: "top-[40%] -right-[10%]", color: "text-red-600", bgColor: "bg-red-100" },
         ],
-        // Group B
         [
           { icon: Star, title: "리뷰 평점", value: "4.9점", sub: "(521건)", position: "top-[20%] -right-[5%]", color: "text-yellow-600", bgColor: "bg-yellow-100" },
           { icon: TrendingUp, title: "트래픽 분석", value: "유입량 ▲300%", position: "bottom-[30%] -left-[10%]", color: "text-purple-600", bgColor: "bg-purple-100" },
@@ -75,7 +73,7 @@ const Home: React.FC = () => {
       category: "Service 02",
       title: "네이버 클립",
       desc: "지금 가장 뜨거운 트래픽, 숏폼.\n60초 안에 소비자의 마음을 훔치는 고감도 영상을 제작하고 배포합니다.",
-      image: serviceImages['clip'] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop", // Vertical Video Interface
+      image: serviceImages['clip'] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop",
       link: "/services/clip",
       groups: [
         [
@@ -94,7 +92,7 @@ const Home: React.FC = () => {
       category: "Service 03",
       title: "체험단 마케팅",
       desc: "광고가 아닌 경험을 팝니다.\n진정성 있는 리뷰 콘텐츠로 잠재 고객의 구매 결정을 확신으로 바꿉니다.",
-      image: serviceImages['experience'] || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=800&auto=format&fit=crop", // Blog typing
+      image: serviceImages['experience'] || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=800&auto=format&fit=crop",
       link: "/services/experience",
       groups: [
         [
@@ -113,7 +111,7 @@ const Home: React.FC = () => {
       category: "Service 04",
       title: "유튜브 관리",
       desc: "브랜드의 팬덤을 구축하는 가장 강력한 무기.\n기획부터 촬영, 편집, 채널 운영까지 전문 PD 그룹이 전담합니다.",
-      image: serviceImages['youtube'] || "https://images.unsplash.com/photo-1626544827763-d516dce335ca?q=80&w=800&auto=format&fit=crop", // Youtube Dashboard
+      image: serviceImages['youtube'] || "https://images.unsplash.com/photo-1626544827763-d516dce335ca?q=80&w=800&auto=format&fit=crop",
       link: "/services/youtube",
       groups: [
         [
@@ -131,7 +129,7 @@ const Home: React.FC = () => {
       category: "Service 05",
       title: "인스타그램",
       desc: "비주얼 임팩트로 소비 욕구를 자극합니다.\n트렌디한 감각과 정밀한 타겟팅으로 브랜드 인지도를 폭발시킵니다.",
-      image: serviceImages['instagram'] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop", // Instagram UI
+      image: serviceImages['instagram'] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop",
       link: "/services/instagram",
       groups: [
         [
@@ -169,7 +167,6 @@ const Home: React.FC = () => {
             />
          </div>
 
-         {/* Overlay Gradient */}
          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/90 z-10 pointer-events-none" />
 
         <div className="relative z-20 text-center px-6 max-w-7xl mx-auto mt-20 pointer-events-none">
@@ -241,12 +238,14 @@ const Home: React.FC = () => {
                   
                   <div className="w-full lg:w-1/2">
                       <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[2rem] bg-gray-100 group shadow-2xl">
+                         {/* Corrected fetchPriority attribute name */}
                          <img 
                             src="https://images.unsplash.com/photo-1577412647305-991150c7d163?q=80&w=1200&auto=format&fit=crop" 
                             alt="Strategy Meeting" 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy" 
                             decoding="async"
+                            fetchPriority="high"
                          />
                          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                       </div>
@@ -256,7 +255,7 @@ const Home: React.FC = () => {
          </div>
       </section>
 
-      {/* Services Section - Cleaner Layout with reduced spacing */}
+      {/* Services Section */}
       <section className="py-12 bg-white">
          <div className="max-w-7xl mx-auto px-6 mb-12 text-center">
             <RevealOnScroll>
@@ -296,7 +295,7 @@ const Home: React.FC = () => {
          </div>
       </section>
 
-      {/* Partner Marquee - Moved Here (Above Contact Us) */}
+      {/* Partner Marquee */}
       <section className="py-24 bg-slate-50 border-b border-gray-100 overflow-hidden relative">
          <div className="max-w-7xl mx-auto px-6 mb-12 text-center">
              <h3 className="text-3xl font-bold text-gray-900 mb-4">Trusted by Market Leaders</h3>
@@ -304,7 +303,6 @@ const Home: React.FC = () => {
          </div>
 
          <div className="flex flex-col gap-8 opacity-80">
-            {/* Row 1: Normal Scroll */}
             <div className="flex w-[200%] animate-scroll hover:[animation-play-state:paused]">
                {[...row1, ...row1].map((partner, i) => (
                   <div key={`r1-${i}`} className="flex-1 text-center min-w-[200px] px-2">
@@ -314,8 +312,6 @@ const Home: React.FC = () => {
                   </div>
                ))}
             </div>
-
-            {/* Row 2: Reverse Scroll */}
             <div className="flex w-[200%] animate-scroll-reverse hover:[animation-play-state:paused]">
                {[...row2, ...row2].map((partner, i) => (
                   <div key={`r2-${i}`} className="flex-1 text-center min-w-[200px] px-2">
@@ -325,8 +321,6 @@ const Home: React.FC = () => {
                   </div>
                ))}
             </div>
-
-            {/* Row 3: Normal Scroll */}
             <div className="flex w-[200%] animate-scroll hover:[animation-play-state:paused]">
                {[...row3, ...row3].map((partner, i) => (
                   <div key={`r3-${i}`} className="flex-1 text-center min-w-[200px] px-2">
@@ -337,12 +331,11 @@ const Home: React.FC = () => {
                ))}
             </div>
          </div>
-         {/* Fade Edges */}
          <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none"></div>
          <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none"></div>
       </section>
 
-      {/* Contact Section - Reduced Height */}
+      {/* Contact Section */}
       <section className="py-20 px-6 bg-brand-black text-white">
          <div className="max-w-4xl mx-auto text-center">
             <RevealOnScroll>

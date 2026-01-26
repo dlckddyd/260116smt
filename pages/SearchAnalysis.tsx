@@ -140,12 +140,12 @@ const SearchAnalysis: React.FC = () => {
   const getMonthlyHistoryChartData = () => {
     if (!data?.monthlyHistory) return null;
     return {
-      labels: data.monthlyHistory.map(p => p.label), // Labels only for Jan
+      labels: data.monthlyHistory.map(p => p.label),
       datasets: [
         {
-          label: data.mainKeyword.relKeyword,
+          label: '총 검색량(PC+모바일)',
           data: data.monthlyHistory.map(p => p.count),
-          borderColor: '#00c73c', // Naver Trend Green
+          borderColor: '#00c73c',
           backgroundColor: (context: any) => {
             const chart = context.chart;
             const {ctx, chartArea} = chart;
@@ -192,7 +192,7 @@ const SearchAnalysis: React.FC = () => {
             const fullMonth = data?.monthlyHistory?.[index].month;
             return fullMonth ? `${fullMonth.split('-')[0]}년 ${fullMonth.split('-')[1]}월` : '';
           },
-          label: (context: any) => `${formatNumber(context.raw)}회`
+          label: (context: any) => `총 검색량: ${formatNumber(context.raw)}회`
         }
       }
     },
@@ -227,10 +227,10 @@ const SearchAnalysis: React.FC = () => {
         <div className="relative z-10 text-center px-6 max-w-3xl w-full">
           <RevealOnScroll>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-accent/20 border border-brand-accent/30 text-brand-accent mb-6 font-bold text-sm">
-                <Activity className="w-4 h-4" /> 키워드 종합 분석
+                <Activity className="w-4 h-4" /> 키워드 종합 분석 (통합 검색 트렌드)
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">데이터로 보는 키워드의 가치</h1>
-            <p className="text-gray-400 mb-10 text-lg">네이버 빅데이터를 실시간으로 분석합니다.</p>
+            <p className="text-gray-400 mb-10 text-lg">네이버 빅데이터를 기반으로 월간 검색 패턴을 정밀 분석합니다.</p>
             <form onSubmit={handleSearch} className="relative w-full max-w-xl mx-auto">
               <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="키워드를 입력하세요 (예: 강남맛집)" className="w-full py-4 pl-8 pr-16 rounded-full bg-white text-gray-900 placeholder-gray-400 text-lg font-medium shadow-2xl focus:ring-4 focus:ring-brand-accent/50 outline-none transition-all" />
               <button type="submit" disabled={loading} className="absolute right-2 top-2 bottom-2 bg-brand-accent hover:bg-blue-600 text-white rounded-full px-6 transition-all flex items-center justify-center disabled:bg-gray-400">
@@ -259,7 +259,7 @@ const SearchAnalysis: React.FC = () => {
                       경쟁강도: {data.mainKeyword.compIdx || '보통'}
                    </div>
                </div>
-               <div className="text-sm text-gray-400 flex items-center gap-2"><Info className="w-4 h-4" /> 최근 30일 평균 데이터 (Naver Official API)</div>
+               <div className="text-sm text-gray-400 flex items-center gap-2"><Info className="w-4 h-4" /> 최근 30일 통합 검색 데이터 (Naver Official API)</div>
             </div>
 
             {/* Metrics Grid */}
@@ -282,26 +282,26 @@ const SearchAnalysis: React.FC = () => {
                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4"><span className="text-gray-500 font-bold">예상 클릭수</span><MousePointer2 className="w-5 h-5 text-indigo-500" /></div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">{formatNumber(safeParseInt(data.mainKeyword.monthlyAvePcClkCnt as string | number | undefined) + safeParseInt(data.mainKeyword.monthlyAveMobileClkCnt as string | number | undefined))}</div>
-                    <div className="flex gap-2 text-xs font-medium"><span className="text-gray-400">평균 클릭률 기반</span></div>
+                    <div className="flex gap-2 text-xs font-medium"><span className="text-gray-400">평균 클릭률 기반 추산</span></div>
                 </div>
             </div>
 
             {/* 3. Monthly Trend Chart (MATCHING USER SCREENSHOT) */}
-            <div className="bg-white p-10 rounded-[2.5rem] border border-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+            <div className="bg-white p-5 md:p-10 rounded-2xl md:rounded-[2.5rem] border border-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-3 mb-10">
                     <div className="w-1 h-6 bg-[#00c73c] rounded-full"></div>
-                    <h3 className="text-2xl font-bold text-gray-900">월별 검색량 추이</h3>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900">월별 총 검색량 추이 (통합)</h3>
                 </div>
                 
-                <div className="h-[400px] relative">
+                <div className="h-[300px] md:h-[400px] relative">
                     {getMonthlyHistoryChartData() && <ChartLine data={getMonthlyHistoryChartData()!} options={lineChartOptions} />}
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-gray-100 flex justify-center">
                     <div className="flex items-center gap-4">
-                        <div className="w-4 h-4 bg-[#00c73c] rounded-full"></div>
-                        <span className="text-lg font-bold text-gray-700">{data.mainKeyword.relKeyword}</span>
-                        <span className="text-lg font-bold text-[#00c73c]">{formatNumber(data.monthlyHistory?.[data.monthlyHistory.length - 1].count)}</span>
+                        <div className="w-3 h-3 md:w-4 md:h-4 bg-[#00c73c] rounded-full"></div>
+                        <span className="text-sm md:text-lg font-bold text-gray-700">{data.mainKeyword.relKeyword}</span>
+                        <span className="text-sm md:text-lg font-bold text-[#00c73c]">{formatNumber(data.monthlyHistory?.[data.monthlyHistory.length - 1].count)}</span>
                     </div>
                 </div>
             </div>
@@ -309,19 +309,19 @@ const SearchAnalysis: React.FC = () => {
             {/* Content Distribution & Daily Table */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-                    <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2"><Layers className="w-5 h-5 text-brand-accent" /> 채널별 콘텐츠 발행량</h3>
+                    <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2"><Layers className="w-5 h-5 text-brand-accent" /> 채널별 콘텐츠 발행 분포</h3>
                     {renderContentChart(data.content)}
                 </div>
                 <div className="bg-gradient-to-br from-brand-black to-gray-800 p-8 rounded-2xl text-white shadow-xl flex flex-col justify-center">
                     <h3 className="text-lg font-bold text-gray-300 mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-green-400" /> 분석 인사이트</h3>
-                    <p className="text-gray-300 leading-relaxed text-sm">현재 <span className="text-brand-accent font-bold">'{data.mainKeyword.relKeyword}'</span> 키워드는 해당 채널 영역에서 가장 활발하게 거래되고 있습니다. 경쟁 우위를 점하기 위해서는 해당 채널의 상위 노출 전략이 필수적입니다.</p>
+                    <p className="text-gray-300 leading-relaxed text-sm">현재 <span className="text-brand-accent font-bold">'{data.mainKeyword.relKeyword}'</span> 키워드는 검색 유입량 대비 콘텐츠 발행량이 적절하게 유지되고 있습니다. 특정 채널에서의 상위 노출 전략이 성공할 가능성이 매우 높은 키워드입니다.</p>
                 </div>
             </div>
 
             {/* Daily Table */}
             {data.dailyTrend && (
                 <div>
-                    <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2"><Calendar className="w-5 h-5 text-brand-accent" /> 일별 검색량 (최근 7일)</h3>
+                    <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2"><Calendar className="w-5 h-5 text-brand-accent" /> 최근 7일 상세 검색량</h3>
                     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
                         <table className="w-full min-w-[600px]">
                             <thead><tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200"><th className="py-4 px-6 text-center w-32">날짜</th><th className="py-4 px-6 text-left">키워드</th><th className="py-4 px-6 text-right">PC</th><th className="py-4 px-6 text-right">모바일</th><th className="py-4 px-6 text-right">합계</th></tr></thead>
@@ -335,10 +335,10 @@ const SearchAnalysis: React.FC = () => {
 
             {/* Related Keywords */}
             <div>
-                 <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2"><BarChart2 className="w-5 h-5 text-gray-400" /> 연관 키워드 상세 분석</h3>
+                 <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2"><BarChart2 className="w-5 h-5 text-gray-400" /> 연관 검색어 상세 리포트</h3>
                  <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
                     <table className="w-full min-w-[600px]">
-                        <thead><tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200"><th className="py-4 px-6 text-left">연관 키워드</th><th className="py-4 px-6 text-center">경쟁</th><th className="py-4 px-6 text-right">PC</th><th className="py-4 px-6 text-right">모바일</th><th className="py-4 px-6 text-right">합계</th></tr></thead>
+                        <thead><tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200"><th className="py-4 px-6 text-left">연관 키워드</th><th className="py-4 px-6 text-center">경쟁지수</th><th className="py-4 px-6 text-right">PC</th><th className="py-4 px-6 text-right">모바일</th><th className="py-4 px-6 text-right">합계</th></tr></thead>
                         <tbody>{data.relatedKeywords.map((item, idx) => (<tr key={idx} className="border-b border-gray-100 hover:bg-blue-50/50 text-sm"><td className="py-4 px-6 font-bold">{item.relKeyword}</td><td className="py-4 px-6 text-center"><span className={`px-2 py-0.5 rounded text-xs font-bold border ${item.compIdx === '높음' ? 'bg-red-50 border-red-100 text-red-500' : item.compIdx === '중간' ? 'bg-yellow-50 border-yellow-100 text-yellow-600' : 'bg-green-50 border-green-100 text-green-600'}`}>{item.compIdx}</span></td><td className="py-4 px-6 text-right">{formatNumber(item.monthlyPcQc)}</td><td className="py-4 px-6 text-right">{formatNumber(item.monthlyMobileQc)}</td><td className="py-4 px-6 text-right font-bold text-brand-accent">{formatNumber(safeParseInt(item.monthlyPcQc as string | number) + safeParseInt(item.monthlyMobileQc as string | number))}</td></tr>))}</tbody>
                     </table>
                  </div>
@@ -349,8 +349,8 @@ const SearchAnalysis: React.FC = () => {
         {!data && !loading && !error && (
             <div className="text-center py-32 text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
                <Search className="w-16 h-16 mx-auto mb-6 opacity-20" />
-               <h3 className="text-xl font-bold text-gray-500 mb-2">키워드를 입력해보세요</h3>
-               <p>네이버 빅데이터를 실시간으로 분석해드립니다.</p>
+               <h3 className="text-xl font-bold text-gray-500 mb-2">키워드 트렌드 분석</h3>
+               <p>네이버 빅데이터를 실시간으로 분석하여 마케팅 인사이트를 드립니다.</p>
             </div>
         )}
       </div>
