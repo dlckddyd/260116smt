@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Search, AlertCircle, BarChart2, Loader2, FileText, PieChart, Activity, Info, ShoppingBag, Newspaper, HelpCircle, Image as ImageIcon, MousePointer2, TrendingUp, Layers, Calendar, ArrowDown } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface KeywordData {
   relKeyword: string;
@@ -124,6 +128,49 @@ const SearchAnalysis: React.FC = () => {
             })}
         </div>
     );
+  };
+
+  const getBarChartData = () => {
+    if(!data) return null;
+    return {
+      labels: ['PC 검색수', '모바일 검색수'],
+      datasets: [
+        {
+          label: '검색수',
+          data: [
+            safeParseInt(data.mainKeyword.monthlyPcQc as string | number),
+            safeParseInt(data.mainKeyword.monthlyMobileQc as string | number)
+          ],
+          backgroundColor: [
+            'rgba(54, 162, 235, 0.7)', // PC Color
+            'rgba(75, 192, 192, 0.7)', // Mobile Color
+          ],
+          borderRadius: 8,
+        },
+      ],
+    };
+  };
+
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+         callbacks: {
+             label: (context: any) => `${context.formattedValue}회`
+         }
+      }
+    },
+    scales: {
+        y: {
+            beginAtZero: true,
+            grid: { display: false }
+        },
+        x: {
+            grid: { display: false }
+        }
+    }
   };
 
   return (
@@ -293,7 +340,17 @@ const SearchAnalysis: React.FC = () => {
                 </div>
             </div>
 
-            {/* 4. NEW: Daily Search Volume Trend Table */}
+            {/* NEW: Monthly Search Volume Chart */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
+                <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                    <BarChart2 className="w-5 h-5 text-brand-accent" /> 월간 검색수 현황 (PC vs 모바일)
+                </h3>
+                <div className="h-[300px]">
+                    {getBarChartData() && <Bar data={getBarChartData()!} options={barChartOptions} />}
+                </div>
+            </div>
+
+            {/* 4. Daily Search Volume Trend Table */}
             {data.dailyTrend && data.dailyTrend.length > 0 && (
                 <div>
                     <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">

@@ -133,7 +133,7 @@ const SmartPlaceMockup: React.FC = () => {
     scales: {
         x: { 
             grid: { display: false, drawBorder: false },
-            ticks: { display: true, color: '#999', font: { size: 11, family: "-apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif" }, padding: 8 },
+            ticks: { display: true, color: '#999', font: { size: 11, family: "-apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', sans-serif" }, padding: 8 },
             border: { display: false }
         },
         y: { 
@@ -283,7 +283,7 @@ const SmartPlaceMockup: React.FC = () => {
                              <button><ChevronUp className="w-5 h-5 text-[#333]" /></button>
                         </div>
                         
-                        <div className="flex divide-x divide-[#f4f6f8] py-2">
+                        <div className="flex divide-x divide-[#f4f6f8]">
                              <SummaryItem 
                                 label="플레이스 유입"
                                 value={config.visitCount}
@@ -311,7 +311,7 @@ const SmartPlaceMockup: React.FC = () => {
                              </h3>
                              <button><ChevronUp className="w-5 h-5 text-[#333]" /></button>
                         </div>
-                        <div className="flex py-2">
+                        <div className="flex">
                              <SummaryItem 
                                 label="리뷰 등록"
                                 value={config.reviewCount}
@@ -593,27 +593,29 @@ const SummaryItem = ({ label, value, prev, isLast = false }: any) => {
     const percent = prev === 0 ? 0 : Math.round(Math.abs(diff) / prev * 100);
 
     return (
-        <div className={`flex-1 flex flex-col justify-between h-[86px] px-6 ${!isLast ? '' : ''}`}>
-            {/* Top Row: Label and Percent */}
-            <div className="flex justify-between items-start mb-1">
-                <div className="flex items-center gap-2">
-                    <span className="text-[15px] font-bold text-[#424242] tracking-tight">{label}</span>
-                    {!isZero && prev !== 0 && (
+        <div className={`flex-1 px-5 py-5 border-r border-[#f4f6f8] last:border-0 ${isLast ? 'flex items-center justify-between' : ''}`}>
+           {/* Top Row: Label and Percent */}
+           <div className="flex justify-between items-baseline mb-2">
+               <div className="flex items-center gap-1.5">
+                   <span className="text-[15px] font-bold text-[#424242] tracking-tight">{label}</span>
+                   {!isZero && prev !== 0 && (
                         <span className={`text-[13px] font-bold flex items-center ${isDown ? 'text-[#2485fe]' : 'text-[#fc4c4e]'}`}>
                             {isDown ? '↓' : '↑'}{percent}%
                         </span>
-                    )}
-                    {(isZero || prev === 0) && <span className="text-[13px] font-bold text-[#424242]">-</span>}
-                </div>
-                <strong className="text-[24px] font-bold text-[#1c1c1c] leading-none">
+                   )}
+                   {(isZero || prev === 0) && <span className="text-[13px] font-bold text-[#424242]">-</span>}
+               </div>
+               
+               {/* Current Value */}
+               <strong className="text-[20px] font-bold text-[#1c1c1c] leading-none">
                     {value.toLocaleString()}<span className="text-[15px] font-normal ml-0.5">회</span>
-                </strong>
-            </div>
-            
-            {/* Bottom Row: Prev count (Right Aligned) */}
-            <div className="text-right mt-auto">
-                <span className="text-[13px] text-[#8c8c8c] tracking-tight">지난 기간 {prev.toLocaleString()}회</span>
-            </div>
+               </strong>
+           </div>
+           
+           {/* Bottom Row: Previous Value (Right Aligned under current value) */}
+           <div className="text-right">
+               <span className="text-[13px] text-[#8c8c8c] tracking-tight">지난 기간 {prev.toLocaleString()}회</span>
+           </div>
         </div>
     );
 };
