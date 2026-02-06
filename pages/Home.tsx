@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2, ExternalLink } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
@@ -8,38 +8,18 @@ import ServiceVisual from '../components/ServiceVisual';
 import { partners } from '../data/content';
 import { useData } from '../context/DataContext';
 
-// Wrapper for custom element
-const SplineViewer = React.forwardRef<any, any>((props, ref) => {
-  return React.createElement('spline-viewer', { ...props, ref });
-});
-
 const Home: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const splineRef = useRef<any>(null);
   const { serviceImages } = useData();
 
   useEffect(() => {
-    // Check if spline is ready or timeout to show content
-    const element = splineRef.current;
-    
-    const handleLoad = () => {
-      setIsLoaded(true);
-    };
-
-    if (element) {
-      element.addEventListener('load', handleLoad);
-    }
-
-    // Fail-safe to ensure user sees content even if Spline is slow
+    // Fail-safe to ensure user sees content even if Iframe is slow
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 1500);
 
     return () => {
       clearTimeout(timer);
-      if (element) {
-        element.removeEventListener('load', handleLoad);
-      }
     };
   }, []);
 
@@ -157,13 +137,16 @@ const Home: React.FC = () => {
            </div>
          )}
          
-         {/* Spline Viewer */}
+         {/* Spline Viewer (Iframe) */}
          <div className="absolute inset-0 w-full h-full pointer-events-none">
-            <SplineViewer 
-              ref={splineRef}
-              loading-anim-type="spinner-small-dark"
-              url="https://prod.spline.design/R8sj9KJPt6z0DcZx/scene.splinecode"
+            <iframe 
+              src='https://my.spline.design/trafficlight-FOL3VWRlskdi7o0EU4PtSnLJ/' 
+              frameBorder='0' 
+              width='100%' 
+              height='100%'
+              title="3D Traffic Light Scene"
               className={`w-full h-full transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={() => setIsLoaded(true)}
             />
          </div>
 
@@ -240,7 +223,7 @@ const Home: React.FC = () => {
                       <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[2rem] bg-gray-100 group shadow-2xl">
                          {/* Corrected fetchPriority attribute name */}
                          <img 
-                            src="https://images.unsplash.com/photo-1577412647305-991150c7d163?q=80&w=1200&auto=format&fit=crop" 
+                            src="https://storage.googleapis.com/yonging_bucket/freepik__an-alluring-korean-woman-in-her-20s-wearing-a-ligh__73967.jpeg" 
                             alt="Strategy Meeting" 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy" 
