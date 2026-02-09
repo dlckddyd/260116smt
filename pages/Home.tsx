@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2, ExternalLink } from 'lucide-react';
+import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2, ExternalLink, Target } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import CountUp from '../components/CountUp';
 import ServiceVisual from '../components/ServiceVisual';
@@ -9,19 +9,7 @@ import { partners } from '../data/content';
 import { useData } from '../context/DataContext';
 
 const Home: React.FC = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
   const { serviceImages } = useData();
-
-  useEffect(() => {
-    // Fail-safe to ensure user sees content even if Iframe is slow
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 1500);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
 
   const row1 = partners.slice(0, 14);
   const row2 = partners.slice(14, 28);
@@ -129,24 +117,16 @@ const Home: React.FC = () => {
     <div className="overflow-hidden bg-white selection:bg-brand-accent selection:text-white">
       {/* Hero Section */}
       <section className="relative w-full h-screen flex flex-col items-center justify-center bg-black overflow-hidden">
-         {!isLoaded && (
-           <div className="absolute inset-0 flex items-center justify-center bg-black z-20 pointer-events-none">
-             <div className="flex flex-col items-center gap-4">
-               <Loader2 className="w-10 h-10 text-white animate-spin" />
-             </div>
-           </div>
-         )}
          
          {/* Spline Viewer (Iframe) */}
-         <div className="absolute inset-0 w-full h-full pointer-events-none">
+         <div className="absolute inset-0 w-full h-full z-0">
             <iframe 
               src='https://my.spline.design/trafficlight-FOL3VWRlskdi7o0EU4PtSnLJ/' 
               frameBorder='0' 
               width='100%' 
               height='100%'
               title="3D Traffic Light Scene"
-              className={`w-full h-full transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-              onLoad={() => setIsLoaded(true)}
+              className="w-full h-full"
             />
          </div>
 
@@ -191,20 +171,23 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* About Us Section */}
+      {/* Mission Section (Replaces About Us) */}
       <section className="py-24 px-6 bg-white relative">
          <div className="max-w-7xl mx-auto">
             <RevealOnScroll>
                <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
                   <div className="w-full lg:w-1/2">
-                     <span className="text-brand-accent font-bold text-sm tracking-[0.2em] uppercase mb-4 block opacity-80">About Us</span>
-                     <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 text-brand-black leading-tight tracking-tight">
-                        We Design<br/>Success.
+                     <div className="inline-block p-3 bg-blue-50 rounded-2xl mb-6">
+                        <Target className="w-8 h-8 text-brand-accent" />
+                     </div>
+                     <h2 className="text-5xl md:text-6xl font-bold mb-6 text-brand-black leading-tight tracking-tight">
+                        Mission
                      </h2>
-                     <p className="text-gray-500 text-xl leading-relaxed mb-10">
-                        스마트마케팅 플레이스는 감이 아닌 데이터로 움직입니다.<br/>
-                        수천 건의 성공 사례를 통해 검증된 알고리즘 분석 시스템과
-                        트래픽 최적화 솔루션으로 비즈니스의 확실한 성장을 약속합니다.
+                     <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 leading-tight">
+                        "모든 비즈니스의 잠재력을 현실로"
+                     </h3>
+                     <p className="text-gray-500 text-lg md:text-xl leading-relaxed mb-10">
+                        우리는 뛰어난 제품과 서비스를 가졌음에도 마케팅의 부재로 빛을 보지 못하는 기업들을 위해 존재합니다. 데이터 기반의 의사결정으로 성장의 장벽을 허물고, 클라이언트의 성공이 곧 우리의 성공이라는 믿음으로 나아갑니다.
                      </p>
                      
                      <div className="grid grid-cols-2 gap-8 border-t border-gray-100 pt-8">
@@ -224,7 +207,7 @@ const Home: React.FC = () => {
                          {/* Corrected fetchPriority attribute name */}
                          <img 
                             src="https://storage.googleapis.com/yonging_bucket/freepik__an-alluring-korean-woman-in-her-20s-wearing-a-ligh__73967.jpeg" 
-                            alt="Strategy Meeting" 
+                            alt="Mission" 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy" 
                             decoding="async"

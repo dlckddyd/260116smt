@@ -29,8 +29,8 @@ const About: React.FC = () => {
       <section className="relative w-full h-screen flex items-center justify-center overflow-hidden">
          {/* Corrected fetchPriority attribute name */}
          <img 
-            src="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=2000&auto=format&fit=crop" 
-            alt="Seoul Cityscape" 
+            src="https://storage.googleapis.com/yonging_bucket/about.png" 
+            alt="About Hero" 
             className="absolute inset-0 w-full h-full object-cover"
             fetchPriority="high"
          />
@@ -60,7 +60,7 @@ const About: React.FC = () => {
                   <p className="text-gray-600 leading-relaxed text-lg">우리는 뛰어난 제품과 서비스를 가졌음에도 마케팅의 부재로 빛을 보지 못하는 기업들을 위해 존재합니다. 데이터 기반의 의사결정으로 성장의 장벽을 허물고, 클라이언트의 성공이 곧 우리의 성공이라는 믿음으로 나아갑니다.</p>
                </div>
                <div className="w-full md:w-1/2 relative">
-                  <ServiceVisual image="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop" groups={aboutVisualGroups} />
+                  <ServiceVisual image="https://storage.googleapis.com/yonging_bucket/1234.jpeg" groups={aboutVisualGroups} />
                </div>
             </div>
          </RevealOnScroll>
@@ -78,7 +78,7 @@ const About: React.FC = () => {
                      <p className="text-gray-600 leading-relaxed text-lg">단순 대행을 넘어, 클라이언트와 함께 성장하는 상생의 생태계를 만듭니다. 기술(Tech)과 크리에이티브(Creative)가 결합된 독보적인 마케팅 솔루션 기업으로 글로벌 시장을 선도합니다.</p>
                   </div>
                   <div className="w-full md:w-1/2">
-                     <img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2000&auto=format&fit=crop" className="rounded-3xl shadow-xl w-full h-80 object-cover hover:-translate-y-2 transition-transform duration-500" alt="Vision" loading="lazy" decoding="async" />
+                     <img src="https://storage.googleapis.com/yonging_bucket/%E1%84%87%E1%85%B5%E1%84%8C%E1%85%A5%E1%86%AB.jpeg" className="rounded-3xl shadow-xl w-full h-80 object-cover hover:-translate-y-2 transition-transform duration-500" alt="Vision" loading="lazy" decoding="async" />
                   </div>
                </div>
             </RevealOnScroll>
@@ -93,6 +93,7 @@ const About: React.FC = () => {
          </div>
          <div className="space-y-12 relative border-l-2 border-gray-200 ml-4 md:ml-0 md:pl-0">
             {[
+               { year: "2025", title: "AI Marketing Revolution", desc: "업계 최초 AI 마케팅 전담 본부 신설 및 솔루션 고도화" },
                { year: "2024", title: "Global Expansion", desc: "해외 마케팅 솔루션 런칭, 누적 클라이언트 1,200사 돌파" },
                { year: "2023", title: "Award Winning", desc: "대한민국 디지털 광고 대상 '퍼포먼스 부문' 대상 수상" },
                { year: "2022", title: "Tech Innovation", desc: "AI 기반 광고 자동화 시스템 'G-Bot' 개발 및 상용화" },
