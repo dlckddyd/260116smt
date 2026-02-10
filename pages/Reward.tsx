@@ -1,229 +1,290 @@
-import React from 'react';
-import RevealOnScroll from '../components/RevealOnScroll';
-import { Gift, TrendingUp, ShieldCheck, Smartphone, Check, AlertTriangle, ArrowDown, Target, Zap, MousePointer } from 'lucide-react';
+
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { 
+  Trophy, TrendingUp, MousePointerClick, Users, ShieldCheck, Zap, 
+  BarChart3, Search, Target, Gift, ArrowRight, CheckCircle2, 
+  Smartphone, Monitor, Lock, Clock, Activity, AlertTriangle 
+} from 'lucide-react';
+import RevealOnScroll from '../components/RevealOnScroll';
 
 const Reward: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'reward' | 'program'>('reward');
+
   return (
     <div className="bg-white">
-      {/* 1. Hero Section - Focused on Result */}
-      <section className="relative pt-32 pb-20 px-6 text-center bg-gray-50">
-         <RevealOnScroll>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100 text-blue-600 mb-6 font-bold text-sm">
-                리워드 · 자체 프로그램 기반
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900 leading-tight">
-               1페이지의 핵심은<br/>결국 <span className="text-blue-600">트래픽</span>입니다.
-            </h1>
-            <p className="text-xl text-gray-500 mb-10">
-               압도적인 실사용자 유입으로 순위 상승의 공식을 완성합니다.
-            </p>
-            <Link to="/contact" className="inline-block px-10 py-4 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/30">
-               무료 상담 신청하기
-            </Link>
-            
-            <div className="mt-16 max-w-5xl mx-auto">
-               <img 
-                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop" 
-                  alt="Dashboard Platform" 
-                  className="rounded-2xl shadow-2xl border border-gray-200"
-               />
-            </div>
-         </RevealOnScroll>
+      {/* 1. Hero Section: Data & Traffic Theme */}
+      <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-[#0f172a]">
+         {/* Dynamic Background */}
+         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-blue-900/20 via-transparent to-[#0f172a] z-0"></div>
+         
+         {/* Animated Glow Orbs */}
+         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/20 rounded-full blur-[100px] animate-pulse"></div>
+         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/20 rounded-full blur-[120px] animate-pulse delay-1000"></div>
+
+         <div className="relative z-10 text-center px-6 max-w-5xl mt-10">
+            <RevealOnScroll>
+               <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-blue-500/10 border border-blue-400/30 text-blue-400 font-bold mb-8 backdrop-blur-md shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                   <Activity className="w-4 h-4" /> 순위 상승의 핵심 알고리즘
+               </div>
+               <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight tracking-tight">
+                   1페이지의 비밀은<br/>
+                   결국 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">유효타 트래픽</span>입니다
+               </h1>
+               <p className="text-xl text-gray-400 font-light tracking-wide max-w-2xl mx-auto mb-12 leading-relaxed">
+                   단순 유입이 아닙니다. 플랫폼 로직이 좋아하는<br/>
+                   '구매 전환 행동 패턴'을 설계하여 순위를 끌어올립니다.
+               </p>
+               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                   <Link to="/contact" className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 hover:-translate-y-1">
+                       트래픽 진단 받기 <ArrowRight className="w-5 h-5" />
+                   </Link>
+                   <Link to="/contact" className="w-full sm:w-auto px-10 py-4 bg-white/5 border border-white/10 text-gray-300 font-bold rounded-xl hover:bg-white/10 transition-all hover:-translate-y-1 backdrop-blur-md">
+                       단가표 확인
+                   </Link>
+               </div>
+            </RevealOnScroll>
+         </div>
       </section>
 
-      {/* 2. Problem Section */}
+      {/* 2. Pain Points: Why Rank Doesn't Go Up */}
       <section className="py-24 px-6 bg-white">
-         <div className="max-w-5xl mx-auto">
+         <div className="max-w-6xl mx-auto">
             <RevealOnScroll>
-               <div className="text-center mb-16">
-                  <h2 className="text-3xl md:text-4xl font-bold mb-4">현재 광고를 하더라도<br/>이런 문제가 반복되고 있으신가요?</h2>
-                  <p className="text-gray-500">단순 노출만으로는 더 이상 매출이 오르지 않습니다.</p>
+               <div className="text-center mb-20">
+                  <span className="text-blue-600 font-bold tracking-widest uppercase text-sm mb-3 block">Real Problems</span>
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 leading-tight">열심히 하는데 왜 순위는 그대로일까요?</h2>
+                  <p className="text-gray-500">단순히 상품만 등록하고 기다린다고 트래픽이 발생하지 않습니다.</p>
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   {[
-                     { title: "검색 결과에 내 상품이 없나요?", desc: "경쟁사 상품은 계속 노출되는데, 내 상품은 10페이지 뒤에 숨어있지 않나요?" },
-                     { title: "매출이 상승하지 않나요?", desc: "비싼 광고비를 집행해도 실제 구매로 이어지지 않아 고민이신가요?" },
-                     { title: "노출이 유지되지 않나요?", desc: "잠깐 1페이지에 올라갔다가 금방 순위가 떨어져서 불안하신가요?" }
+                     { icon: AlertTriangle, title: "죽은 상품/플레이스", desc: "10페이지 뒤에 있어 아무도 클릭하지 않는 '유령 상태'인가요?" },
+                     { icon: MousePointerClick, title: "단순 클릭의 한계", desc: "체류 시간 없이 클릭만 발생하면 오히려 어뷰징으로 인식됩니다." },
+                     { icon: TrendingUp, title: "유지 실패", desc: "반짝 순위가 올랐다가 금방 떨어져서 매출로 이어지지 않나요?" }
                   ].map((item, idx) => (
-                     <div key={idx} className="bg-gray-50 p-8 rounded-3xl text-center hover:bg-white hover:shadow-xl transition-all border border-gray-100">
-                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                           <AlertTriangle className="w-8 h-8 text-red-500" />
+                     <div key={idx} className="bg-gray-50 p-10 rounded-[2.5rem] border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all group relative overflow-hidden text-center">
+                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 mx-auto shadow-sm text-gray-400 group-hover:text-red-500 group-hover:scale-110 transition-all duration-300">
+                           <item.icon className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-bold mb-3 text-gray-900">{item.title}</h3>
-                        <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>
+                        <h3 className="text-xl font-bold mb-4 text-gray-900">{item.title}</h3>
+                        <p className="text-gray-600 text-sm leading-relaxed break-keep">
+                           {item.desc}
+                        </p>
                      </div>
                   ))}
                </div>
                
-               <div className="mt-12 text-center p-6 bg-blue-50 rounded-2xl border border-blue-100">
-                  <p className="text-blue-800 font-bold text-lg">
-                     플랫폼은 '구매자와 유사한 행동패턴'을 기준으로<br className="md:hidden"/> 인기있는 상품을 판단하기 때문입니다.
+               <div className="mt-16 p-8 bg-blue-50 rounded-2xl border border-blue-100 text-center max-w-3xl mx-auto">
+                  <p className="text-blue-900 font-bold text-lg md:text-xl">
+                     💡 플랫폼은 <span className="underline decoration-wavy decoration-blue-400 underline-offset-4">'실제 구매자와 유사한 행동 패턴'</span>을 가진<br className="md:hidden"/> 트래픽에 높은 점수를 줍니다.
                   </p>
                </div>
             </RevealOnScroll>
          </div>
       </section>
 
-      {/* 3. Solution Section */}
-      <section className="py-24 px-6 bg-gray-900 text-white relative overflow-hidden">
+      {/* 3. Solution: Reward vs Program */}
+      <section className="py-24 px-6 bg-slate-900 overflow-hidden relative">
+         {/* Background Elements */}
+         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[100px] -translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
+
          <div className="max-w-7xl mx-auto relative z-10">
             <RevealOnScroll>
-               <div className="text-center mb-20">
-                  <h2 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">
-                     스마트마케팅 플레이스는<br/>
-                     <span className="text-blue-400">리워드와 프로그램</span>을 활용하여<br/>
-                     사용자 행동 패턴을 설계합니다.
-                  </h2>
-                  <p className="text-gray-400">플랫폼이 평가하는 로직에 정확히 부합하는 트래픽을 공급합니다.</p>
+               <div className="text-center mb-16 text-white">
+                  <h2 className="text-3xl md:text-5xl font-bold mb-6">Dual Track Strategy</h2>
+                  <p className="text-gray-400">브랜드 상황에 맞춰 가장 효과적인 방식을 제안합니다.</p>
                </div>
 
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                  <div className="bg-white/10 p-10 rounded-[2.5rem] border border-white/10 backdrop-blur-sm">
-                     <div className="inline-block px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-bold mb-6">리워드</div>
-                     <h3 className="text-2xl font-bold mb-4">실사용자의 검색·클릭·체류 흐름을<br/>설계하는 리워드</h3>
-                     <p className="text-gray-400 mb-8 leading-relaxed">
-                        실제 사용자 행동을 바탕으로 한 유효타 데이터를 생성합니다. 
-                        초기에 만드는 데 사용할 수 있어요. 단순 클릭이 아닌 체류시간까지 확보합니다.
-                     </p>
-                     <img 
-                        src="https://images.unsplash.com/photo-1555421689-d68471e189f2?q=80&w=800&auto=format&fit=crop" 
-                        className="w-full h-48 object-cover rounded-xl opacity-80" 
-                        alt="Reward Logic"
-                     />
-                  </div>
-                  <div className="bg-white/10 p-10 rounded-[2.5rem] border border-white/10 backdrop-blur-sm">
-                     <div className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold mb-6">프로그램</div>
-                     <h3 className="text-2xl font-bold mb-4">실제 구매자 유사 행동 패턴을<br/>설계하는 프로그램</h3>
-                     <p className="text-gray-400 mb-8 leading-relaxed">
-                        자체적인 반복 프로그램을 통해 인위적인 반복 없이 계정 리스크를 줄일 수 있어요.
-                        다양한 디바이스 환경을 구축하여 정밀하게 타겟팅합니다.
-                     </p>
-                     <img 
-                        src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=800&auto=format&fit=crop" 
-                        className="w-full h-48 object-cover rounded-xl opacity-80" 
-                        alt="Program Logic"
-                     />
-                  </div>
+               <div className="flex justify-center mb-12">
+                   <div className="bg-white/10 p-1 rounded-full backdrop-blur-md inline-flex">
+                       <button 
+                           onClick={() => setActiveTab('reward')}
+                           className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${activeTab === 'reward' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                       >
+                           리워드 (Reward)
+                       </button>
+                       <button 
+                           onClick={() => setActiveTab('program')}
+                           className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${activeTab === 'program' ? 'bg-cyan-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                       >
+                           프로그램 (Program)
+                       </button>
+                   </div>
+               </div>
+
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                   {/* Visual Side */}
+                   <div className="relative aspect-square md:aspect-[4/3] bg-gradient-to-br from-white/5 to-white/0 rounded-[2.5rem] border border-white/10 flex items-center justify-center p-8 overflow-hidden group">
+                       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                       {activeTab === 'reward' ? (
+                           <div className="relative w-full h-full flex items-center justify-center">
+                               <div className="absolute top-10 right-10 animate-float-slow"><Gift className="w-16 h-16 text-blue-400" /></div>
+                               <div className="absolute bottom-20 left-10 animate-float-medium"><Users className="w-12 h-12 text-blue-300" /></div>
+                               <div className="bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 text-center max-w-sm">
+                                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-blue-500/40">
+                                       <Smartphone className="w-10 h-10 text-white" />
+                                   </div>
+                                   <h3 className="text-2xl font-bold text-white mb-2">실사용자 참여</h3>
+                                   <p className="text-blue-200 text-sm">유저가 직접 검색하고 클릭하여<br/>체류 시간을 확보합니다.</p>
+                               </div>
+                           </div>
+                       ) : (
+                           <div className="relative w-full h-full flex items-center justify-center">
+                               <div className="absolute top-10 left-10 animate-float-slow"><Monitor className="w-16 h-16 text-cyan-400" /></div>
+                               <div className="absolute bottom-10 right-10 animate-float-medium"><Lock className="w-12 h-12 text-cyan-300" /></div>
+                               <div className="bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 text-center max-w-sm">
+                                   <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-cyan-500/40">
+                                       <Zap className="w-10 h-10 text-white" />
+                                   </div>
+                                   <h3 className="text-2xl font-bold text-white mb-2">정밀 타겟팅</h3>
+                                   <p className="text-cyan-200 text-sm">자체 개발 솔루션으로<br/>구매 행동 패턴을 시뮬레이션합니다.</p>
+                               </div>
+                           </div>
+                       )}
+                   </div>
+
+                   {/* Text Side */}
+                   <div className="text-white">
+                       <h3 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                           {activeTab === 'reward' ? <Gift className="w-8 h-8 text-blue-500" /> : <Monitor className="w-8 h-8 text-cyan-500" />}
+                           {activeTab === 'reward' ? '리워드 마케팅' : '자체 프로그램'}
+                       </h3>
+                       <p className="text-lg text-gray-400 mb-8 leading-relaxed">
+                           {activeTab === 'reward' 
+                               ? "실제 유저에게 포인트를 지급하여 특정 행동(검색, 유입, 체류, 찜하기 등)을 유도하는 방식입니다. 100% 실계정으로 진행되어 안전하며, 초기 트래픽 확보에 탁월합니다."
+                               : "디바이스 ID, IP, 브라우저 지문 등을 다양화하여 실제 구매자와 동일한 패턴의 트래픽을 발생시킵니다. 인위적인 반복을 배제하여 로직 변화에 유연하게 대응합니다."
+                           }
+                       </p>
+                       
+                       <ul className="space-y-4">
+                           {(activeTab === 'reward' ? [
+                               "100% 실사용자 모바일 트래픽",
+                               "검색 + 유입 + 체류 + 액션(찜/저장) 패키지",
+                               "초기 플레이스/쇼핑 순위 진입용",
+                               "어뷰징 위험 0% 안전 보장"
+                           ] : [
+                               "정밀한 체류 시간 및 이탈률 관리",
+                               "구매 전환율 최적화 로직 적용",
+                               "경쟁 강도가 높은 키워드 공략",
+                               "다양한 디바이스/통신사 IP 활용"
+                           ]).map((item, i) => (
+                               <li key={i} className="flex items-center gap-3 text-lg font-medium">
+                                   <CheckCircle2 className={`w-6 h-6 ${activeTab === 'reward' ? 'text-blue-500' : 'text-cyan-500'}`} />
+                                   {item}
+                               </li>
+                           ))}
+                       </ul>
+                   </div>
                </div>
             </RevealOnScroll>
          </div>
       </section>
 
-      {/* 4. Effect Graph Section */}
+      {/* 4. Logic Flow (Horizontal Scroll/Steps) */}
       <section className="py-24 px-6 bg-white">
+          <div className="max-w-7xl mx-auto">
+              <RevealOnScroll>
+                  <div className="text-center mb-16">
+                      <h2 className="text-3xl md:text-4xl font-bold mb-4">순위가 오르는 <span className="text-blue-600">성공 방정식</span></h2>
+                      <p className="text-gray-500">단순 클릭이 아닌 '유효한 데이터'가 쌓여야 합니다.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+                      {/* Connecting Line (Desktop) */}
+                      <div className="hidden lg:block absolute top-12 left-0 w-full h-[2px] bg-gradient-to-r from-blue-100 via-blue-300 to-blue-100 z-0"></div>
+
+                      {[
+                          { title: "Step 1. 검색 유입", desc: "지정된 키워드로 검색하여 자연스럽게 유입됩니다.", icon: Search },
+                          { title: "Step 2. 체류 활동", desc: "상세페이지를 읽고 사진을 보며 체류 시간을 확보합니다.", icon: Clock },
+                          { title: "Step 3. 액션 전환", desc: "찜하기, 알림받기, 장바구니 등 구매 시그널을 보냅니다.", icon: MousePointerClick },
+                          { title: "Step 4. 순위 반영", desc: "유효타가 누적되어 플랫폼 로직에 의해 순위가 상승합니다.", icon: TrendingUp }
+                      ].map((step, idx) => (
+                          <div key={idx} className="relative z-10 bg-white p-8 rounded-3xl border border-gray-100 shadow-lg flex flex-col items-center text-center group hover:-translate-y-2 transition-transform">
+                              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                  <step.icon className="w-7 h-7" />
+                              </div>
+                              <h3 className="text-lg font-bold mb-3">{step.title}</h3>
+                              <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
+                          </div>
+                      ))}
+                  </div>
+              </RevealOnScroll>
+          </div>
+      </section>
+
+      {/* 5. Effect Graph Simulation */}
+      <section className="py-24 px-6 bg-[#f8fafc]">
          <div className="max-w-6xl mx-auto">
             <RevealOnScroll>
                <div className="text-center mb-16">
-                  <h2 className="text-3xl font-bold mb-4">설계된 방식은<br/>실제 순위 상승으로 이어졌습니다.</h2>
+                  <h2 className="text-3xl font-bold mb-4 text-gray-900">실제 데이터로 증명합니다</h2>
+                  <p className="text-gray-500">다양한 카테고리에서 1페이지 상위 노출을 달성하고 있습니다.</p>
                </div>
                
-               {/* Mockup Graphs */}
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                     { k: "쿠팡", rank: "1위", up: "22위 상승" },
-                     { k: "플레이스", rank: "1위", up: "86위 상승" },
-                     { k: "스마트스토어", rank: "1위", up: "54위 상승" },
-                     { k: "쇼핑검색", rank: "2위", up: "12위 상승" }
+                     { k: "강남 맛집", rank: "1위", up: "86위 상승", color: "text-red-500", bg: "bg-red-50", line: "bg-red-500" },
+                     { k: "홍대 미용실", rank: "1위", up: "54위 상승", color: "text-blue-500", bg: "bg-blue-50", line: "bg-blue-500" },
+                     { k: "제주도 렌트카", rank: "2위", up: "12위 상승", color: "text-green-500", bg: "bg-green-50", line: "bg-green-500" },
+                     { k: "여성 의류", rank: "1위", up: "22위 상승", color: "text-purple-500", bg: "bg-purple-50", line: "bg-purple-500" }
                   ].map((item, idx) => (
-                     <div key={idx} className="border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="text-xs text-gray-400 mb-2">{item.k} 키워드</div>
-                        <div className="text-3xl font-bold text-gray-900 mb-1">{item.rank}</div>
-                        <div className="text-sm text-red-500 font-bold flex items-center gap-1">
-                           <TrendingUp className="w-4 h-4" /> {item.up}
+                     <div key={idx} className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all relative overflow-hidden group">
+                        <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">{item.k}</div>
+                        <div className="flex items-end gap-2 mb-4">
+                            <span className="text-4xl font-bold text-gray-900">{item.rank}</span>
+                            <span className={`text-sm font-bold mb-1.5 flex items-center ${item.color}`}>
+                               <TrendingUp className="w-3 h-3 mr-1" /> {item.up}
+                            </span>
                         </div>
-                        <div className="mt-4 h-16 bg-gray-50 rounded-lg flex items-end justify-center pb-2 px-2 overflow-hidden">
-                           <div className="w-full h-full bg-gradient-to-t from-red-100 to-transparent relative">
-                              <div className="absolute bottom-0 w-full bg-red-400 h-[2px]"></div>
-                              <div className="absolute bottom-0 left-0 w-full h-full bg-red-400/10 transform skew-y-12 origin-bottom-left"></div>
-                           </div>
+                        
+                        {/* Simulated Graph */}
+                        <div className="h-24 w-full flex items-end justify-between gap-1 mt-4">
+                            {[20, 35, 30, 50, 45, 70, 60, 90, 80, 100].map((h, i) => (
+                                <div key={i} className="w-full bg-gray-100 rounded-t-sm relative overflow-hidden group-hover:bg-gray-200 transition-colors" style={{ height: `${h}%` }}>
+                                    <div className={`absolute bottom-0 left-0 w-full ${item.line} opacity-20 group-hover:opacity-100 transition-opacity duration-700`} style={{ height: '100%', transitionDelay: `${i * 50}ms` }}></div>
+                                </div>
+                            ))}
                         </div>
                      </div>
                   ))}
                </div>
                
-               <div className="mt-8 text-center text-sm text-gray-400">
-                  * 구매자와 유사한 행동 패턴이 누적되며, 각 플랫폼에서 1페이지 진입을 포함한 실제 순위 상승 결과 확인
-               </div>
-            </RevealOnScroll>
-         </div>
-      </section>
-
-      {/* 5. Process Detail */}
-      <section className="py-24 px-6 bg-gray-50">
-         <div className="max-w-7xl mx-auto">
-            <RevealOnScroll>
-               <div className="text-center mb-16">
-                  <h2 className="text-3xl font-bold mb-6">순위가 오를 수 밖에 없는 조건</h2>
-                  <p className="text-gray-600">플랫폼은 특정 방식이 아니라 '구매자와 유사한 행동 패턴'이 어떻게 누적됐는지 평가합니다.</p>
-               </div>
-
-               <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
-                  <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border border-gray-100">
-                     <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 text-white font-bold text-xl">1</div>
-                     <h3 className="text-xl font-bold mb-3">검색 및 유입</h3>
-                     <p className="text-gray-500 text-sm leading-relaxed">
-                        키워드 검색을 통해 자연스럽게 상품을 찾고 클릭합니다. 체류 시간을 확보하여 이탈률을 낮춥니다.
-                     </p>
-                  </div>
-                  <ArrowDown className="md:hidden text-gray-300" />
-                  <div className="hidden md:block w-16 h-1 bg-gray-200"></div>
-                  
-                  <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border border-gray-100">
-                     <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 text-white font-bold text-xl">2</div>
-                     <h3 className="text-xl font-bold mb-3">행동 패턴 누적</h3>
-                     <p className="text-gray-500 text-sm leading-relaxed">
-                        찜하기, 장바구니 담기, 알림 받기 등 구매 의사가 있는 사용자의 패턴을 학습시킵니다.
-                     </p>
-                  </div>
-                  <ArrowDown className="md:hidden text-gray-300" />
-                  <div className="hidden md:block w-16 h-1 bg-gray-200"></div>
-
-                  <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border border-gray-100">
-                     <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 text-white font-bold text-xl">3</div>
-                     <h3 className="text-xl font-bold mb-3">순위 최적화</h3>
-                     <p className="text-gray-500 text-sm leading-relaxed">
-                        누적된 데이터가 플랫폼 로직에 반영되어 자연스러운 순위 상승을 이끌어냅니다.
-                     </p>
-                  </div>
+               <div className="mt-8 text-center text-sm text-gray-400 bg-white inline-block px-6 py-2 rounded-full border border-gray-200 mx-auto shadow-sm">
+                  * 위 데이터는 실제 진행 사례를 기반으로 한 예시이며, 결과는 업종 및 키워드에 따라 상이할 수 있습니다.
                </div>
             </RevealOnScroll>
          </div>
       </section>
 
       {/* 6. CTA Section */}
-      <section className="py-24 px-6 bg-black text-white text-center">
+      <section className="py-24 px-6 bg-gradient-to-r from-blue-700 to-indigo-800 text-white text-center">
          <RevealOnScroll>
             <div className="max-w-4xl mx-auto">
-               <h2 className="text-3xl md:text-5xl font-bold mb-8">
-                  이 중 하나라도 해당된다면<br/>
-                  <span className="text-blue-500">그냥 넘기지 마세요.</span>
+               <h2 className="text-3xl md:text-5xl font-bold mb-8 leading-tight">
+                  경쟁사가 자는 시간에도<br/>
+                  <span className="text-blue-300">당신의 순위는 올라갑니다.</span>
                </h2>
                
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 text-left">
-                  <div className="bg-white/10 p-4 rounded-xl">
-                     <Target className="w-6 h-6 text-blue-400 mb-2" />
-                     <p className="text-sm text-gray-300">노출이 불안정한 브랜드</p>
-                  </div>
-                  <div className="bg-white/10 p-4 rounded-xl">
-                     <Zap className="w-6 h-6 text-yellow-400 mb-2" />
-                     <p className="text-sm text-gray-300">광고 효율이 떨어지는 브랜드</p>
-                  </div>
-                  <div className="bg-white/10 p-4 rounded-xl">
-                     <TrendingUp className="w-6 h-6 text-green-400 mb-2" />
-                     <p className="text-sm text-gray-300">순위 유지가 필요한 브랜드</p>
-                  </div>
-                  <div className="bg-white/10 p-4 rounded-xl">
-                     <MousePointer className="w-6 h-6 text-purple-400 mb-2" />
-                     <p className="text-sm text-gray-300">성과가 정체된 브랜드</p>
-                  </div>
+               <div className="flex flex-wrap justify-center gap-4 mb-12">
+                  {[
+                      "노출이 불안정한 브랜드", 
+                      "광고 효율이 떨어지는 브랜드", 
+                      "순위 유지가 필요한 브랜드", 
+                      "성과가 정체된 브랜드"
+                  ].map((text, i) => (
+                      <span key={i} className="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-blue-100 text-sm font-medium backdrop-blur-sm">
+                          {text}
+                      </span>
+                  ))}
                </div>
 
-               <div className="bg-blue-600/20 border border-blue-500/30 rounded-3xl p-10 backdrop-blur-md">
-                  <h3 className="text-2xl font-bold mb-4">우리 브랜드에 맞는 전략이 어떤건지<br/>지금 확인해보세요.</h3>
-                  <Link to="/contact" className="inline-block px-12 py-4 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-500 transition-all shadow-[0_0_20px_rgba(37,99,235,0.5)]">
-                     무료 상담하기
+               <div className="bg-white/10 border border-white/20 rounded-[2rem] p-10 backdrop-blur-md max-w-2xl mx-auto hover:bg-white/15 transition-colors">
+                  <h3 className="text-2xl font-bold mb-4">우리 브랜드에 맞는 전략이 무엇인지<br/>지금 바로 확인해보세요.</h3>
+                  <Link to="/contact" className="inline-flex items-center gap-2 px-12 py-5 bg-white text-blue-700 font-bold rounded-full hover:bg-gray-100 transition-all shadow-xl hover:scale-105 mt-4">
+                     무료 상담 및 견적 받기 <ArrowRight className="w-5 h-5" />
                   </Link>
                </div>
             </div>

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2, ExternalLink, Target } from 'lucide-react';
+import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2, ExternalLink, Target, Zap, Activity, Layers } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 import CountUp from '../components/CountUp';
 import ServiceVisual from '../components/ServiceVisual';
@@ -19,12 +19,13 @@ const Home: React.FC = () => {
   const services = [
     {
       id: "place",
-      category: "Service 01",
-      title: "플레이스 마케팅",
-      desc: "매출의 80%는 지역 검색에서 시작됩니다.\n상권 분석 데이터와 최적화 로직으로 당신의 매장을 지역 1위로 만듭니다.",
+      category: "01. Place Marketing",
+      title: "지역 1등 매장의\n숨겨진 비밀",
+      desc: "매출의 80%는 지역 검색에서 시작됩니다.\n상권 분석 데이터와 최적화 로직으로\n당신의 매장을 지역 1위로 만듭니다.",
       image: serviceImages['place'] || "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop",
       link: "/services/place",
-      labels: { left: "최적화 전", right: "최적화 후" }, // Added labels for Place Marketing
+      labels: { left: "최적화 전", right: "최적화 후" },
+      color: "text-blue-600",
       groups: [
         [
           { icon: Search, title: "검색 순위", value: "강남 맛집 1위", position: "top-[10%] -left-[5%]", color: "text-blue-600", bgColor: "bg-blue-100" },
@@ -40,11 +41,12 @@ const Home: React.FC = () => {
     },
     {
       id: "clip",
-      category: "Service 02",
-      title: "네이버 클립",
-      desc: "지금 가장 뜨거운 트래픽, 숏폼.\n60초 안에 소비자의 마음을 훔치는 고감도 영상을 제작하고 배포합니다.",
+      category: "02. Naver Clip",
+      title: "60초의 승부,\n숏폼 트래픽",
+      desc: "지금 가장 뜨거운 트래픽, 숏폼.\n60초 안에 소비자의 마음을 훔치는\n고감도 영상을 제작하고 배포합니다.",
       image: serviceImages['clip'] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop",
       link: "/services/clip",
+      color: "text-green-600",
       groups: [
         [
           { icon: Eye, title: "누적 조회수", value: "15.2M", position: "top-[15%] -left-[5%]", color: "text-indigo-600", bgColor: "bg-indigo-100" },
@@ -59,11 +61,12 @@ const Home: React.FC = () => {
     },
     {
       id: "experience",
-      category: "Service 03",
-      title: "체험단 마케팅",
-      desc: "광고가 아닌 경험을 팝니다.\n진정성 있는 리뷰 콘텐츠로 잠재 고객의 구매 결정을 확신으로 바꿉니다.",
+      category: "03. Experience Group",
+      title: "경험을 파는\n진정성 있는 리뷰",
+      desc: "단순 배포형 광고가 아닙니다.\n진정성 있는 리뷰 콘텐츠로 잠재 고객의\n구매 결정을 확신으로 바꿉니다.",
       image: serviceImages['experience'] || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=800&auto=format&fit=crop",
       link: "/services/experience",
+      color: "text-orange-500",
       groups: [
         [
           { icon: Camera, title: "포토 리뷰", value: "고퀄리티 보장", position: "top-[10%] -right-[5%]", color: "text-pink-600", bgColor: "bg-pink-100" },
@@ -78,11 +81,12 @@ const Home: React.FC = () => {
     },
     {
       id: "youtube",
-      category: "Service 04",
-      title: "유튜브 관리",
-      desc: "브랜드의 팬덤을 구축하는 가장 강력한 무기.\n기획부터 촬영, 편집, 채널 운영까지 전문 PD 그룹이 전담합니다.",
+      category: "04. Youtube Management",
+      title: "팬덤을 만드는\n강력한 무기",
+      desc: "유튜브는 이제 선택이 아닌 필수입니다.\n기획부터 촬영, 편집, 채널 운영까지\n전문 PD 그룹이 전담 케어합니다.",
       image: serviceImages['youtube'] || "https://images.unsplash.com/photo-1626544827763-d516dce335ca?q=80&w=800&auto=format&fit=crop",
       link: "/services/youtube",
+      color: "text-red-600",
       groups: [
         [
           { icon: Youtube, title: "구독자 수", value: "100,000+", position: "top-[20%] -left-[8%]", color: "text-red-600", bgColor: "bg-red-100" },
@@ -96,11 +100,12 @@ const Home: React.FC = () => {
     },
     {
       id: "instagram",
-      category: "Service 05",
-      title: "인스타그램",
-      desc: "비주얼 임팩트로 소비 욕구를 자극합니다.\n트렌디한 감각과 정밀한 타겟팅으로 브랜드 인지도를 폭발시킵니다.",
+      category: "05. Instagram",
+      title: "비주얼로 소통하는\n브랜드 이미지",
+      desc: "비주얼 임팩트로 소비 욕구를 자극합니다.\n트렌디한 감각과 정밀한 타겟팅으로\n브랜드 인지도를 폭발시킵니다.",
       image: serviceImages['instagram'] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop",
       link: "/services/instagram",
+      color: "text-pink-600",
       groups: [
         [
           { icon: Heart, title: "도달 계정", value: "45,200명", position: "top-[15%] -right-[8%]", color: "text-pink-600", bgColor: "bg-pink-100" },
@@ -117,13 +122,13 @@ const Home: React.FC = () => {
 
   return (
     <div className="overflow-hidden bg-white selection:bg-brand-accent selection:text-white">
-      {/* Hero Section */}
+      {/* 1. Hero Section - Spline + High-end Typography */}
       <section className="relative w-full h-screen flex flex-col items-center justify-center bg-black overflow-hidden">
-         
-         {/* 1. Base Background (Black to prevent white flash) */}
+         {/* Background Elements */}
          <div className="absolute inset-0 bg-black z-0" />
+         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 z-0 animate-pulse"></div>
 
-         {/* 2. Spline 3D Scene (Fade in when loaded) */}
+         {/* Spline 3D Scene */}
          <div className={`absolute inset-0 z-10 transition-opacity duration-1000 ease-in-out ${isSplineLoaded ? 'opacity-100' : 'opacity-0'}`}>
             <iframe 
               src='https://my.spline.design/trafficlight-FOL3VWRlskdi7o0EU4PtSnLJ/' 
@@ -131,223 +136,245 @@ const Home: React.FC = () => {
               width='100%' 
               height='100%'
               title="3D Traffic Light Scene"
-              className="w-full h-full pointer-events-none" // KEY FIX: Prevents scroll hijacking
-              onLoad={() => setTimeout(() => setIsSplineLoaded(true), 500)} // Small delay to ensure render is ready
+              className="w-full h-full pointer-events-none scale-110" 
+              onLoad={() => setTimeout(() => setIsSplineLoaded(true), 500)}
             />
          </div>
 
-         {/* 3. Gradient Overlay */}
-         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/90 z-20 pointer-events-none" />
+         {/* Gradient Overlays for Readability */}
+         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90 z-20 pointer-events-none" />
+         <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40 z-20 pointer-events-none" />
 
-        <div className="relative z-30 text-center px-6 max-w-7xl mx-auto mt-20 pointer-events-none">
+        <div className="relative z-30 text-center px-6 max-w-7xl mx-auto mt-10 pointer-events-none">
           <RevealOnScroll>
+            {/* Top Badge */}
             <div className="flex justify-center mb-8 pointer-events-auto">
-              <span className="px-4 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md text-white/90 text-sm font-medium tracking-[0.2em] uppercase shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+              <div className="px-5 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-xl text-white/90 text-sm font-bold tracking-widest uppercase shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                 Digital Marketing Partner
-              </span>
+              </div>
             </div>
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-none mb-8 text-white tracking-tighter mix-blend-overlay opacity-90 pointer-events-auto">
-              SMART PLACE
+
+            {/* Main Headline */}
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-[0.9] mb-8 text-white tracking-tighter mix-blend-overlay opacity-90 pointer-events-auto">
+              SMART<br/>PLACE
             </h1>
-            <p className="text-xl md:text-3xl text-gray-200 font-light max-w-3xl mx-auto leading-normal mb-12 pointer-events-auto">
-               데이터로 증명하는 <span className="text-green-400 font-semibold">확실한 성과</span><br/>
+
+            {/* Sub Headline */}
+            <p className="text-xl md:text-2xl text-gray-300 font-light max-w-3xl mx-auto leading-relaxed mb-12 pointer-events-auto">
+               데이터로 증명하는 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300 font-bold">확실한 성과</span><br/>
                당신의 비즈니스에 초록불을 켜드립니다.
             </p>
             
+            {/* Buttons */}
             <div className="flex flex-col md:flex-row items-center justify-center gap-6 pointer-events-auto">
-              <Link to="/about" className="group inline-flex items-center gap-3 text-white border-b border-white/30 pb-1 hover:border-white transition-all text-lg">
-                 Explore Our Vision <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Link to="/about" className="group inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                 Explore Vision <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               
               <a 
                 href="https://m.idsn.co.kr/news/view/1065602129224578" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="group flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all text-white font-medium hover:scale-105 shadow-lg"
+                className="group flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all text-white font-medium hover:scale-105"
               >
                  <span className="bg-brand-accent text-white text-[10px] font-bold px-1.5 py-0.5 rounded leading-none">NEWS</span>
-                 <span className="text-sm">언론보도 선정기사 확인</span>
+                 <span>언론보도 선정기사</span>
                  <ExternalLink className="w-4 h-4 text-white/70" />
               </a>
             </div>
           </RevealOnScroll>
         </div>
 
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 animate-bounce text-white/30 pointer-events-none">
-          <ChevronDown className="w-8 h-8" />
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 pointer-events-none">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-white/50">Scroll Down</span>
+          <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent"></div>
         </div>
       </section>
 
-      {/* Mission Section */}
-      <section className="py-24 px-6 bg-white relative">
-         <div className="max-w-7xl mx-auto">
-            <RevealOnScroll>
-               <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-                  <div className="w-full lg:w-1/2">
-                     <div className="inline-block p-3 bg-blue-50 rounded-2xl mb-6">
-                        <Target className="w-8 h-8 text-brand-accent" />
-                     </div>
-                     <h2 className="text-5xl md:text-6xl font-bold mb-6 text-brand-black leading-tight tracking-tight">
-                        Mission
-                     </h2>
-                     <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 leading-tight">
-                        "모든 비즈니스의 잠재력을 현실로"
-                     </h3>
-                     <p className="text-gray-500 text-lg md:text-xl leading-relaxed mb-10">
-                        우리는 뛰어난 제품과 서비스를 가졌음에도 마케팅의 부재로 빛을 보지 못하는 기업들을 위해 존재합니다. 데이터 기반의 의사결정으로 성장의 장벽을 허물고, 클라이언트의 성공이 곧 우리의 성공이라는 믿음으로 나아갑니다.
-                     </p>
-                     
-                     <div className="grid grid-cols-2 gap-8 border-t border-gray-100 pt-8">
-                        <div>
-                           <div className="text-5xl font-bold text-brand-black mb-2 tracking-tighter"><CountUp end={1200} suffix="+" /></div>
-                           <div className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Projects</div>
-                        </div>
-                        <div>
-                           <div className="text-5xl font-bold text-brand-black mb-2 tracking-tighter"><CountUp end={98} suffix="%" /></div>
-                           <div className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Satisfaction</div>
-                        </div>
-                     </div>
-                  </div>
+      {/* 2. Intro Philosophy Section (Dark Mode) */}
+      <section className="py-32 px-6 bg-brand-black text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-green-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+          <div className="max-w-6xl mx-auto text-center relative z-10">
+              <RevealOnScroll>
+                  <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-16">
+                      마케팅은<br/>
+                      <span className="text-gray-500">감(Feeling)</span>이 아닌 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">데이터(Data)</span>입니다.
+                  </h2>
                   
-                  <div className="w-full lg:w-1/2">
-                      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[2rem] bg-gray-100 group shadow-2xl">
-                         <img 
-                            src="https://storage.googleapis.com/yonging_bucket/freepik__an-alluring-korean-woman-in-her-20s-wearing-a-ligh__73967.jpeg" 
-                            alt="Mission" 
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            loading="lazy" 
-                            decoding="async"
-                            fetchPriority="high"
-                         />
-                         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      {[
+                          { icon: Activity, title: "Data Analysis", desc: "빅데이터 기반의\n시장 및 경쟁사 분석" },
+                          { icon: Target, title: "Targeting", desc: "잠재 고객을 정확히\n타격하는 정밀 타겟팅" },
+                          { icon: Layers, title: "Full Funnel", desc: "노출부터 전환까지\n빈틈없는 설계" }
+                      ].map((item, i) => (
+                          <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group backdrop-blur-sm">
+                              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-800 to-black flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform border border-white/10 shadow-lg">
+                                  <item.icon className="w-8 h-8 text-blue-400" />
+                              </div>
+                              <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                              <p className="text-gray-400 leading-relaxed whitespace-pre-line">{item.desc}</p>
+                          </div>
+                      ))}
                   </div>
-               </div>
-            </RevealOnScroll>
-         </div>
+              </RevealOnScroll>
+          </div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-12 bg-white">
-         <div className="max-w-7xl mx-auto px-6 mb-12 text-center">
-            <RevealOnScroll>
-               <h2 className="text-4xl md:text-6xl font-bold text-brand-black mb-6 tracking-tight">Our Solutions</h2>
-               <p className="text-xl text-gray-500 max-w-2xl mx-auto">비즈니스 성장의 모든 단계에 필요한 최적의 솔루션을 제안합니다.</p>
-            </RevealOnScroll>
-         </div>
-
-         <div className="flex flex-col gap-0">
-            {services.map((service, index) => (
-               <div key={service.id} className="sticky top-0 bg-white py-12 lg:py-16">
-                  <div className="max-w-7xl mx-auto px-6 w-full">
-                     <RevealOnScroll className="w-full">
-                        <div className={`flex flex-col lg:flex-row items-center gap-12 lg:gap-16 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
-                           <div className="w-full lg:w-1/2 relative">
-                              <ServiceVisual 
-                                 image={service.image} 
-                                 groups={service.groups} 
-                                 labels={service.labels} 
-                              />
+      {/* 3. Services Section (Sticky Scroll) */}
+      <section className="bg-white">
+         {services.map((service, index) => (
+            <div key={service.id} className="sticky top-0 h-screen min-h-[700px] flex items-center justify-center overflow-hidden border-b border-gray-50">
+               <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50 -z-10" />
+               
+               <div className="max-w-7xl mx-auto px-6 w-full h-full flex items-center">
+                  <RevealOnScroll className="w-full">
+                     <div className={`flex flex-col lg:flex-row items-center gap-16 lg:gap-24 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
+                        
+                        {/* Visual Side */}
+                        <div className="w-full lg:w-1/2 relative group">
+                           <div className="absolute inset-0 bg-gradient-to-tr from-gray-100 to-white rounded-[3rem] transform rotate-3 scale-105 opacity-50 -z-10 group-hover:rotate-6 transition-transform duration-700"></div>
+                           <ServiceVisual 
+                              image={service.image} 
+                              groups={service.groups} 
+                              labels={service.labels} 
+                           />
+                        </div>
+                        
+                        {/* Text Side */}
+                        <div className="w-full lg:w-1/2">
+                           <div className={`inline-block px-4 py-1.5 rounded-full bg-white border border-gray-100 shadow-sm text-sm font-bold tracking-widest uppercase mb-6 ${service.color}`}>
+                               {service.category}
                            </div>
+                           <h3 className="text-4xl md:text-6xl font-bold mb-8 text-brand-black leading-tight tracking-tight whitespace-pre-line">
+                               {service.title}
+                           </h3>
+                           <p className="text-xl text-gray-500 leading-relaxed mb-10 whitespace-pre-line font-medium">
+                              {service.desc}
+                           </p>
                            
-                           <div className="w-full lg:w-1/2">
-                              <span className="text-brand-accent font-bold tracking-[0.2em] uppercase mb-4 block">{service.category}</span>
-                              <h3 className="text-4xl md:text-5xl font-bold mb-6 text-brand-black leading-tight tracking-tight">{service.title}</h3>
-                              <p className="text-xl text-gray-500 leading-relaxed mb-8 whitespace-pre-line">
-                                 {service.desc}
-                              </p>
-                              <Link 
-                                 to={service.link}
-                                 className="inline-flex items-center gap-3 px-8 py-4 bg-brand-black text-white rounded-full font-bold hover:bg-gray-800 transition-all hover:gap-5 shadow-lg hover:shadow-xl"
-                              >
-                                 자세히 보기 <ArrowRight className="w-5 h-5" />
-                              </Link>
+                           <div className="flex items-center gap-6">
+                               <Link 
+                                  to={service.link}
+                                  className="inline-flex items-center gap-3 px-8 py-4 bg-brand-black text-white rounded-full font-bold hover:bg-gray-800 transition-all hover:gap-5 shadow-xl hover:shadow-2xl hover:-translate-y-1"
+                               >
+                                  솔루션 자세히 보기 <ArrowRight className="w-5 h-5" />
+                               </Link>
+                               {/* Optional: Add a subtle secondary link or stat */}
                            </div>
                         </div>
-                     </RevealOnScroll>
-                  </div>
+
+                     </div>
+                  </RevealOnScroll>
                </div>
-            ))}
-         </div>
+            </div>
+         ))}
       </section>
 
-      {/* Partner Marquee */}
-      <section className="py-24 bg-slate-50 border-b border-gray-100 overflow-hidden relative">
-         <div className="max-w-7xl mx-auto px-6 mb-12 text-center">
-             <h3 className="text-3xl font-bold text-gray-900 mb-4">Trusted by Market Leaders</h3>
-             <p className="text-gray-500">1,200+ 파트너사가 스마트마케팅 플레이스와 함께 성장하고 있습니다.</p>
+      {/* 4. Partner Marquee (Enhanced) */}
+      <section className="py-32 bg-gray-50 relative overflow-hidden">
+         <div className="max-w-7xl mx-auto px-6 mb-16 text-center relative z-10">
+             <RevealOnScroll>
+                 <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Trusted by Market Leaders</h3>
+                 <p className="text-xl text-gray-500">1,200+ 파트너사가 스마트마케팅 플레이스와 함께 성장하고 있습니다.</p>
+             </RevealOnScroll>
          </div>
 
-         <div className="flex flex-col gap-8 opacity-80">
+         {/* Gradient Masks */}
+         <div className="absolute inset-y-0 left-0 w-32 md:w-64 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none"></div>
+         <div className="absolute inset-y-0 right-0 w-32 md:w-64 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none"></div>
+
+         <div className="flex flex-col gap-6 opacity-60 hover:opacity-100 transition-opacity duration-500">
+            {/* Row 1 */}
             <div className="flex w-[200%] animate-scroll hover:[animation-play-state:paused]">
                {[...row1, ...row1].map((partner, i) => (
-                  <div key={`r1-${i}`} className="flex-1 text-center min-w-[200px] px-2">
-                     <div className="bg-white border border-gray-200 py-4 rounded-xl shadow-sm hover:shadow-md hover:border-brand-accent hover:text-brand-accent transition-all text-gray-600 font-bold text-lg">
+                  <div key={`r1-${i}`} className="flex-1 min-w-[200px] px-3">
+                     <div className="bg-white border border-gray-200 py-5 rounded-2xl shadow-sm hover:shadow-md hover:border-brand-accent hover:text-brand-accent transition-all text-gray-500 font-bold text-lg text-center flex items-center justify-center h-full">
                         {partner}
                      </div>
                   </div>
                ))}
             </div>
+            {/* Row 2 (Reverse) */}
             <div className="flex w-[200%] animate-scroll-reverse hover:[animation-play-state:paused]">
                {[...row2, ...row2].map((partner, i) => (
-                  <div key={`r2-${i}`} className="flex-1 text-center min-w-[200px] px-2">
-                     <div className="bg-white border border-gray-200 py-4 rounded-xl shadow-sm hover:shadow-md hover:border-green-500 hover:text-green-600 transition-all text-gray-600 font-bold text-lg">
+                  <div key={`r2-${i}`} className="flex-1 min-w-[200px] px-3">
+                     <div className="bg-white border border-gray-200 py-5 rounded-2xl shadow-sm hover:shadow-md hover:border-green-500 hover:text-green-600 transition-all text-gray-500 font-bold text-lg text-center flex items-center justify-center h-full">
                         {partner}
                      </div>
                   </div>
                ))}
             </div>
+            {/* Row 3 */}
             <div className="flex w-[200%] animate-scroll hover:[animation-play-state:paused]">
                {[...row3, ...row3].map((partner, i) => (
-                  <div key={`r3-${i}`} className="flex-1 text-center min-w-[200px] px-2">
-                     <div className="bg-white border border-gray-200 py-4 rounded-xl shadow-sm hover:shadow-md hover:border-purple-500 hover:text-purple-600 transition-all text-gray-600 font-bold text-lg">
+                  <div key={`r3-${i}`} className="flex-1 min-w-[200px] px-3">
+                     <div className="bg-white border border-gray-200 py-5 rounded-2xl shadow-sm hover:shadow-md hover:border-purple-500 hover:text-purple-600 transition-all text-gray-500 font-bold text-lg text-center flex items-center justify-center h-full">
                         {partner}
                      </div>
                   </div>
                ))}
             </div>
          </div>
-         <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none"></div>
-         <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none"></div>
       </section>
 
-      {/* Contact Section */}
-      <section className="py-20 px-6 bg-brand-black text-white">
-         <div className="max-w-4xl mx-auto text-center">
+      {/* 5. Contact CTA Section (Gradient) */}
+      <section className="py-24 px-6 bg-white relative">
+         <div className="max-w-5xl mx-auto">
             <RevealOnScroll>
-               <span className="text-gray-500 font-bold tracking-[0.2em] uppercase mb-4 block">Contact Us</span>
-               <h2 className="text-4xl md:text-6xl font-bold mb-8 leading-tight">
-                  망설이는 시간에도<br/>
-                  경쟁사는 성장하고 있습니다.
-               </h2>
-               <p className="text-lg text-gray-400 mb-12 max-w-xl mx-auto">
-                  지금 바로 문의하세요. 귀사의 비즈니스 현황을 무료로 진단해 드립니다.
-               </p>
+               <div className="bg-gradient-to-r from-brand-black to-slate-900 rounded-[3rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl">
+                   {/* Background Glows */}
+                   <div className="absolute top-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
+                   <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
+                   
+                   <div className="relative z-10">
+                       <span className="text-blue-400 font-bold tracking-[0.2em] uppercase mb-6 block text-sm">Ready to Grow?</span>
+                       <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight">
+                          망설이는 시간에도<br/>
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">경쟁사는 성장하고 있습니다.</span>
+                       </h2>
+                       <p className="text-lg text-gray-400 mb-12 max-w-xl mx-auto leading-relaxed">
+                          지금 바로 문의하세요. 귀사의 비즈니스 현황을 무료로 진단하고<br className="hidden md:block"/> 최적의 마케팅 솔루션을 제안해 드립니다.
+                       </p>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                  <a href="tel:02-6958-9144" className="group flex items-center justify-center gap-4 p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                     <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Phone className="w-6 h-6 text-white" />
-                     </div>
-                     <div className="text-left">
-                        <h3 className="text-lg font-bold">전화 문의</h3>
-                        <p className="text-gray-400 text-sm">02-6958-9144</p>
-                     </div>
-                  </a>
-                  <a href="mailto:yonging@kakao.com" className="group flex items-center justify-center gap-4 p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                     <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Mail className="w-6 h-6 text-white" />
-                     </div>
-                     <div className="text-left">
-                        <h3 className="text-lg font-bold">이메일 문의</h3>
-                        <p className="text-gray-400 text-sm">yonging@kakao.com</p>
-                     </div>
-                  </a>
+                       <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16">
+                          <Link to="/contact" className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-black font-bold rounded-full hover:bg-gray-100 transition-all shadow-xl hover:scale-105">
+                              무료 진단 신청하기 <ArrowRight className="w-5 h-5" />
+                          </Link>
+                          <a href="tel:02-6958-9144" className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-all backdrop-blur-md border border-white/10">
+                              <Phone className="w-5 h-5" /> 02-6958-9144
+                          </a>
+                       </div>
+
+                       {/* Contact Grid */}
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left border-t border-white/10 pt-10">
+                           <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-colors">
+                               <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"><Mail className="w-5 h-5"/></div>
+                               <div>
+                                   <div className="text-xs text-gray-500 uppercase font-bold mb-1">Email</div>
+                                   <div className="text-white font-medium">yonging@kakao.com</div>
+                               </div>
+                           </div>
+                           <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-colors">
+                               <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400"><MessageCircle className="w-5 h-5"/></div>
+                               <div>
+                                   <div className="text-xs text-gray-500 uppercase font-bold mb-1">KaKao Talk</div>
+                                   <div className="text-white font-medium">스마트마케팅플레이스</div>
+                               </div>
+                           </div>
+                           <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-colors">
+                               <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400"><MapPin className="w-5 h-5"/></div>
+                               <div>
+                                   <div className="text-xs text-gray-500 uppercase font-bold mb-1">Office</div>
+                                   <div className="text-white font-medium">서울 강서구 양천로 547</div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
                </div>
-               
-               <Link to="/contact" className="inline-block px-10 py-4 bg-brand-accent text-white font-bold rounded-full hover:bg-blue-600 transition-all shadow-lg hover:shadow-blue-500/30 hover:-translate-y-1">
-                  무료 진단 신청하기
-               </Link>
             </RevealOnScroll>
          </div>
       </section>
