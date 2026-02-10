@@ -13,7 +13,7 @@ const Reward: React.FC = () => {
 
   return (
     <div className="bg-white">
-      {/* 1. Hero Section: Data & Traffic Theme */}
+      {/* 1. Hero Section: Steady Growth Theme */}
       <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-[#0f172a]">
          {/* Dynamic Background */}
          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
@@ -29,12 +29,12 @@ const Reward: React.FC = () => {
                    <Activity className="w-4 h-4" /> 순위 상승의 핵심 알고리즘
                </div>
                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight tracking-tight">
-                   1페이지의 비밀은<br/>
-                   결국 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">유효타 트래픽</span>입니다
+                   급하지 않게, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">꾸준히</span><br/>
+                   순위의 본질을 쌓아갑니다
                </h1>
                <p className="text-xl text-gray-400 font-light tracking-wide max-w-2xl mx-auto mb-12 leading-relaxed">
-                   단순 유입이 아닙니다. 플랫폼 로직이 좋아하는<br/>
-                   '구매 전환 행동 패턴'을 설계하여 순위를 끌어올립니다.
+                   단기간의 급상승은 위험합니다. 실제 유저의 행동 패턴으로<br/>
+                   <strong>안전하게 관리되는 순위 상승</strong>을 경험하세요.
                </p>
                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                    <Link to="/contact" className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 hover:-translate-y-1">
@@ -215,7 +215,7 @@ const Reward: React.FC = () => {
           </div>
       </section>
 
-      {/* 5. Effect Graph Simulation */}
+      {/* 5. Effect Graph Simulation (Realistic Varied Ranking) */}
       <section className="py-24 px-6 bg-[#f8fafc]">
          <div className="max-w-6xl mx-auto">
             <RevealOnScroll>
@@ -226,10 +226,10 @@ const Reward: React.FC = () => {
                
                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                     { k: "강남 맛집", rank: "1위", up: "86위 상승", color: "text-red-500", bg: "bg-red-50", line: "bg-red-500" },
-                     { k: "홍대 미용실", rank: "1위", up: "54위 상승", color: "text-blue-500", bg: "bg-blue-50", line: "bg-blue-500" },
-                     { k: "제주도 렌트카", rank: "2위", up: "12위 상승", color: "text-green-500", bg: "bg-green-50", line: "bg-green-500" },
-                     { k: "여성 의류", rank: "1위", up: "22위 상승", color: "text-purple-500", bg: "bg-purple-50", line: "bg-purple-500" }
+                     { k: "강남 맛집", rank: "1위", up: "1위 유지", color: "text-red-500", bg: "bg-red-50", line: "bg-red-500" },
+                     { k: "홍대 미용실", rank: "3위", up: "54위 상승", color: "text-blue-500", bg: "bg-blue-50", line: "bg-blue-500" },
+                     { k: "제주도 렌트카", rank: "5위", up: "12위 상승", color: "text-green-500", bg: "bg-green-50", line: "bg-green-500" },
+                     { k: "여성 의류", rank: "8위", up: "22위 상승", color: "text-purple-500", bg: "bg-purple-50", line: "bg-purple-500" }
                   ].map((item, idx) => (
                      <div key={idx} className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all relative overflow-hidden group">
                         <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">{item.k}</div>
@@ -265,7 +265,7 @@ const Reward: React.FC = () => {
             <div className="max-w-4xl mx-auto">
                <h2 className="text-3xl md:text-5xl font-bold mb-8 leading-tight">
                   경쟁사가 자는 시간에도<br/>
-                  <span className="text-blue-300">당신의 순위는 올라갑니다.</span>
+                  <span className="text-blue-300">당신의 순위는 관리됩니다.</span>
                </h2>
                
                <div className="flex flex-wrap justify-center gap-4 mb-12">

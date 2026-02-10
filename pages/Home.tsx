@@ -155,15 +155,15 @@ const Home: React.FC = () => {
               </div>
             </div>
 
-            {/* Main Headline */}
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-[0.9] mb-8 text-white tracking-tighter mix-blend-overlay opacity-90 pointer-events-auto">
-              SMART<br/>PLACE
+            {/* Main Headline (Resized) */}
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.1] mb-6 text-white tracking-tighter mix-blend-overlay opacity-90 pointer-events-auto">
+              DATA DRIVEN<br/>GROWTH
             </h1>
 
-            {/* Sub Headline */}
-            <p className="text-xl md:text-2xl text-gray-300 font-light max-w-3xl mx-auto leading-relaxed mb-12 pointer-events-auto">
-               데이터로 증명하는 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300 font-bold">확실한 성과</span><br/>
-               당신의 비즈니스에 초록불을 켜드립니다.
+            {/* Sub Headline (Refined Copy) */}
+            <p className="text-lg md:text-xl text-gray-300 font-light max-w-2xl mx-auto leading-relaxed mb-12 pointer-events-auto">
+               반짝하고 사라지는 순위가 아닙니다.<br/>
+               <span className="text-white font-bold">데이터</span>와 <span className="text-white font-bold">알고리즘</span>으로 증명하는 지속 가능한 성장 파트너.
             </p>
             
             {/* Buttons */}
@@ -263,7 +263,6 @@ const Home: React.FC = () => {
                                >
                                   솔루션 자세히 보기 <ArrowRight className="w-5 h-5" />
                                </Link>
-                               {/* Optional: Add a subtle secondary link or stat */}
                            </div>
                         </div>
 
