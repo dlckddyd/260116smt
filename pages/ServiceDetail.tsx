@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, Video, MonitorPlay, Instagram, Users, Check, ArrowRight, ThumbsUp, BarChart2, Zap, Search, MousePointer2, Star, TrendingUp, CheckCircle2, Eye, Heart, Share2, Camera, MessageCircle, Youtube, Loader2 } from 'lucide-react';
@@ -10,7 +11,7 @@ const serviceData: Record<string, any> = {
     title: "플레이스 마케팅",
     subtitle: "우리 동네 1등 매장의 비밀",
     icon: MapPin,
-    heroImage: "https://images.unsplash.com/photo-1577412647305-991150c7d163?q=80&w=2000&auto=format&fit=crop", // Korean Office/Strategy
+    heroImage: "https://storage.googleapis.com/yonging_bucket/Gemini_Generated_Image_iix02fiix02fiix0_cleanup.png",
     description: "오프라인 매장의 매출은 네이버 지도에서 결정됩니다. 단순 순위 상승을 넘어, 실제 방문으로 이어지는 '전환형' 플레이스 마케팅을 제공합니다.",
     recommended: ["지역 맛집 및 카페", "미용실, 네일샵 등 뷰티업종", "병원, 한의원", "피트니스, 필라테스 센터"],
     features: [
@@ -22,6 +23,7 @@ const serviceData: Record<string, any> = {
     // Phone Mockup Image for Visual
     image: "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop", 
     effect: "평균 플레이스 유입량 300% 증가, 예약률 150% 상승",
+    labels: { left: "최적화 전", right: "최적화 후" }, // Labels for Place Marketing
     groups: [
         [
           { icon: Search, title: "검색 순위", value: "강남 맛집 1위", position: "top-[10%] -left-[5%]", color: "text-blue-600", bgColor: "bg-blue-100" },
@@ -39,7 +41,7 @@ const serviceData: Record<string, any> = {
     title: "네이버 클립",
     subtitle: "60초의 승부, 숏폼 마케팅",
     icon: Video,
-    heroImage: "https://images.unsplash.com/photo-1585856407005-728639255a62?q=80&w=2000&auto=format&fit=crop", // Seoul Night Life/Video
+    heroImage: "https://storage.googleapis.com/yonging_bucket/Gemini_Generated_Image_lrscgnlrscgnlrsc_cleanup.png",
     description: "텍스트보다 영상이 편한 시대. 네이버의 숏폼 플랫폼 '클립'은 폭발적인 노출량을 보장합니다.",
     recommended: ["비주얼이 중요한 요식업/뷰티", "제품 시연이 필요한 쇼핑몰", "트렌디한 공간을 보유한 핫플레이스"],
     features: [
@@ -66,7 +68,7 @@ const serviceData: Record<string, any> = {
     title: "유튜브 관리",
     subtitle: "브랜드 팬덤을 만드는 영상",
     icon: MonitorPlay,
-    heroImage: "https://images.unsplash.com/photo-1610375229633-3720ba212871?q=80&w=2000&auto=format&fit=crop", // Studio
+    heroImage: "https://storage.googleapis.com/yonging_bucket/%E1%84%8B%E1%85%B2%E1%84%90%E1%85%B2%E1%84%87%E1%85%B3_cleanup.png",
     description: "유튜브는 이제 선택이 아닌 필수입니다. 기획, 대본, 촬영, 편집, 채널 관리까지 전문 PD팀이 함께합니다.",
     recommended: ["전문성을 보여줘야 하는 기업", "브랜딩이 필요한 프랜차이즈", "제품 상세 설명이 필요한 제조사"],
     features: [
@@ -119,7 +121,7 @@ const serviceData: Record<string, any> = {
     title: "체험단 마케팅",
     subtitle: "소비자가 증명하는 진짜 후기",
     icon: Users,
-    heroImage: "https://images.unsplash.com/photo-1621248031548-c89b882333b2?q=80&w=2000&auto=format&fit=crop", // Korean BBQ
+    heroImage: "https://storage.googleapis.com/yonging_bucket/%E1%84%8E%E1%85%A6%E1%84%92%E1%85%A5%E1%86%B7%E1%84%83%E1%85%A1%E1%86%AB_cleanup.png",
     description: "잘 쓴 리뷰 하나가 열 광고 안 부럽습니다. 영향력 있는 블로거와 인플루언서를 선별하여 진정성 있는 후기를 만듭니다.",
     recommended: ["신제품 런칭 기업", "리뷰가 부족한 신규 매장", "입소문이 필요한 서비스"],
     features: [
@@ -225,8 +227,13 @@ const ServiceDetail: React.FC = () => {
             </div>
             <div className="order-1 lg:order-2">
               <div className="relative hover:-translate-y-2 transition-transform duration-700">
-                 {/* Replaced Static Image with Animated ServiceVisual */}
-                 <ServiceVisual image={dynamicImage} groups={data.groups} />
+                 
+                 {/* Replaced Manual Overlays with Prop-driven ServiceVisual */}
+                 <ServiceVisual 
+                    image={dynamicImage} 
+                    groups={data.groups} 
+                    labels={data.labels} 
+                 />
                  
                  <div className="absolute bottom-8 right-8 bg-white/90 backdrop-blur p-6 rounded-2xl shadow-xl max-w-xs border border-white/50 z-30">
                     <div className="flex items-center gap-2 mb-2">

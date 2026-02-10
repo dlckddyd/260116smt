@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown, Loader2, Phone, Mail, Search, MapPin, Star, TrendingUp, MousePointer2, Eye, Heart, Share2, Youtube, Camera, MessageCircle, BarChart2, CheckCircle2, ExternalLink, Target } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
@@ -10,6 +10,7 @@ import { useData } from '../context/DataContext';
 
 const Home: React.FC = () => {
   const { serviceImages } = useData();
+  const [isSplineLoaded, setIsSplineLoaded] = useState(false);
 
   const row1 = partners.slice(0, 14);
   const row2 = partners.slice(14, 28);
@@ -23,6 +24,7 @@ const Home: React.FC = () => {
       desc: "매출의 80%는 지역 검색에서 시작됩니다.\n상권 분석 데이터와 최적화 로직으로 당신의 매장을 지역 1위로 만듭니다.",
       image: serviceImages['place'] || "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=800&auto=format&fit=crop",
       link: "/services/place",
+      labels: { left: "최적화 전", right: "최적화 후" }, // Added labels for Place Marketing
       groups: [
         [
           { icon: Search, title: "검색 순위", value: "강남 맛집 1위", position: "top-[10%] -left-[5%]", color: "text-blue-600", bgColor: "bg-blue-100" },
@@ -118,21 +120,26 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <section className="relative w-full h-screen flex flex-col items-center justify-center bg-black overflow-hidden">
          
-         {/* Spline Viewer (Iframe) */}
-         <div className="absolute inset-0 w-full h-full z-0">
+         {/* 1. Base Background (Black to prevent white flash) */}
+         <div className="absolute inset-0 bg-black z-0" />
+
+         {/* 2. Spline 3D Scene (Fade in when loaded) */}
+         <div className={`absolute inset-0 z-10 transition-opacity duration-1000 ease-in-out ${isSplineLoaded ? 'opacity-100' : 'opacity-0'}`}>
             <iframe 
               src='https://my.spline.design/trafficlight-FOL3VWRlskdi7o0EU4PtSnLJ/' 
               frameBorder='0' 
               width='100%' 
               height='100%'
               title="3D Traffic Light Scene"
-              className="w-full h-full"
+              className="w-full h-full pointer-events-none" // KEY FIX: Prevents scroll hijacking
+              onLoad={() => setTimeout(() => setIsSplineLoaded(true), 500)} // Small delay to ensure render is ready
             />
          </div>
 
-         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/90 z-10 pointer-events-none" />
+         {/* 3. Gradient Overlay */}
+         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/90 z-20 pointer-events-none" />
 
-        <div className="relative z-20 text-center px-6 max-w-7xl mx-auto mt-20 pointer-events-none">
+        <div className="relative z-30 text-center px-6 max-w-7xl mx-auto mt-20 pointer-events-none">
           <RevealOnScroll>
             <div className="flex justify-center mb-8 pointer-events-auto">
               <span className="px-4 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md text-white/90 text-sm font-medium tracking-[0.2em] uppercase shadow-[0_0_15px_rgba(255,255,255,0.1)]">
@@ -166,12 +173,12 @@ const Home: React.FC = () => {
           </RevealOnScroll>
         </div>
 
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 animate-bounce text-white/30 pointer-events-none">
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 animate-bounce text-white/30 pointer-events-none">
           <ChevronDown className="w-8 h-8" />
         </div>
       </section>
 
-      {/* Mission Section (Replaces About Us) */}
+      {/* Mission Section */}
       <section className="py-24 px-6 bg-white relative">
          <div className="max-w-7xl mx-auto">
             <RevealOnScroll>
@@ -204,7 +211,6 @@ const Home: React.FC = () => {
                   
                   <div className="w-full lg:w-1/2">
                       <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[2rem] bg-gray-100 group shadow-2xl">
-                         {/* Corrected fetchPriority attribute name */}
                          <img 
                             src="https://storage.googleapis.com/yonging_bucket/freepik__an-alluring-korean-woman-in-her-20s-wearing-a-ligh__73967.jpeg" 
                             alt="Mission" 
@@ -237,7 +243,11 @@ const Home: React.FC = () => {
                      <RevealOnScroll className="w-full">
                         <div className={`flex flex-col lg:flex-row items-center gap-12 lg:gap-16 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
                            <div className="w-full lg:w-1/2 relative">
-                              <ServiceVisual image={service.image} groups={service.groups} />
+                              <ServiceVisual 
+                                 image={service.image} 
+                                 groups={service.groups} 
+                                 labels={service.labels} 
+                              />
                            </div>
                            
                            <div className="w-full lg:w-1/2">
