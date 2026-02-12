@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   MapPin, Video, MonitorPlay, Instagram, Users, Check, ArrowRight, ThumbsUp, 
@@ -10,7 +9,7 @@ import {
   PlayCircle, Film, Clapperboard, Sparkles, Smartphone, Monitor, Scissors, 
   Palette, Grid, Hash, ShoppingBag, Megaphone, Image, Filter, PenTool, Radio,
   Clock, Activity, Lock, AlertCircle, Cpu, Globe, Settings, MousePointerClick, Lightbulb, User,
-  Database, LineChart, BrainCircuit
+  Database, LineChart, BrainCircuit, Play, Music
 } from 'lucide-react';
 import RevealOnScroll from '../components/RevealOnScroll';
 
@@ -143,19 +142,33 @@ const PlaceMarketingDetail: React.FC = () => {
                                 </div>
                             </div>
                             <div className="w-full lg:w-1/2 relative">
-                                {/* Abstract Graphic for 'Broken Graph' */}
-                                <div className="relative aspect-square bg-gray-50 rounded-[3rem] p-10 flex items-center justify-center border border-gray-100 overflow-hidden">
-                                    <div className="absolute inset-0 bg-[linear-gradient(45deg,#f3f4f6_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-                                    <div className="relative z-10 w-full">
-                                        <div className="flex justify-between text-sm font-bold text-gray-400 mb-2">
-                                            <span>Rank 1</span>
-                                            <span>Rank 50+</span>
-                                        </div>
-                                        <div className="h-64 w-full bg-white rounded-2xl shadow-sm border border-gray-200 relative overflow-hidden">
-                                            <svg className="w-full h-full" preserveAspectRatio="none">
-                                                <path d="M0,50 Q100,50 200,150 T400,250" fill="none" stroke="#ef4444" strokeWidth="4" strokeDasharray="8 8" className="animate-pulse" />
-                                            </svg>
-                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg animate-bounce">
+                                {/* Improved Logic Changed Graph (Matching Image 2 Style) */}
+                                <div className="relative aspect-[4/3] bg-white rounded-[2.5rem] border border-gray-200 shadow-2xl overflow-hidden p-8 flex flex-col">
+                                    <div className="flex justify-between text-gray-400 font-bold text-lg mb-4">
+                                        <span>Rank 1</span>
+                                        <span>Rank 50+</span>
+                                    </div>
+                                    <div className="relative flex-1 w-full">
+                                        {/* Dashed Line Down */}
+                                        <svg className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 400 300">
+                                            <path 
+                                                d="M0,20 C150,20 200,200 400,280" 
+                                                fill="none" 
+                                                stroke="#ff6b6b" 
+                                                strokeWidth="5" 
+                                                strokeDasharray="12 12" 
+                                                strokeLinecap="round"
+                                                className="drop-shadow-sm"
+                                            />
+                                            {/* Start Point */}
+                                            <circle cx="20" cy="20" r="8" fill="#ff6b6b" className="animate-pulse" />
+                                            {/* End Point */}
+                                            <circle cx="380" cy="280" r="8" fill="#ff6b6b" />
+                                        </svg>
+                                        
+                                        {/* Logic Changed Button */}
+                                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                            <div className="bg-[#ef4444] text-white px-8 py-3 rounded-full font-bold text-lg shadow-xl shadow-red-200 animate-bounce whitespace-nowrap">
                                                 Logic Changed!
                                             </div>
                                         </div>
@@ -288,7 +301,7 @@ const PlaceMarketingDetail: React.FC = () => {
                                 <div className="inline-block px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-bold mb-4">Premium Care</div>
                                 <h3 className="text-3xl font-bold text-gray-900 mb-4">프리미엄 순위 관리 케어</h3>
                                 <p className="text-gray-600 mb-8 leading-relaxed">
-                                    단기간의 무리한 상위노출은 오히려 독이 될 수 있습니다.<br/>
+                                    단기간의 무리한 상위노출은 오히려 독이 됩니다.<br/>
                                     로직에 맞춘 안전한 트래픽과 콘텐츠로 <strong>서서히, 그러나 확실하게</strong> 순위를 높입니다.
                                 </p>
                                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
@@ -354,42 +367,126 @@ const PlaceMarketingDetail: React.FC = () => {
     );
 };
 
-// --- 2. Naver Clip Detail ---
+// --- 2. Naver Clip Detail (Redesigned: Algorithm & Virality) ---
 const ClipMarketingDetail: React.FC = () => {
     return (
         <div className="bg-white">
-            <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-black">
-                <div className="absolute inset-0 bg-gradient-to-b from-black via-green-900/20 to-black"></div>
+            {/* 1. Hero: Impact & Algorithm */}
+            <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-[#050505]">
+                <div className="absolute inset-0">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] opacity-20"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#050505] via-green-900/10 to-[#050505]"></div>
+                    {/* Animated Glow Orbs */}
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-[150px] animate-pulse"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[150px] animate-pulse delay-1000"></div>
+                </div>
+                
                 <div className="relative z-10 text-center px-6 max-w-5xl mt-20">
                      <RevealOnScroll>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 font-bold mb-8 backdrop-blur-md text-sm tracking-wider uppercase">
-                            <Video className="w-4 h-4" /> Naver Clip & Short-form
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 font-bold mb-8 backdrop-blur-md shadow-[0_0_15px_rgba(34,197,94,0.2)] text-sm tracking-wider uppercase">
+                            <Video className="w-4 h-4" /> Short-form Algorithm Lab
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight">
-                            60초 안에 사로잡는<br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400">숏폼 트래픽의 기적</span>
+                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight tracking-tight">
+                            단 60초, 소비자의 뇌리에<br/>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400">각인되는 알고리즘</span>
                         </h1>
-                        <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">
-                            네이버가 밀어주는 최신 트래픽 '클립'.<br/>
-                            단순한 영상이 아닌, 구매 전환을 유도하는 숏폼 마케팅을 경험하세요.
+                        <p className="text-xl text-gray-400 font-light tracking-wide max-w-3xl mx-auto mb-12 leading-relaxed">
+                            텍스트는 읽지 않습니다. 15초 안에 승부하지 않으면 이탈합니다.<br/>
+                            철저하게 계산된 <strong>도파민 루프(Dopamine Loop)</strong>로 당신의 브랜드를 각인시킵니다.
                         </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link to="/contact" className="w-full sm:w-auto px-10 py-5 bg-[#00c73c] text-white font-bold rounded-xl hover:bg-[#00b336] transition-all shadow-[0_0_20px_rgba(0,199,60,0.3)] flex items-center justify-center gap-2">
+                                숏폼 컨설팅 받기 <Play className="w-5 h-5 fill-white" />
+                            </Link>
+                        </div>
                      </RevealOnScroll>
                 </div>
             </section>
             
+            {/* 2. The Shift: Why Short-form? */}
             <section className="py-24 px-6 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <RevealOnScroll>
-                        <SectionTitle sub="Why Short-form?" title="지금은 숏폼 전성시대" />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                        <div className="flex flex-col lg:flex-row gap-16 items-center">
+                            <div className="w-full lg:w-1/2">
+                                <span className="text-green-600 font-bold tracking-widest uppercase mb-4 block">Market Shift</span>
+                                <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                                    "왜 네이버가<br/>
+                                    클립(Clip)을 밀어줄까요?"
+                                </h2>
+                                <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                                    검색의 시대에서 <strong>발견의 시대</strong>로 넘어왔습니다.<br/>
+                                    네이버는 지금 유튜브/틱톡에 뺏긴 체류 시간을 되찾기 위해<br/>
+                                    '클립' 콘텐츠에 막대한 트래픽 가산점을 부여하고 있습니다.<br/>
+                                    지금이 가장 저렴하게 노출될 수 있는 <strong className="text-green-600">골든 타임</strong>입니다.
+                                </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <div className="text-3xl font-bold text-gray-300 mb-1">Old</div>
+                                        <div className="font-bold text-gray-500">블로그 텍스트</div>
+                                        <div className="text-sm text-gray-400 mt-2">이탈률 70% 이상</div>
+                                    </div>
+                                    <div className="p-5 bg-green-50 rounded-2xl border border-green-100 shadow-sm">
+                                        <div className="text-3xl font-bold text-green-500 mb-1">New</div>
+                                        <div className="font-bold text-gray-800">숏폼 비디오</div>
+                                        <div className="text-sm text-green-600 mt-2 font-bold">도달률 500% 증가</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="w-full lg:w-1/2 relative">
+                                <div className="relative aspect-[9/16] max-w-sm mx-auto bg-gray-900 rounded-[2.5rem] border-8 border-gray-200 shadow-2xl overflow-hidden">
+                                    <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                                        <div className="text-center">
+                                            <PlayCircle className="w-16 h-16 text-white/50 mb-4 mx-auto" />
+                                            <p className="text-gray-400 font-medium">Viral Content Loading...</p>
+                                        </div>
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                                        <div className="flex flex-col gap-2 mb-4">
+                                            <div className="w-3/4 h-4 bg-gray-200/20 rounded-full animate-pulse"></div>
+                                            <div className="w-1/2 h-4 bg-gray-200/20 rounded-full animate-pulse"></div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-white">
+                                            <div className="flex gap-4">
+                                                <div className="flex flex-col items-center"><Heart className="w-6 h-6 mb-1"/> <span className="text-xs">2.4k</span></div>
+                                                <div className="flex flex-col items-center"><MessageCircle className="w-6 h-6 mb-1"/> <span className="text-xs">342</span></div>
+                                            </div>
+                                            <button className="px-4 py-2 bg-[#00c73c] rounded-full text-sm font-bold">예약하기</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="absolute top-10 -right-4 bg-white p-4 rounded-xl shadow-lg border border-gray-100 animate-float-slow">
+                                    <div className="flex items-center gap-2">
+                                        <TrendingUp className="w-5 h-5 text-red-500" />
+                                        <span className="font-bold text-gray-800">조회수 급상승 🔥</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </RevealOnScroll>
+                </div>
+            </section>
+
+            {/* NEW: Viral DNA Section */}
+            <section className="py-24 px-6 bg-[#111] text-white">
+                <div className="max-w-7xl mx-auto">
+                    <RevealOnScroll>
+                        <div className="text-center mb-16">
+                            <span className="text-[#00c73c] font-bold tracking-widest uppercase mb-3 block">Viral Formula</span>
+                            <h2 className="text-3xl md:text-5xl font-bold">터지는 영상에는 <span className="text-[#00c73c]">법칙</span>이 있습니다</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             {[
-                                { title: "압도적 노출량", desc: "네이버 모바일 메인에 노출될 기회" },
-                                { title: "높은 전환율", desc: "짧고 강렬한 메시지로 구매 유도" },
-                                { title: "빠른 확산", desc: "알고리즘을 통한 폭발적인 바이럴" }
+                                { title: "0.5초 후킹", desc: "시작하자마자 시선을 사로잡는 시각적 충격 효과", icon: Zap },
+                                { title: "트렌드 음원", desc: "알고리즘이 선호하는 최신 유행 음원 매칭", icon: Music },
+                                { title: "도파민 편집", desc: "지루할 틈 없는 빠른 컷 전환과 리듬감", icon: Activity }
                             ].map((item, i) => (
-                                <div key={i} className="p-8 rounded-3xl bg-gray-50 border border-gray-100">
-                                    <h3 className="text-xl font-bold mb-4">{item.title}</h3>
-                                    <p className="text-gray-600">{item.desc}</p>
+                                <div key={i} className="bg-[#222] p-8 rounded-3xl border border-white/10 hover:border-[#00c73c] transition-colors group">
+                                    <div className="w-14 h-14 bg-[#333] rounded-full flex items-center justify-center mb-6 group-hover:bg-[#00c73c] transition-colors text-white">
+                                        <item.icon className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                                    <p className="text-gray-400">{item.desc}</p>
                                 </div>
                             ))}
                         </div>
@@ -397,10 +494,230 @@ const ClipMarketingDetail: React.FC = () => {
                 </div>
             </section>
 
+            {/* 3. Strategy: Bento Grid Layout */}
+            <section className="py-24 px-6 bg-gray-50">
+               <div className="max-w-7xl mx-auto">
+                    <RevealOnScroll>
+                        <SectionTitle 
+                            sub="Our Strategy" 
+                            title={<>성공하는 숏폼의<br/><span className="text-green-600">3가지 절대 법칙</span></>} 
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(280px,auto)]">
+                            {/* Card 1: Hook Logic */}
+                            <div className="md:col-span-2 bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-lg transition-all">
+                                <div className="relative z-10">
+                                    <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mb-6">
+                                        <Zap className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-3 text-gray-900">3-Second Rule (후킹의 법칙)</h3>
+                                    <p className="text-gray-500 leading-relaxed max-w-lg">
+                                        영상의 성패는 초반 3초에 결정됩니다. 
+                                        시각적 충격, 질문 던지기, 빠른 컷 편집을 통해 
+                                        <strong> 스크롤을 멈추게(Thumb-stopping)</strong> 만드는 심리적 장치를 설계합니다.
+                                    </p>
+                                </div>
+                                <div className="absolute right-0 bottom-0 w-64 h-64 bg-gradient-to-tl from-red-50 to-transparent rounded-tl-[100px] -mr-10 -mb-10 group-hover:scale-110 transition-transform"></div>
+                            </div>
+                            {/* Card 2: SEO */}
+                            <div className="md:row-span-2 bg-gray-900 text-white rounded-[2.5rem] p-10 shadow-xl relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+                                <div className="relative z-10 h-full flex flex-col justify-between">
+                                    <div>
+                                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white mb-6 backdrop-blur-sm">
+                                            <Search className="w-6 h-6" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold mb-3">검색 연동 SEO<br/>(Discovery)</h3>
+                                        <p className="text-gray-400 leading-relaxed text-sm">
+                                            단순 노출에서 끝나지 않습니다.<br/><br/>
+                                            네이버 클립은 <strong>'플레이스'</strong> 및 <strong>'키워드 검색'</strong>과 연동됩니다.
+                                            영상 하단에 플레이스 지도를 심어 시청자를 즉시 구매자로 전환시킵니다.
+                                        </p>
+                                    </div>
+                                    <div className="mt-8 pt-8 border-t border-white/10">
+                                        <div className="flex items-end gap-2">
+                                            <span className="text-4xl font-bold text-green-400">Top 1</span>
+                                            <span className="text-sm text-gray-400 mb-2">추천 탭 노출 목표</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Card 3: Quality */}
+                            <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 flex flex-col justify-center group hover:shadow-lg transition-all">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600">
+                                        <Palette className="w-5 h-5" />
+                                    </div>
+                                    <h3 className="text-xl font-bold">시네마틱 톤앤매너</h3>
+                                </div>
+                                <p className="text-gray-500 text-sm">
+                                    스마트폰 촬영의 한계를 넘어, 전문 장비와 색보정(Color Grading)으로 
+                                    <strong> 브랜드의 격</strong>을 높입니다.
+                                </p>
+                            </div>
+                            {/* Card 4: Structure */}
+                            <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 flex flex-col justify-center group hover:shadow-lg transition-all">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                                        <Layers className="w-5 h-5" />
+                                    </div>
+                                    <h3 className="text-xl font-bold">기승전결 구조화</h3>
+                                </div>
+                                <p className="text-gray-500 text-sm">
+                                    단순 나열이 아닌, 문제 제기 → 해결책 제시 → 결과 증명으로 이어지는 
+                                    <strong> 설득의 서사</strong>를 담습니다.
+                                </p>
+                            </div>
+                        </div>
+                    </RevealOnScroll>
+               </div>
+            </section>
+
+            {/* NEW: Place Synergy Section */}
+            <section className="py-24 px-6 bg-white border-t border-gray-100">
+                <div className="max-w-6xl mx-auto">
+                    <RevealOnScroll>
+                        <div className="flex flex-col lg:flex-row items-center gap-16">
+                            <div className="w-full lg:w-1/2">
+                                <span className="text-green-600 font-bold tracking-widest uppercase mb-4 block">Connection</span>
+                                <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                                    영상 하나가<br/>
+                                    <span className="text-green-600">매출</span>로 이어지는 과정
+                                </h2>
+                                <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                                    클립은 단순 조회수로 끝나지 않습니다. <br/>
+                                    영상 내에 삽입된 '플레이스 정보'와 '예약 버튼'을 통해 <br/>
+                                    시청자를 <strong>즉각적인 구매 행동</strong>으로 유도합니다.
+                                </p>
+                                <ul className="space-y-4">
+                                    <li className="flex items-center gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
+                                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm font-bold">1</div>
+                                        <span className="font-bold text-gray-800">메인 노출로 신규 잠재 고객 유입</span>
+                                    </li>
+                                    <li className="flex items-center gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
+                                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm font-bold">2</div>
+                                        <span className="font-bold text-gray-800">영상 속 장소 태그 클릭 유도</span>
+                                    </li>
+                                    <li className="flex items-center gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
+                                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm font-bold">3</div>
+                                        <span className="font-bold text-gray-800">플레이스 저장 및 예약 확정</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="w-full lg:w-1/2">
+                                {/* Diagram Visualization */}
+                                <div className="relative bg-gray-50 rounded-[3rem] p-10 border border-gray-100">
+                                    <div className="flex flex-col gap-6 items-center">
+                                        {/* Step 1 */}
+                                        <div className="w-full bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4 animate-fade-in-up" style={{animationDelay: '0ms'}}>
+                                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-red-500"><PlayCircle className="w-6 h-6"/></div>
+                                            <div>
+                                                <div className="font-bold text-gray-900">영상 시청</div>
+                                                <div className="text-xs text-gray-500">네이버 메인/검색 노출</div>
+                                            </div>
+                                        </div>
+                                        <div className="text-gray-300">↓</div>
+                                        {/* Step 2 */}
+                                        <div className="w-full bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4 animate-fade-in-up" style={{animationDelay: '150ms'}}>
+                                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-500"><MousePointerClick className="w-6 h-6"/></div>
+                                            <div>
+                                                <div className="font-bold text-gray-900">장소 클릭</div>
+                                                <div className="text-xs text-gray-500">영상 하단 플레이스 태그</div>
+                                            </div>
+                                        </div>
+                                        <div className="text-gray-300">↓</div>
+                                        {/* Step 3 */}
+                                        <div className="w-full bg-green-50 p-5 rounded-2xl shadow-md border border-green-200 flex items-center gap-4 animate-fade-in-up" style={{animationDelay: '300ms'}}>
+                                            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-white"><CheckCircle2 className="w-6 h-6"/></div>
+                                            <div>
+                                                <div className="font-bold text-green-900">매출 전환</div>
+                                                <div className="text-xs text-green-700">예약 / 주문 / 저장하기</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </RevealOnScroll>
+                </div>
+            </section>
+
+            {/* 5. Result Graph Section (Reinvented: Full-Width Dashboard Style) */}
+            <section className="py-32 px-6 bg-[#0a0f1c] relative overflow-hidden">
+                {/* Background Gradients */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-green-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <RevealOnScroll>
+                        {/* Centered Header */}
+                        <div className="text-center mb-16 max-w-3xl mx-auto">
+                            <span className="text-[#00c73c] font-bold tracking-widest uppercase mb-4 block text-sm animate-pulse">Performance Data</span>
+                            <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+                                압도적인 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00c73c] to-emerald-200">도달률 격차</span>를<br/>확인하세요
+                            </h2>
+                            <p className="text-gray-400 text-lg">
+                                텍스트와 이미지는 한계가 있습니다. <br className="md:hidden"/>
+                                숏폼은 네이버 검색 결과의 <strong className="text-white">골든존(Golden Zone)</strong>을 점유합니다.
+                            </p>
+                        </div>
+
+                        {/* Main Dashboard Card (Full Width) */}
+                        <div className="bg-[#151925] border border-white/5 rounded-[3rem] p-8 md:p-14 shadow-2xl relative overflow-hidden group">
+                            {/* Grid Background */}
+                            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]"></div>
+
+                            <div className="flex flex-col md:flex-row items-end justify-between gap-12 relative z-10">
+                                
+                                {/* Stat Highlights */}
+                                <div className="flex-1 space-y-10 w-full">
+                                    <div>
+                                        <div className="text-gray-500 font-medium mb-2 text-lg">Average Reach Rate</div>
+                                        <div className="flex items-baseline gap-4">
+                                            <span className="text-7xl md:text-8xl font-black text-white tracking-tighter">8.5<span className="text-[#00c73c] text-5xl md:text-6xl">x</span></span>
+                                            <span className="text-green-500 font-bold bg-green-500/10 px-3 py-1 rounded-full text-sm border border-green-500/20">vs Blog/Image</span>
+                                        </div>
+                                    </div>
+                                    <div className="h-px w-full bg-white/10"></div>
+                                    <div className="grid grid-cols-2 gap-8">
+                                        <div>
+                                            <div className="text-gray-500 text-sm mb-1">Cost Per View</div>
+                                            <div className="text-2xl font-bold text-white">▼ 82%</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-500 text-sm mb-1">Viral Potential</div>
+                                            <div className="text-2xl font-bold text-white">Very High</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* The Graph (Simplified & Abstract) */}
+                                <div className="w-full md:w-1/2 h-[300px] relative flex items-end justify-between gap-4">
+                                    {/* Bar 1 */}
+                                    <div className="w-full bg-gray-800/50 rounded-t-xl h-[15%] relative group-hover:bg-gray-700/50 transition-colors duration-500 flex justify-center">
+                                        <div className="absolute -top-8 text-gray-500 text-xs font-bold">블로그</div>
+                                    </div>
+                                    {/* Bar 2 */}
+                                    <div className="w-full bg-gray-800/50 rounded-t-xl h-[25%] relative group-hover:bg-gray-700/50 transition-colors duration-500 flex justify-center">
+                                        <div className="absolute -top-8 text-gray-500 text-xs font-bold">인스타</div>
+                                    </div>
+                                    {/* Bar 3 (Winner) */}
+                                    <div className="w-full bg-gradient-to-t from-[#00c73c]/20 to-[#00c73c] rounded-t-xl h-[100%] relative shadow-[0_0_50px_rgba(0,199,60,0.3)] flex justify-center">
+                                        <div className="absolute top-4 w-px h-[80%] bg-white/30"></div>
+                                        <div className="absolute -top-10 bg-[#00c73c] text-black font-bold px-4 py-1.5 rounded-full text-sm shadow-lg whitespace-nowrap animate-bounce">
+                                            네이버 클립 🚀
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </RevealOnScroll>
+                </div>
+            </section>
+
              <FaqSection items={[
-                { q: "영상 촬영도 직접 해주시나요?", a: "네, 전문 PD가 기획부터 촬영, 편집까지 올인원으로 진행해 드립니다." },
-                { q: "노출 보장은 되나요?", a: "클립 알고리즘에 최적화된 콘텐츠를 제작하여 높은 확률로 추천 탭 노출을 유도합니다." },
-                { q: "기존 영상을 활용할 수 있나요?", a: "네, 기존 영상을 숏폼 문법에 맞게 재가공(Recut)하여 활용할 수도 있습니다." }
+                { q: "영상 촬영도 직접 해주시나요?", a: "네, 전문 PD가 기획부터 현장 방문 촬영, 편집, 후보정까지 올인원으로 진행해 드립니다. 사장님은 매장 공간만 빌려주시면 됩니다." },
+                { q: "노출 보장은 되나요?", a: "알고리즘의 특성상 100% 보장은 불가능하지만, 클립 알고리즘(시청지속시간, 반응률 등)에 최적화된 콘텐츠를 제작하여 일반 영상 대비 압도적으로 높은 추천 탭 노출 확률을 확보합니다." },
+                { q: "기존 영상을 활용할 수 있나요?", a: "네, 기존에 촬영해두신 영상 소스가 있다면 숏폼 문법에 맞게 컷편집, 자막, 효과를 더해 '재가공(Recut)'하는 서비스도 제공합니다." },
+                { q: "어떤 업종에 효과적인가요?", a: "시각적 요소가 중요한 요식업(맛집, 카페), 뷰티(미용실, 네일), 펜션, 운동 시설 등 오프라인 매장이 있는 모든 업종에 강력하게 추천합니다." }
             ]} color="text-green-600"/>
 
              <CtaSection 
@@ -418,56 +735,66 @@ const ClipMarketingDetail: React.FC = () => {
 const YoutubeMarketingDetail: React.FC = () => {
     return (
         <div className="bg-white">
-             <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-[#1a1a1a]">
-                <div className="absolute inset-0 bg-gradient-to-b from-black via-red-900/20 to-black"></div>
-                <div className="relative z-10 text-center px-6 max-w-5xl mt-20">
+            <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-red-950">
+                 <div className="absolute inset-0 bg-black/50 z-0"></div>
+                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80 z-0"></div>
+                 <div className="relative z-10 text-center px-6 max-w-5xl mt-20">
                      <RevealOnScroll>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 font-bold mb-8 backdrop-blur-md text-sm tracking-wider uppercase">
-                            <Youtube className="w-4 h-4" /> YouTube Channel Growth
-                        </div>
-                        <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight">
-                            팬덤을 만드는<br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">브랜드 채널의 힘</span>
-                        </h1>
-                        <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">
-                            유튜브는 이제 선택이 아닌 필수 브랜딩 채널입니다.<br/>
-                            기획부터 촬영, 편집, 채널 운영까지 전문가에게 맡기세요.
-                        </p>
+                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 font-bold mb-8 backdrop-blur-md shadow-lg text-sm tracking-wider uppercase">
+                             <Youtube className="w-4 h-4" /> Professional Channel Management
+                         </div>
+                         <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight tracking-tight">
+                             유튜브, 이제는<br/>
+                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">선택이 아닌 필수</span>
+                         </h1>
+                         <p className="text-xl text-gray-300 font-light tracking-wide max-w-3xl mx-auto mb-12 leading-relaxed">
+                             단순한 영상 업로드가 아닙니다. 브랜드의 팬덤을 구축하고<br/>
+                             충성 고객을 만드는 <strong>강력한 무기</strong>를 만들어 드립니다.
+                         </p>
+                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link to="/contact" className="w-full sm:w-auto px-10 py-5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                                채널 컨설팅 신청 <Play className="w-5 h-5 fill-white" />
+                            </Link>
+                         </div>
                      </RevealOnScroll>
-                </div>
+                 </div>
             </section>
 
             <section className="py-24 px-6 bg-white">
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                     <RevealOnScroll>
-                        <SectionTitle sub="Service Process" title="유튜브 운영 프로세스" />
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                             {[
-                                { step: "01", title: "채널 기획", desc: "컨셉 도출 및 타겟 분석" },
-                                { step: "02", title: "콘텐츠 제작", desc: "전문 장비 촬영 및 편집" },
-                                { step: "03", title: "채널 운영", desc: "썸네일, 업로드, 댓글 관리" },
-                                { step: "04", title: "성과 분석", desc: "데이터 분석 및 전략 수정" }
+                         <SectionTitle 
+                            sub="Why Youtube?" 
+                            title={<>잠재 고객이 머무는 시간,<br/><span className="text-red-600">압도적 1위 플랫폼</span></>} 
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                            {[
+                                { title: "브랜딩 강화", desc: "텍스트보다 강력한 영상의 힘으로\n브랜드 신뢰도 구축", icon: Star },
+                                { title: "팬덤 형성", desc: "구독자와의 소통을 통해\n충성 고객(Fan) 확보", icon: Users },
+                                { title: "구매 전환", desc: "제품/서비스의 가치를\n가장 효과적으로 전달", icon: ShoppingBag }
                             ].map((item, i) => (
-                                <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-lg text-center">
-                                    <div className="text-red-500 font-bold text-lg mb-2">{item.step}</div>
-                                    <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                                    <p className="text-gray-500 text-sm">{item.desc}</p>
+                                <div key={i} className="p-8 border border-gray-100 rounded-3xl shadow-sm hover:shadow-xl transition-all">
+                                    <div className="w-16 h-16 mx-auto bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-6">
+                                        <item.icon className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                                    <p className="text-gray-500 whitespace-pre-line">{item.desc}</p>
                                 </div>
                             ))}
                         </div>
                     </RevealOnScroll>
                 </div>
             </section>
-
-             <FaqSection items={[
-                { q: "구독자가 없어도 시작할 수 있나요?", a: "물론입니다. 초기 채널 세팅부터 콘텐츠 기획까지 제로베이스에서 성장을 도와드립니다." },
-                { q: "비용은 어떻게 되나요?", a: "제작 편수와 퀄리티, 출연진 유무에 따라 견적이 달라집니다. 상담을 통해 맞춤 견적을 드립니다." },
-                { q: "촬영 장비가 필요한가요?", a: "아니요, 저희가 보유한 시네마급 장비로 촬영을 진행하므로 별도 준비하실 필요 없습니다." }
+            
+            <FaqSection items={[
+                { q: "편집만 따로 맡길 수 있나요?", a: "네, 가능합니다. 원본 소스만 보내주시면 컷편집, 자막, 효과 등을 입혀 완성본으로 제작해 드립니다." },
+                { q: "채널 개설부터 도와주시나요?", a: "네, 채널 브랜딩(로고, 채널아트)부터 초기 설정, 영상 기획 및 업로드까지 전 과정을 도와드립니다." },
+                { q: "촬영 장비가 없는데 괜찮나요?", a: "전문 촬영팀이 방문하여 고화질 카메라와 조명, 음향 장비를 세팅하고 촬영을 진행해 드립니다." }
             ]} color="text-red-600"/>
 
             <CtaSection 
-                title="유튜브 채널," 
-                subTitle="전문가와 함께 성장하세요"
+                title="유튜브 마케팅," 
+                subTitle="전문가와 함께 시작하세요"
                 colorFrom="from-gray-900" colorTo="to-red-900"
                 buttonColor="text-red-700"
                 textClass="text-red-300"
@@ -478,147 +805,163 @@ const YoutubeMarketingDetail: React.FC = () => {
 
 // --- 4. Instagram Marketing Detail ---
 const InstagramMarketingDetail: React.FC = () => {
-     return (
+    return (
         <div className="bg-white">
-             <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-black">
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/30 via-black to-orange-900/30"></div>
-                <div className="relative z-10 text-center px-6 max-w-5xl mt-20">
+             <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 to-pink-900">
+                 <div className="relative z-10 text-center px-6 max-w-5xl mt-20">
                      <RevealOnScroll>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-pink-500/30 bg-pink-500/10 text-pink-400 font-bold mb-8 backdrop-blur-md text-sm tracking-wider uppercase">
-                            <Instagram className="w-4 h-4" /> Instagram Branding
-                        </div>
-                        <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight">
-                            비주얼로 완성하는<br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-orange-400">브랜드 아이덴티티</span>
-                        </h1>
-                        <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">
-                            인스타그램은 브랜드의 첫인상입니다.<br/>
-                            감각적인 피드 구성과 소통으로 찐팬을 확보합니다.
-                        </p>
+                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-pink-500/30 bg-pink-500/10 text-pink-200 font-bold mb-8 backdrop-blur-md shadow-lg text-sm tracking-wider uppercase">
+                             <Instagram className="w-4 h-4" /> Visual Branding Strategy
+                         </div>
+                         <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight tracking-tight">
+                             비주얼로 소비자를<br/>
+                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-yellow-400">사로잡는 힘</span>
+                         </h1>
+                         <p className="text-xl text-pink-100/80 font-light tracking-wide max-w-3xl mx-auto mb-12 leading-relaxed">
+                             감각적인 이미지 한 장이 천 마디 말보다 강력합니다.<br/>
+                             트렌디한 감각으로 브랜드의 가치를 높여드립니다.
+                         </p>
+                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link to="/contact" className="w-full sm:w-auto px-10 py-5 bg-white text-pink-900 font-bold rounded-xl hover:bg-pink-50 transition-all shadow-lg flex items-center justify-center gap-2">
+                                인스타 컨설팅 받기 <ArrowRight className="w-5 h-5" />
+                            </Link>
+                         </div>
                      </RevealOnScroll>
-                </div>
+                 </div>
             </section>
 
             <section className="py-24 px-6 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <RevealOnScroll>
-                        <SectionTitle sub="Strategy" title="인스타그램 성장 전략" />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                            <div className="bg-gray-50 p-10 rounded-[2.5rem]">
-                                <h3 className="text-2xl font-bold mb-4">피드 디자인 & 톤앤매너</h3>
-                                <p className="text-gray-600 mb-6">브랜드 색깔에 맞는 통일감 있는 피드 디자인으로 팔로우 전환율을 높입니다.</p>
-                                <ul className="space-y-2 text-gray-700">
-                                    <li className="flex items-center gap-2"><Check className="w-5 h-5 text-pink-500"/> 감성적인 사진 촬영 및 보정</li>
-                                    <li className="flex items-center gap-2"><Check className="w-5 h-5 text-pink-500"/> 카드뉴스 및 정보성 콘텐츠 제작</li>
-                                </ul>
-                            </div>
-                            <div className="bg-gray-50 p-10 rounded-[2.5rem]">
-                                <h3 className="text-2xl font-bold mb-4">해시태그 & 계정 관리</h3>
-                                <p className="text-gray-600 mb-6">잠재 고객이 검색하는 해시태그를 분석하고, 진정성 있는 소통으로 계정 지수를 높입니다.</p>
-                                <ul className="space-y-2 text-gray-700">
-                                    <li className="flex items-center gap-2"><Check className="w-5 h-5 text-pink-500"/> 인기 게시물 노출 전략</li>
-                                    <li className="flex items-center gap-2"><Check className="w-5 h-5 text-pink-500"/> 팔로워 소통 및 댓글 관리</li>
-                                </ul>
-                            </div>
-                        </div>
+                         <SectionTitle 
+                            sub="Instagram Strategy" 
+                            title={<>브랜드의 감성을 전달하는<br/><span className="text-pink-600">비주얼 스토리텔링</span></>} 
+                        />
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <div className="bg-pink-50 rounded-3xl p-10">
+                                 <h3 className="text-2xl font-bold mb-4 text-pink-900">피드 디자인 & 톤앤매너</h3>
+                                 <p className="text-gray-700 leading-relaxed">브랜드의 정체성을 나타내는 컬러와 무드를 설정하여, 피드 전체가 하나의 포트폴리오처럼 보이도록 기획합니다. 통일감 있는 비주얼은 팔로우 전환율을 높입니다.</p>
+                             </div>
+                             <div className="bg-purple-50 rounded-3xl p-10">
+                                 <h3 className="text-2xl font-bold mb-4 text-purple-900">해시태그 & 도달 최적화</h3>
+                                 <p className="text-gray-700 leading-relaxed">타겟 고객이 검색하는 키워드를 분석하여 최적의 해시태그를 조합합니다. 인기 게시물 노출을 통해 유입을 극대화합니다.</p>
+                             </div>
+                         </div>
                     </RevealOnScroll>
                 </div>
             </section>
 
              <FaqSection items={[
-                { q: "팔로워 구매도 가능한가요?", a: "저희는 유령 계정이 아닌, 실제 활동하는 한국인 타겟 유저들과의 소통을 통해 자연스러운 팔로워 증가를 지향합니다." },
-                { q: "이미지는 직접 찍어서 보내야 하나요?", a: "직접 촬영해주셔도 되고, 제품을 보내주시면 저희 스튜디오에서 촬영 대행도 가능합니다." },
-                { q: "릴스 제작도 포함되나요?", a: "네, 최근 인스타그램 로직상 릴스의 중요성이 커져 릴스 기획 및 제작도 패키지에 포함되어 있습니다." }
+                { q: "팔로워 구매도 가능한가요?", a: "저희는 유령 계정을 구매하는 어뷰징 방식은 진행하지 않습니다. 실제 타겟 고객과의 소통을 통해 진성 팔로워를 늘리는 정공법만을 사용합니다." },
+                { q: "카드뉴스 제작도 해주시나요?", a: "네, 정보성 콘텐츠나 홍보용 카드뉴스 제작도 포함되어 있습니다. 전문 디자이너가 가독성 높고 트렌디한 디자인을 제공합니다." }
             ]} color="text-pink-600"/>
 
             <CtaSection 
-                title="인스타그램," 
-                subTitle="브랜드의 감성을 입히세요"
-                colorFrom="from-purple-900" colorTo="to-orange-900"
+                title="인스타그램 마케팅," 
+                subTitle="트렌드를 리드하세요"
+                colorFrom="from-purple-900" colorTo="to-pink-900"
                 buttonColor="text-pink-700"
                 textClass="text-pink-300"
             />
         </div>
-     );
+    );
 };
 
 // --- 5. Experience Marketing Detail ---
 const ExperienceMarketingDetail: React.FC = () => {
     return (
         <div className="bg-white">
-             <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-black">
-                <div className="absolute inset-0 bg-gradient-to-b from-black via-orange-900/20 to-black"></div>
-                <div className="relative z-10 text-center px-6 max-w-5xl mt-20">
+             <section className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden bg-[#ff6b00]">
+                 <div className="absolute inset-0 bg-black/20 z-0"></div>
+                 <div className="relative z-10 text-center px-6 max-w-5xl mt-20">
                      <RevealOnScroll>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 font-bold mb-8 backdrop-blur-md text-sm tracking-wider uppercase">
-                            <Users className="w-4 h-4" /> Experience Group
-                        </div>
-                        <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight">
-                            고객의 목소리로 증명하는<br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-400">진정성 있는 리뷰</span>
-                        </h1>
-                        <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">
-                            소비자는 광고보다 다른 사람의 후기를 믿습니다.<br/>
-                            파워 블로거, 인플루언서 체험단을 통해 신뢰도를 확보하세요.
-                        </p>
+                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-white/10 text-white font-bold mb-8 backdrop-blur-md shadow-lg text-sm tracking-wider uppercase">
+                             <Users className="w-4 h-4" /> Authentic Review Marketing
+                         </div>
+                         <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight tracking-tight">
+                             진정성 있는 리뷰가<br/>
+                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-white">매출을 만든다</span>
+                         </h1>
+                         <p className="text-xl text-white/90 font-light tracking-wide max-w-3xl mx-auto mb-12 leading-relaxed">
+                             광고 냄새 나는 리뷰는 오히려 독이 됩니다.<br/>
+                             실제 고객의 생생한 체험기로 신뢰를 구축하세요.
+                         </p>
+                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link to="/contact" className="w-full sm:w-auto px-10 py-5 bg-white text-[#ff6b00] font-bold rounded-xl hover:bg-orange-50 transition-all shadow-lg flex items-center justify-center gap-2">
+                                체험단 모집 의뢰 <ArrowRight className="w-5 h-5" />
+                            </Link>
+                         </div>
                      </RevealOnScroll>
-                </div>
+                 </div>
             </section>
 
             <section className="py-24 px-6 bg-white">
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                     <RevealOnScroll>
-                        <SectionTitle sub="Why Us?" title="스마트플레이스 체험단의 차별점" />
+                         <SectionTitle 
+                            sub="Review Strategy" 
+                            title={<>고객의 지갑을 여는<br/><span className="text-orange-500">리뷰의 기술</span></>} 
+                        />
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                              {[
-                                { title: "엄격한 리뷰어 선별", desc: "일방문자 수, 노출 정확도 등을 분석하여 영향력 있는 인플루언서만 선별합니다." },
-                                { title: "키워드 정밀 타겟팅", desc: "검색량이 많고 전환율이 높은 황금 키워드를 발굴하여 가이드라인을 제공합니다." },
-                                { title: "체계적인 결과 보고", desc: "노출 현황, 조회수 등을 취합하여 투명한 결과 리포트를 제공합니다." }
-                            ].map((item, i) => (
-                                <div key={i} className="bg-white p-8 rounded-2xl border border-gray-200 shadow-lg hover:-translate-y-2 transition-transform">
-                                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-orange-600">
-                                        <CheckCircle2 className="w-6 h-6"/>
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-4">{item.title}</h3>
-                                    <p className="text-gray-600 leading-relaxed">{item.desc}</p>
-                                </div>
-                            ))}
+                                 { title: "블로그 체험단", desc: "검색 노출(SEO)에 최적화된\n상세한 포스팅 배포", icon: FileText },
+                                 { title: "인스타 체험단", desc: "비주얼과 해시태그로\n빠른 확산 유도", icon: Instagram },
+                                 { title: "영수증 리뷰", desc: "플레이스 평점 관리 및\n신뢰도 상승 효과", icon: CheckCircle2 }
+                             ].map((item, i) => (
+                                 <div key={i} className="text-center p-8 bg-orange-50 rounded-3xl border border-orange-100">
+                                     <div className="w-16 h-16 mx-auto bg-white text-orange-500 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                                         <item.icon className="w-8 h-8" />
+                                     </div>
+                                     <h3 className="text-xl font-bold mb-2 text-gray-900">{item.title}</h3>
+                                     <p className="text-gray-600 whitespace-pre-line">{item.desc}</p>
+                                 </div>
+                             ))}
                         </div>
                     </RevealOnScroll>
                 </div>
             </section>
 
              <FaqSection items={[
-                { q: "제품 배송형과 방문형 중 어떤 것이 좋나요?", a: "업종에 따라 다릅니다. 식당/뷰티샵은 방문형, 화장품/식품 등은 배송형이 적합합니다." },
-                { q: "모집 기간은 얼마나 걸리나요?", a: "보통 모집 시작 후 1주일 내로 인원 선정이 완료되며, 리뷰 등록까지는 약 2~3주 소요됩니다." },
-                { q: "노출이 안 되면 환불 되나요?", a: "블로거 지수 문제로 누락 시 재진행해 드립니다. 단, 로직 이슈 등 불가항력적인 상황은 제외됩니다." }
-            ]} color="text-orange-600"/>
+                { q: "체험단 모집 기간은 얼마나 걸리나요?", a: "보통 모집 시작 후 1주일 내로 인원 선정이 완료되며, 선정 후 1~2주 내에 리뷰가 등록됩니다." },
+                { q: "제품 배송형도 가능한가요?", a: "네, 배송형과 방문형 모두 진행 가능합니다. 제품 특성에 맞춰 가장 효과적인 방식을 제안해 드립니다." },
+                { q: "노쇼(No-Show) 관리는 어떻게 하나요?", a: "체험단 선정 시 블랙리스트 필터링을 거치며, 노쇼 발생 시 대체 인원을 빠르게 투입하여 약속된 리뷰 수를 보장해 드립니다." }
+            ]} color="text-orange-500"/>
 
             <CtaSection 
-                title="리뷰 마케팅," 
-                subTitle="입소문의 시작입니다"
-                colorFrom="from-gray-900" colorTo="to-orange-900"
+                title="체험단 마케팅," 
+                subTitle="입소문을 시작하세요"
+                colorFrom="from-orange-900" colorTo="to-yellow-700"
                 buttonColor="text-orange-700"
-                textClass="text-orange-300"
+                textClass="text-yellow-300"
             />
         </div>
     );
 };
 
-// --- Generic Wrapper for Fallback ---
-const GenericServiceDetail: React.FC = () => <div className="p-20 text-center">서비스 준비중입니다.</div>;
-
+// --- Main Service Detail Component ---
 const ServiceDetail: React.FC = () => {
-  const { type } = useParams<{ type: string }>();
-  
-  switch (type) {
-      case 'place': return <PlaceMarketingDetail />;
-      case 'clip': return <ClipMarketingDetail />;
-      case 'youtube': return <YoutubeMarketingDetail />;
-      case 'instagram': return <InstagramMarketingDetail />;
-      case 'experience': return <ExperienceMarketingDetail />;
-      default: return <GenericServiceDetail />;
-  }
+    const { type } = useParams<{ type: string }>();
+
+    // Scroll to top on type change
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [type]);
+
+    switch (type) {
+        case 'place':
+            return <PlaceMarketingDetail />;
+        case 'clip':
+            return <ClipMarketingDetail />;
+        case 'youtube':
+            return <YoutubeMarketingDetail />;
+        case 'instagram':
+            return <InstagramMarketingDetail />;
+        case 'experience':
+            return <ExperienceMarketingDetail />;
+        default:
+            // Fallback for unknown routes, redirect or show place as default
+            return <PlaceMarketingDetail />;
+    }
 };
 
 export default ServiceDetail;
